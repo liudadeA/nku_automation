@@ -1,0 +1,2207 @@
+\documentclass[12pt,a4paper]{article}
+
+%==================== 宏包 ====================
+\usepackage[UTF8,fontset=windows]{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{setspace}
+
+%==================== 页面设置 ====================
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+%==================== 字体设置 ====================
+\setCJKmainfont{SimSun}[AutoFakeBold=2]  % 宋体
+\setCJKsansfont{SimHei}[AutoFakeBold=2]  % 黑体
+\setmainfont{Times New Roman}
+
+%==================== 标题格式设置 ====================
+% 章标题：黑体16磅加粗居中，段前24磅，段后18磅
+\titleformat{\section}
+{\centering\fontsize{16pt}{20pt}\selectfont\CJKfamily{hei}\bfseries}
+{\thesection\quad}
+{0em}
+{}
+\titlespacing*{\section}{0pt}{24pt}{18pt}
+
+% 一级标题：黑体14磅加粗居中，段前24磅，段后6磅
+\titleformat{\subsection}
+{\centering\fontsize{14pt}{18pt}\selectfont\CJKfamily{hei}\bfseries}
+{\thesubsection\quad}
+{0em}
+{}
+\titlespacing*{\subsection}{0pt}{24pt}{6pt}
+
+% 二级标题：黑体13磅居左，段前12磅，段后6磅
+\titleformat{\subsubsection}
+{\fontsize{13pt}{16pt}\selectfont\CJKfamily{hei}\bfseries}
+{\thesubsubsection\quad}
+{0em}
+{}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+%==================== 段落格式设置 ====================
+\setlength{\parindent}{2em}  % 首行缩进2汉字符
+\setlength{\parskip}{0pt}    % 段间距0磅
+\linespread{1.25}            % 固定值行距20磅（约1.25倍）
+
+%==================== 自定义环境 ====================
+\newtcolorbox{keybox}[1][]{
+  colback=yellow!8!white,
+  colframe=orange!60!black,
+  fonttitle=\bfseries,
+  title=关键点,
+  #1
+}
+\newtcolorbox{notebox}[1][]{
+  colback=blue!5!white,
+  colframe=blue!55!black,
+  fonttitle=\bfseries,
+  title=备注,
+  #1
+}
+\newtcolorbox{summarybox}[1][]{
+  colback=green!6!white,
+  colframe=green!50!black,
+  fonttitle=\bfseries,
+  title=小结,
+  #1
+}
+
+%==================== 笔记空间 ====================
+\newcommand{\notespace}[1][3cm]{%
+  \vspace{#1}%
+  \noindent\textbf{【笔记空间】}%
+  \vspace{#1}%
+}
+
+%==================== 数学命令 ====================
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+
+%==================== 页眉页脚 ====================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{强化学习复习笔记}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%==================== 文档信息 ====================
+\title{\textbf{强化学习复习笔记}\\[0.5em]\large 基于课程内容整理}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%==================================================================
+% 第一章 强化学习概述
+%==================================================================
+\section{强化学习概述}
+
+\subsection{强化学习能解决的问题}
+
+强化学习适合解决序贯决策、复杂控制和交互优化问题，典型应用包括：
+
+\begin{itemize}[leftmargin=2em]
+  \item 非线性控制、视频游戏、机器人控制（走路、站立）
+  \item AlphaGo、多智能体协作（星际争霸）
+  \item 海量智能体问题、可控核聚变控制
+  \item 大语言模型中的人类反馈优化（如 ChatGPT 的 RLHF）
+\end{itemize}
+
+\subsubsection*{典型场景：可控核聚变}
+
+托卡马克装置利用电磁力约束核聚变时的超高温等离子体。关键点：
+
+\begin{itemize}[leftmargin=2em]
+  \item 控制等离子体形状，服务于发电
+  \item 热传导不能过多（容器融化）也不能过少（发电效率低）
+\end{itemize}
+
+\subsubsection*{典型场景：ChatGPT 训练思路}
+
+\begin{enumerate}[leftmargin=2em]
+  \item 收集示例数据，得到有监督微调策略 SFT
+  \item 收集人工标注的对比数据，训练回报模型
+  \item 使用 PPO 算法和学到的回报模型进一步优化 SFT
+\end{enumerate}
+
+\notespace[2cm]
+
+\subsection{强化学习与监督学习的联系和区别}
+
+\textbf{相同点：} 都从数据中学习；都会逐步改善性能。
+
+\textbf{不同点：}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{数据类型}：监督学习需要标签数据；强化学习需要与环境交互得到的数据
+  \item \textbf{优化目标}：监督学习优化预测误差；强化学习优化长期累积回报
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{强化学习与其他优化方法}
+
+序贯最优决策的其他方法：
+
+\begin{itemize}[leftmargin=2em]
+  \item 状态空间很小时：线性规划（资源分配、调度）
+  \item 模型已知、回报函数解析时：动态规划或最优控制
+  \item 控制策略较简单时：进化算法（遗传算法）
+\end{itemize}
+
+\subsubsection*{最优控制的一般形式}
+
+状态方程：
+\begin{equation}
+\dot{X} = f(t, X, U), \quad X(t_0)=X_0
+\end{equation}
+
+性能指标函数：
+\begin{equation}
+J(x,t)=\phi(X(t_f),t_f)+\int_t^{t_f} L(x(\tau),u(\tau),\tau)\,d\tau
+\end{equation}
+
+最优值函数：
+\begin{equation}
+V(X,t)=\min_{u\in\Omega}\left[\phi(X(t_f),t_f)+\int_t^{t_f} L(x(\tau),u(\tau),\tau)\,d\tau\right]
+\end{equation}
+
+对应 HJB 方程：
+\begin{equation}
+-\frac{\partial V}{\partial t} = \min_{u\in U} \left\{ L(x,t,u) + \left(\frac{\partial V}{\partial x}\right)^{\!T} f(x,t,u) \right\}
+\end{equation}
+
+\begin{keybox}
+当模型未知或非常复杂、回报函数未知时，强化学习通过采样和环境交互来学习最优策略。
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{基本概念}
+
+\subsubsection*{策略（Policy）}
+
+策略是从状态空间到动作空间的映射：
+\begin{equation}
+\pi(\cdot \mid s): s \rightarrow a
+\end{equation}
+
+\subsubsection*{奖赏（Reward）}
+
+环境在每个时间步给智能体的立即回报。
+
+\subsubsection*{值函数（Value Function）}
+
+从某个状态开始，按照某个策略行动时所能获得的累积回报。
+
+\subsubsection*{学习目标}
+
+使长期累积回报最大，即让值函数最大。
+
+\notespace[2cm]
+
+\subsection{与环境交互的学习过程}
+
+强化学习通过与环境交互产生数据流，智能体利用这些数据学习并优化行为，通常放在马尔可夫决策过程（MDP）框架下理解。
+
+强化学习的两个核心特征：
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{试错探索}
+  \item \textbf{延迟回报}
+\end{itemize}
+
+\subsubsection*{井字游戏示例}
+
+\begin{itemize}[leftmargin=2em]
+  \item 设置值函数列表，每个值表示从当前状态出发最终获胜的概率
+  \item 初始化：赢的状态取 $1$，输的状态取 $0$，其他状态取 $0.5$
+  \item 价值更新（备份更新）：
+\end{itemize}
+
+\begin{equation}
+V(S_t) \leftarrow V(S_t) + \alpha \bigl[V(S_{t+1}) - V(S_t)\bigr]
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{强化学习算法历史与发展}
+
+\subsubsection*{发展阶段}
+
+\begin{itemize}[leftmargin=2em]
+  \item 1998 年前：基本理论框架形成
+  \item 1998--2013 年：各种直接策略搜索方法出现
+  \item 2013 年至今：深度强化学习快速发展
+\end{itemize}
+
+\subsubsection*{代表方向}
+
+\begin{itemize}[leftmargin=2em]
+  \item 基于值函数的方法：DQN、DNC、AlphaGo
+  \item 基于策略梯度的强化学习
+  \item 基于 EM、基于路径积分、基于回归、基于模型的强化学习
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{强化学习的分类}
+
+\subsubsection*{按是否依赖模型}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{基于模型}：先学习系统模型，再基于模型求最优策略
+  \item \textbf{无模型}：不显式学习环境模型，直接通过交互数据得到最优策略
+\end{itemize}
+
+\subsubsection*{按策略更新方式}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{基于值函数}：先求最优值函数，再由值函数重构最优策略
+  \item \textbf{基于直接策略搜索}：直接在策略空间中搜索最优策略
+  \item \textbf{Actor-Critic}：同时逼近值函数和最优策略，类似策略迭代
+\end{itemize}
+
+\subsubsection*{按回报函数是否已知}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{正向强化学习}：从回报中学习最优策略
+  \item \textbf{逆向强化学习}：从专家示例中学习回报函数
+\end{itemize}
+
+\subsubsection*{按任务形式和规模}
+
+分层强化学习、元强化学习、多智能体强化学习、迁移学习。
+
+\notespace[2cm]
+
+\subsection{强化学习的特点}
+
+\begin{keybox}
+核心在于：搜索/探索 + 正确的评估。利用对当前动作的评估进行学习。
+\end{keybox}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第二章 数学基础
+%==================================================================
+\section{数学基础}
+
+\subsection{概率论基础}
+
+\subsubsection*{期望与方差}
+
+离散型随机变量期望：
+\begin{equation}
+\E[X]=\sum_x x\,P(X=x)
+\end{equation}
+
+连续型随机变量期望：
+\begin{equation}
+\E[X]=\int x f(x)\,dx
+\end{equation}
+
+方差：
+\begin{equation}
+\mathrm{Var}(X)=\E\bigl[(X-\E[X])^2\bigr]
+\end{equation}
+
+\subsubsection*{条件概率}
+
+在事件 $A$ 已发生条件下，事件 $B$ 发生的概率：$P(B\mid A)$。
+
+\subsubsection*{随机过程}
+
+设 $(\Omega,\Sigma,P)$ 是概率空间，对每个参数 $t\in T$，$X(t,\omega)$ 是定义在该概率空间上的随机变量，则随机变量族
+\begin{equation}
+\{X_t=X(t,\omega);\, t\in T\}
+\end{equation}
+称为该概率空间上的一个随机过程。
+
+\notespace[2cm]
+
+\subsection{马尔可夫性}
+
+\begin{keybox}
+\textbf{马尔可夫性}：系统的下一个状态只与当前状态有关，而与更早的历史无关。
+\begin{equation}
+P(S_{t+1}\mid S_t)=P(S_{t+1}\mid S_1,\dots,S_t)
+\end{equation}
+\end{keybox}
+
+\textbf{直观理解：} 当前状态蕴含了所有相关的历史信息；一旦当前状态已知，历史信息就可以被抛弃。
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第三章 多臂赌博机问题
+%==================================================================
+\section{多臂赌博机问题}
+
+\subsection{基本概念}
+
+\textbf{多臂赌博机（Multi-Armed Bandit）}：
+
+\begin{itemize}[leftmargin=2em]
+  \item 有 $K$ 个臂
+  \item 每次摇动某个臂，会得到服从该臂对应概率分布的回报
+  \item 目标：通过学习知道摇哪个臂能获得更高回报
+\end{itemize}
+
+\textbf{问题目标：} 在摇动 $N$ 次的过程中，使总回报最高。
+
+\subsubsection*{强化学习视角下的表述}
+
+\begin{itemize}[leftmargin=2em]
+  \item 动作：$a \in \{0,1,2,\dots\}$
+  \item 状态：单一状态 $s$
+  \item 回报：$r$，服从不同动作对应的不同回报分布
+  \item 学习目标：在状态 $s$ 下找到最优动作，利用回报 $r$ 学习动作的优劣
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{动作价值的定义}
+
+动作的真实价值：
+\begin{equation}
+q_*(a)=\E[R_t \mid A_t=a]
+\end{equation}
+
+动作的估计值（样本平均）：
+\begin{equation}
+Q_t(a)=\frac{\sum_{i=1}^{t-1} R_i \cdot \1(A_i=a)}{\sum_{i=1}^{t-1} \1(A_i=a)}
+\end{equation}
+其中 $\1(A_i=a)$ 表示当第 $i$ 次选择动作 $a$ 时取 1，否则取 0。
+
+\notespace[2cm]
+
+\subsection{探索与利用}
+
+在每个臂都至少尝试一次后，选择下一个臂需要平衡：
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{利用（exploitation）}：选择估计值最大的动作
+\end{itemize}
+
+\begin{equation}
+a=\argmax_a q(a)
+\end{equation}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{探索（exploration）}：选择非贪婪动作，以获取更多信息
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{增量式更新}
+
+\begin{keybox}
+\textbf{新估计值 = 旧估计值 + 步长 $\times$ 预测误差}
+\begin{equation}
+Q_{n+1} = Q_n + \frac{1}{n}\bigl(R_n - Q_n\bigr)
+\end{equation}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{常见动作选择方法}
+
+\subsubsection*{Upper Confidence Bound（UCB）}
+
+\begin{equation}
+A_t=\argmax_a \left[ Q_t(a)+c\sqrt{\frac{\ln t}{N_t(a)}} \right]
+\end{equation}
+其中 $Q_t(a)$ 为价值估计，$N_t(a)$ 为动作 $a$ 被选择的次数，$c$ 控制探索强度。
+
+\subsubsection*{玻尔兹曼分布（Softmax）动作选择}
+
+\begin{equation}
+\Pr\{A_t=a\}=\frac{e^{H_t(a)}}{\sum_{b=1}^{k} e^{H_t(b)}}
+\end{equation}
+其中 $H_t(a)$ 表示动作偏好（preference）。
+
+\notespace[2cm]
+
+\subsection{从多臂赌博机到马尔可夫决策过程}
+
+\begin{notebox}
+\textbf{核心区别：}
+\begin{itemize}[leftmargin=1.5em]
+  \item 多臂赌博机：单状态问题，动作只影响立即回报
+  \item MDP：多状态问题，动作不仅影响回报，还影响状态转移
+\end{itemize}
+\end{notebox}
+
+MDP 中：在状态 $s_t$ 执行动作 $a_t$，获得回报 $r_t$，转移到下一状态 $s_{t+1}$：
+\begin{equation}
+s_t \xrightarrow{a_t,\, r_t} s_{t+1}
+\end{equation}
+
+\textbf{延迟回报：} 在 MDP 中，动作的好坏不能只看立即回报，还要看未来回报。需要平衡立即回报与将来回报。
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第四章 马尔可夫决策过程
+%==================================================================
+\section{马尔可夫决策过程}
+
+\subsection{定义}
+
+\begin{keybox}
+MDP 由五元组描述：$(S,A,P,R,\gamma)$
+\begin{itemize}[leftmargin=1.5em]
+  \item $S$：有限状态集
+  \item $A$：有限动作集
+  \item $P$：状态转移概率
+  \item $R$：回报函数
+  \item $\gamma$：折扣因子
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{动力学模型}
+
+随机变量 $s',r$ 的联合分布：
+\begin{equation}
+p(s',r\mid s,a)=\Pr\{S_t=s',R_t=r\mid S_{t-1}=s,A_{t-1}=a\}
+\end{equation}
+
+\subsubsection*{状态转移概率}
+
+\begin{equation}
+p(s'\mid s,a)=\sum_r p(s',r\mid s,a)
+\end{equation}
+
+\subsubsection*{回报的期望}
+
+\begin{equation}
+R(s,a)=\E[R_t\mid S_{t-1}=s,A_{t-1}=a] =\sum_r \sum_{s'} r\, p(s',r\mid s,a)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{状态、动作与回报}
+
+\subsubsection*{状态}
+
+状态是任何我们能够知道、并且可能有助于决策的信息。
+
+\begin{itemize}[leftmargin=2em]
+  \item DQN 的状态：连续的四帧图像
+  \item AlphaGo 的状态：过去八手的双方棋局
+\end{itemize}
+
+\textbf{状态表示会严重影响学习效果，目前更像一门艺术。}
+
+\subsubsection*{动作}
+
+动作是任何我们希望智能体学习做出的决策，可以是宏观/微观、精神/物质层面动作。
+
+\subsubsection*{立即回报的设计}
+
+立即回报的设置应服务于最终目标：
+
+\begin{itemize}[leftmargin=2em]
+  \item 机器人学习走路：回报正比于前进速度
+  \item 机器人逃离迷宫：每走一步给 $-1$，鼓励尽快逃离
+  \item 下棋：赢 $+1$，输 $-1$，平局 $0$
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{累积回报与折扣回报}
+
+\subsubsection*{累积回报}
+
+\begin{equation}
+G_t = R_{t+1}+R_{t+2}+\cdots+R_T
+\end{equation}
+
+\subsubsection*{幕与任务类型}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{幕（episode）}：一次完整交互序列
+  \item \textbf{终止状态（terminal state）}：交互结束的状态
+  \item \textbf{episodic tasks}：有终止状态的任务
+  \item \textbf{continuing tasks}：没有终止状态、持续进行的任务
+\end{itemize}
+
+\subsubsection*{折扣回报}
+
+\begin{equation}
+G_t = R_{t+1}+\gamma R_{t+2}+\gamma^2 R_{t+3}+\cdots = \sum_{k=0}^{\infty}\gamma^k R_{t+k+1}
+\end{equation}
+其中 $0 \le \gamma \le 1$。
+
+\begin{keybox}
+\textbf{折扣率 $\gamma$ 的含义：}
+\begin{itemize}[leftmargin=1.5em]
+  \item $\gamma \to 1$：智能体更有远见（farsighted），重视未来回报
+  \item $\gamma=0$：智能体短视（myopic），只最大化立即回报
+  \item 若回报有界：$G_t \le \dfrac{R_{\max}}{1-\gamma}$
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{策略与值函数}
+
+\subsubsection*{策略的定义}
+
+策略 $\pi$ 是给定状态 $s$ 时在动作集上的一个概率分布：
+\begin{equation}
+\pi(a\mid s)=P(A_t=a\mid S_t=s)
+\end{equation}
+
+\subsubsection*{常见策略}
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{贪婪策略}：
+\end{enumerate}
+
+\begin{equation}
+\pi(a\mid s)= \begin{cases} 1, & a=\argmax_{a\in A} q_*(s,a) \\ 0, & \text{otherwise} \end{cases}
+\end{equation}
+
+\begin{enumerate}[leftmargin=2em]
+  \setcounter{enumi}{1}
+  \item \textbf{随机策略}：按某个概率分布随机选动作
+  \item \textbf{高斯策略}：常用于连续动作空间
+  \item \textbf{玻尔兹曼策略}：
+\end{enumerate}
+
+\begin{equation}
+\pi_\theta(a\mid s)= \frac{\exp(Q(s,a;\theta))} {\sum_b \exp(Q(s,b;\theta))}
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{值函数与动作价值函数}
+
+\subsubsection*{状态值函数}
+
+\begin{equation}
+v_\pi(s)=\E_\pi[G_t\mid S_t=s] =\E_\pi\left[\sum_{k=0}^{\infty}\gamma^k R_{t+k+1}\,\middle|\, S_t=s\right]
+\end{equation}
+
+\subsubsection*{行为值函数}
+
+\begin{equation}
+q_\pi(s,a)=\E_\pi[G_t\mid S_t=s,A_t=a] =\E_\pi\left[\sum_{k=0}^{\infty}\gamma^k R_{t+k+1}\,\middle|\, S_t=s,A_t=a\right]
+\end{equation}
+
+\begin{notebox}
+由于状态转移概率和策略都可能是随机的，因此折扣累积回报 $G_t$ 本身是随机变量。值函数就是该随机回报的期望。
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{贝尔曼方程}
+
+\subsubsection*{值函数与动作价值函数之间的关系}
+
+\begin{equation}
+v_\pi(s)=\sum_{a\in A}\pi(a\mid s)\,q_\pi(s,a)
+\end{equation}
+
+\subsubsection*{状态值函数的贝尔曼方程}
+
+\begin{equation}
+v_\pi(s)=\sum_a \pi(a\mid s)\sum_{s',r} p(s',r\mid s,a)\bigl[r+\gamma v_\pi(s')\bigr]
+\end{equation}
+
+\subsubsection*{行为值函数的贝尔曼方程}
+
+\begin{equation}
+q_\pi(s,a)=\sum_{s',r} p(s',r\mid s,a)\bigl[r+\gamma \sum_{a'}\pi(a'\mid s')q_\pi(s',a')\bigr]
+\end{equation}
+
+\subsubsection*{最优贝尔曼方程}
+
+\begin{equation}
+v^*(s)=\max_a \sum_{s',r} p(s',r\mid s,a)\bigl[r+\gamma v^*(s')\bigr]
+\end{equation}
+
+\begin{equation}
+q^*(s,a)=\sum_{s',r} p(s',r\mid s,a)\bigl[r+\gamma \max_{a'} q^*(s',a')\bigr]
+\end{equation}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第五章 动态规划
+%==================================================================
+\section{动态规划}
+
+\subsection{动态规划的本质}
+
+\begin{keybox}
+动态规划的核心思想：将多阶段决策问题通过贝尔曼方程，转化为多个单阶段决策问题。
+\end{keybox}
+
+\subsubsection*{离散情形}
+
+\begin{equation}
+J^*(x(j),j) = \min_{u(j)\in U} \left\{ L(x(j),u(j),j)+J^*(x(j+1),j+1) \right\}
+\end{equation}
+其中 $x(j+1)=f(x(j),u(j),j)$。
+
+\subsubsection*{连续情形与 HJB 方程}
+
+\begin{equation}
+-\frac{\partial J^*[x(t),t]}{\partial t} = \min_{u(t)\in U} \left\{ L[x(t),u(t),t] + \frac{\partial J^*[x(t),t]}{\partial x^T}f[x(t),u(t),t] \right\}
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{策略评估}
+
+\textbf{输入：} 策略 $\pi$、状态转移概率 $P_{ss'}^a$、回报函数 $R_{sa}$、折扣因子 $\gamma$
+
+\textbf{初始化：} $V(s)=0$
+
+\textbf{迭代更新：}
+
+\begin{equation}
+v_{k+1}(s) = \sum_{a\in A}\pi(a|s)\left(R_{sa} + \gamma\sum_{s'\in S}P_{ss'}^a v_k(s')\right)
+\end{equation}
+
+直到 $v_{k+1} = v_k$。该方法属于"期望更新"，一次对所有状态的更新称为"一次状态扫描"。
+
+\notespace[2cm]
+
+\subsection{策略改进}
+
+\textbf{基本思想：} 在每个状态上采用贪婪策略：
+
+\begin{equation}
+\pi_{l+1}(s)\in \argmax_a q_{\pi_l}(s,a)
+\end{equation}
+
+\textbf{策略改善理论：} 如果新策略在每个状态上的动作选择都不差于原策略，则新策略不会比原策略差，通常会更好。
+
+\textbf{贪婪策略计算：}
+
+\begin{equation}
+q_{\pi_l}(s,a)=R_{sa}+\gamma\sum_{s'\in S}P_{ss'}^a v_{\pi_l}(s')
+\end{equation}
+
+\begin{equation}
+\pi_{l+1}(s)\in \argmax_a q_{\pi_l}(s,a)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{策略迭代}
+
+\begin{keybox}
+策略迭代由两步交替进行，直到策略不再变化：
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{策略评估}：对当前策略 $\pi_l$ 求得 $V^{\pi_l}$
+  \item \textbf{策略改进}：$\pi_{l+1}(s)\in \argmax_a q_{\pi_l}(s,a)$
+\end{enumerate}
+\end{keybox}
+
+\textbf{终止条件：} $\pi_{l+1}=\pi_l$，输出 $\pi^*=\pi_l$。
+
+\textbf{关系总结：} $V^* \ge V^{\pi}$，当 $\pi = \text{greedy}(V)$ 时，通过反复评估和改进可逐步逼近最优值函数 $V^*$ 和最优策略 $\pi^*$。
+
+\notespace[2cm]
+
+\subsection{值函数迭代}
+
+\textbf{动机：} 策略改进一定要等到值函数完全收敛吗？不一定。当 $K=1$ 时便进行策略改进，可得到值迭代算法。
+
+\textbf{最优贝尔曼方程：}
+
+\begin{equation}
+v^*(s)=\max_a\left( R_{sa}+\gamma\sum_{s'\in S}P_{ss'}^a v^*(s') \right)
+\end{equation}
+
+\textbf{算法：}
+
+\begin{algorithmic}[1]
+\State 初始化 $v(s)=0$
+\Repeat
+  \For{每个 $s$}
+    \State $v_{l+1}(s) = \max_a \left(R_{sa} + \gamma \sum_{s'} P_{ss'}^a v_l(s')\right)$
+  \EndFor
+\Until{$v_{l+1} = v_l$}
+\end{algorithmic}
+
+\textbf{收敛后提取策略：}
+
+\begin{equation}
+\pi(s)=\argmax_a\left( R_{sa}+\gamma\sum_{s'\in S}P_{ss'}^a v_l(s') \right)
+\end{equation}
+
+\begin{summarybox}
+\textbf{特点：} 将策略评估与策略改进更紧密地结合，不需要每次都把策略评估做到完全收敛，通常比完整策略迭代更直接。
+\end{summarybox}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第六章 蒙特卡洛方法
+%==================================================================
+\section{蒙特卡洛方法}
+
+\subsection{基本思想}
+
+\begin{keybox}
+蒙特卡洛方法的核心思想：利用经验平均代替随机变量的期望。
+\end{keybox}
+
+一次实验（episode）是从初始状态开始，到终止状态结束的一条完整轨迹。对某个时刻 $t$ 之后的折扣回报：
+
+\begin{equation}
+G_t=R_{t+1}+\gamma R_{t+2}+\gamma^2 R_{t+3}+\cdots+\gamma^{T-t-1}R_T
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{与动态规划策略评估对比}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{DP}：需要已知模型，每次进行一次状态扫描
+  \item \textbf{MC}：每次进行一次完整试验，用试验中观察到的回报估计值函数
+\end{itemize}
+
+\subsection{First-visit MC 与 Every-visit MC}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{First-visit MC}：每幕中只使用某状态第一次出现后的回报进行估计
+  \item \textbf{Every-visit MC}：每幕中该状态每次出现后的回报都用于估计
+\end{itemize}
+
+根据大数定律：$\hat{v}(s)\to v_{\pi}(s)$，当 $N(s)\to\infty$。
+
+\notespace[2cm]
+
+\subsection{探索型初始化}
+
+为保证充分访问，采用探索型初始化（exploring starts）：每个状态都有一定几率作为初始状态；更强的形式是每个状态-行为对都有机会作为初始状态-动作对出现。
+
+\notespace[2cm]
+
+\subsection{蒙特卡洛评估行为值函数}
+
+在模型未知时，最重要的是评估行为值函数：
+
+\begin{equation}
+q_{\pi}(s,a)=\E_{\pi}\left[\sum_{k=0}^{\infty}\gamma^k R_{t+k+1}\mid S_t=s,A_t=a\right]
+\end{equation}
+
+\begin{notebox}
+\textbf{蒙特卡洛评估与动态规划评估的区别：}
+\begin{itemize}[leftmargin=1.5em]
+  \item MC 不需要 bootstrap
+  \item MC 对单个状态的估计相对独立
+  \item MC 对单个状态的估计复杂度不直接依赖于整个状态空间大小
+  \item DP 依赖模型；MC 依赖采样得到的完整 episode
+\end{itemize}
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{蒙特卡洛策略改进}
+
+贪婪改进形式：
+
+\begin{equation}
+\pi(s)=\argmax_a q_{\pi}(s,a)
+\end{equation}
+
+\subsubsection*{蒙特卡洛强化学习：探索初始化}
+
+\begin{algorithmic}[1]
+\State 初始化 $Q(s,a)$、$\pi(s)$、$\mathrm{Returns}(s,a)$
+\Repeat
+  \State 随机选择初始状态-动作对 $(S_0,A_0)$
+  \State 从 $(S_0,A_0)$ 出发，按策略 $\pi$ 生成一个 episode
+  \For{episode 中每个 $(s,a)$}
+    \State 计算 $G$（第一次出现后的回报）
+    \State 将 $G$ 附加到 $\mathrm{Returns}(s,a)$
+    \State $Q(s,a)\leftarrow \mathrm{average}(\mathrm{Returns}(s,a))$
+  \EndFor
+  \State $\pi(s)\leftarrow \argmax_a Q(s,a)$
+\Until{收敛}
+\end{algorithmic}
+
+\notespace[2cm]
+
+\subsection{On-policy 与 Off-policy}
+
+\subsubsection*{基本要求}
+
+策略必须是永久温和的，即对任意状态 $s$ 和动作 $a$：$\pi(a|s)>0$。
+
+\subsubsection*{On-policy MC}
+
+产生数据的策略、被评估的策略、被改进的策略三者是同一个策略。典型做法是使用 $\varepsilon$-soft 策略：
+
+\begin{equation}
+\pi(a|s)= \begin{cases} 1-\varepsilon+\dfrac{\varepsilon}{|A(s)|}, & a=a^* \\ \dfrac{\varepsilon}{|A(s)|}, & a\neq a^* \end{cases}
+\end{equation}
+
+\subsubsection*{Off-policy MC}
+
+使用两个不同的策略：
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{目标策略} $\pi$：要学习和改进的策略，通常较贪婪
+  \item \textbf{行为策略} $\mu$：用来实际采样，负责探索
+\end{itemize}
+
+\textbf{覆盖性条件：} 若 $\pi(a|s)>0$，则必须有 $\mu(a|s)>0$。
+
+\notespace[2cm]
+
+\subsection{重要性采样}
+
+\subsubsection*{普通重要性采样}
+
+\begin{equation}
+\E[f]\approx \frac{1}{N}\sum_{n=1}^{N}\omega_n f(z_n), \quad \omega_n=\frac{p(z_n)}{q(z_n)}
+\end{equation}
+特点：无偏估计，但方差可能非常大。
+
+\subsubsection*{加权重要性采样}
+
+\begin{equation}
+\E[f]\approx \frac{\sum_{n=1}^{N}\omega_n f(z_n)}{\sum_{n=1}^{N}\omega_n}
+\end{equation}
+特点：一般有偏，但方差更小、更稳定。
+
+\subsubsection*{MC 中的重要性采样}
+
+重要性比率只与动作概率有关：
+
+\begin{equation}
+\rho_{t:T-1} =\prod_{k=t}^{T-1}\frac{\pi(A_k|S_k)}{\mu(A_k|S_k)}
+\end{equation}
+
+\textbf{普通重要性采样估计：}
+
+\begin{equation}
+V(s)=\frac{\sum_{t\in T(s)} \rho_t G_t}{|T(s)|}
+\end{equation}
+
+\textbf{加权重要性采样估计：}
+
+\begin{equation}
+V(s)=\frac{\sum_{t\in T(s)} \rho_t G_t}{\sum_{t\in T(s)} \rho_t}
+\end{equation}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第七章 时间差分学习
+%==================================================================
+\section{时间差分学习}
+
+\subsection{TD 学习的基本思想}
+
+\begin{keybox}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{TD 学习}是采样更新
+  \item \textbf{DP 学习}是期望更新
+\end{itemize}
+\end{keybox}
+
+\subsubsection*{DP、MC、TD 的对比}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{MC}：利用完整回报 $G_t$ 估计值函数（采样平均逼近期望）
+  \item \textbf{TD}：结合 MC 和 DP，采样得到目标，并利用当前估计值 $V(S_{t+1})$ 进行自举
+  \item \textbf{DP}：依赖环境模型提供期望，也利用当前估计值进行更新
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{增量式 MC 与 TD(0)}
+
+\textbf{增量式 MC：}
+
+\begin{equation}
+V(S_t)\leftarrow V(S_t)+\alpha\bigl[G_t-V(S_t)\bigr]
+\end{equation}
+
+\textbf{TD(0)：}
+
+\begin{equation}
+V(S_t)\leftarrow V(S_t)+\alpha\bigl[R_{t+1}+\gamma V(S_{t+1})-V(S_t)\bigr]
+\end{equation}
+其中 $R_{t+1}+\gamma V(S_{t+1})$ 称为 TD 目标。
+
+\begin{keybox}
+\textbf{偏差-方差权衡：}
+\begin{itemize}[leftmargin=1.5em]
+  \item $G_t$ 是 $v_\pi(S_t)$ 的无偏估计
+  \item 真实 TD 目标 $R_{t+1}+\gamma v_\pi(S_{t+1})$ 也是无偏估计
+  \item 实际使用的 TD 目标 $R_{t+1}+\gamma V(S_{t+1})$ 是有偏估计
+  \item TD 目标的方差通常比 MC 的回报 $G_t$ 小很多
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{时间差分学习的优势}
+
+\begin{itemize}[leftmargin=2em]
+  \item TD 不需要环境模型
+  \item 与 MC 相比，TD 只需要等待一个时间步
+  \item TD 只评估当前动作，与后继动作序列无直接关系
+  \item TD 方法的收敛性已经得到证明
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{表格型强化学习算法}
+
+\subsubsection*{Sarsa：On-Policy TD}
+
+学习行为值函数 $Q(s,a)$，基本数据单元是五元组 $(s,a,r,s',a')$。行动策略和评估策略都是同一个 $\varepsilon$-贪婪策略。
+
+\textbf{更新公式：}
+
+\begin{equation}
+Q(s,a)\leftarrow Q(s,a)+\alpha\bigl[r+\gamma Q(s',a')-Q(s,a)\bigr]
+\end{equation}
+
+\subsubsection*{Q-learning：Off-policy TD}
+
+直接逼近最优行为值函数。行动策略通常为 $\varepsilon$-贪婪，目标策略为贪婪。
+
+\textbf{更新公式：}
+
+\begin{equation}
+Q(s,a)\leftarrow Q(s,a)+\alpha\bigl[r+\gamma \max_{a'}Q(s',a')-Q(s,a)\bigr]
+\end{equation}
+
+\subsubsection*{Expected Sarsa}
+
+把下一状态下动作值的随机采样，替换成对策略分布下的期望，消除部分方差。
+
+\subsubsection*{Double Q-learning}
+
+\textbf{问题：} Q-learning 中的 $\max_{a'}Q(s',a')$ 会因最优化操作导致最大化偏差。
+
+\textbf{思想：} 使用两个值函数逼近器，一个负责选择动作，另一个负责评估该动作的值，减轻过高估计问题。
+
+\notespace[2cm]
+
+\subsection{$\varepsilon$-贪婪策略}
+
+\begin{equation}
+\pi(a|s)= \begin{cases} 1-\varepsilon+\dfrac{\varepsilon}{|A(s)|}, & a=\argmax_a Q(s,a) \\ \dfrac{\varepsilon}{|A(s)|}, & \text{其他动作} \end{cases}
+\end{equation}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第八章 函数逼近方法
+%==================================================================
+\section{函数逼近方法}
+
+\subsection{表格型方法的局限}
+
+当状态空间很大时，表格型方法存在以下问题：
+
+\begin{itemize}[leftmargin=2em]
+  \item 存储空间过大
+  \item 学习速度慢
+  \item 无法处理连续状态空间
+\end{itemize}
+
+\begin{keybox}
+\textbf{解决方案：} 使用参数化函数逼近值函数或策略。
+\begin{equation}
+\hat{v}(s,\mathbf{w})\approx v_\pi(s)
+\end{equation}
+其中 $\mathbf{w}$ 是参数向量。
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{线性函数逼近}
+
+\subsubsection*{特征向量表示}
+
+状态 $s$ 的特征向量：
+\begin{equation}
+\mathbf{x}(s)=(x_1(s),x_2(s),\dots,x_d(s))^T
+\end{equation}
+
+值函数的线性逼近：
+\begin{equation}
+\hat{v}(s,\mathbf{w})=\mathbf{w}^T\mathbf{x}(s)=\sum_{i=1}^{d}w_i x_i(s)
+\end{equation}
+
+\subsubsection*{目标函数}
+
+最小化均方误差：
+\begin{equation}
+\mathrm{MSE}(\mathbf{w})=\sum_{s\in S}\bigl[v_\pi(s)-\hat{v}(s,\mathbf{w})\bigr]^2
+\end{equation}
+
+\subsubsection*{梯度下降更新}
+
+\begin{equation}
+\mathbf{w}_{t+1}=\mathbf{w}_t-\alpha\bigl[\hat{v}(s_t,\mathbf{w}_t)-v_\pi(s_t)\bigr]\nabla_{\mathbf{w}}\hat{v}(s_t,\mathbf{w}_t)
+\end{equation}
+
+对于线性逼近：
+\begin{equation}
+\nabla_{\mathbf{w}}\hat{v}(s,\mathbf{w})=\mathbf{x}(s)
+\end{equation}
+
+\begin{equation}
+\mathbf{w}_{t+1}=\mathbf{w}_t+\alpha\bigl[v_\pi(s_t)-\hat{v}(s_t,\mathbf{w}_t)\bigr]\mathbf{x}(s_t)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{蒙特卡洛与 TD 学习的函数逼近}
+
+\subsubsection*{蒙特卡洛函数逼近}
+
+使用采样回报 $G_t$ 作为目标：
+\begin{equation}
+\mathbf{w}_{t+1}=\mathbf{w}_t+\alpha\bigl[G_t-\hat{v}(s_t,\mathbf{w}_t)\bigr]\nabla_{\mathbf{w}}\hat{v}(s_t,\mathbf{w}_t)
+\end{equation}
+
+\subsubsection*{TD(0) 函数逼近}
+
+使用 TD 目标：
+\begin{equation}
+\mathbf{w}_{t+1}=\mathbf{w}_t+\alpha\bigl[R_{t+1}+\gamma\hat{v}(s_{t+1},\mathbf{w}_t)-\hat{v}(s_t,\mathbf{w}_t)\bigr]\nabla_{\mathbf{w}}\hat{v}(s_t,\mathbf{w}_t)
+\end{equation}
+
+\begin{notebox}
+\textbf{半梯度方法：} TD 方法中目标值也依赖于参数 $\mathbf{w}$，因此不是真正的梯度下降，称为半梯度方法。
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{批量方法}
+
+\subsubsection*{最小二乘蒙特卡洛}
+
+给定一组样本 $\{(s_i,G_i)\}_{i=1}^{N}$，求解：
+\begin{equation}
+\mathbf{w}^*=\argmin_{\mathbf{w}}\sum_{i=1}^{N}\bigl[G_i-\mathbf{w}^T\mathbf{x}(s_i)\bigr]^2
+\end{equation}
+
+解析解：
+\begin{equation}
+\mathbf{w}^*=(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{G}
+\end{equation}
+
+\subsubsection*{线性 TD 的收敛性}
+
+TD(0) 的线性逼近收敛到：
+\begin{equation}
+\mathbf{w}_{TD}=\mathbf{A}^{-1}\mathbf{b}
+\end{equation}
+其中：
+\begin{equation}
+\mathbf{A}=\E\bigl[\mathbf{x}(s_t)(\mathbf{x}(s_t)-\gamma\mathbf{x}(s_{t+1}))^T\bigr]
+\end{equation}
+\begin{equation}
+\mathbf{b}=\E\bigl[R_{t+1}\mathbf{x}(s_t)\bigr]
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{特征构造}
+
+\subsubsection*{多项式基}
+
+\begin{equation}
+x_i(s)=s^i
+\end{equation}
+
+\subsubsection*{傅里叶基}
+
+\begin{equation}
+x_i(s)=\cos(i\pi s)
+\end{equation}
+
+\subsubsection*{径向基函数（RBF）}
+
+\begin{equation}
+x_i(s)=\exp\left(-\frac{\|s-c_i\|^2}{2\sigma_i^2}\right)
+\end{equation}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第九章 神经网络与深度学习框架
+%==================================================================
+\section{神经网络与深度学习框架}
+
+\subsection{神经网络基础}
+
+\subsubsection*{神经元模型}
+
+单个神经元的输出：
+\begin{equation}
+y=f\left(\sum_{i=1}^{n}w_i x_i+b\right)
+\end{equation}
+其中 $f$ 为激活函数，$w_i$ 为权重，$b$ 为偏置。
+
+\subsubsection*{常见激活函数}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Sigmoid}：$f(x)=\dfrac{1}{1+e^{-x}}$
+  \item \textbf{ReLU}：$f(x)=\max(0,x)$
+  \item \textbf{Tanh}：$f(x)=\dfrac{e^x-e^{-x}}{e^x+e^{-x}}$
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{多层神经网络}
+
+\subsubsection*{前向传播}
+
+第 $l$ 层的输出：
+\begin{equation}
+\mathbf{a}^{(l)}=f\bigl(\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}\bigr)
+\end{equation}
+
+\subsubsection*{反向传播}
+
+通过链式法则计算梯度：
+\begin{equation}
+\frac{\partial L}{\partial \mathbf{W}^{(l)}}=\frac{\partial L}{\partial \mathbf{a}^{(l)}}\cdot\frac{\partial \mathbf{a}^{(l)}}{\partial \mathbf{W}^{(l)}}
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{卷积神经网络（CNN）}
+
+\subsubsection*{卷积操作}
+
+\begin{equation}
+(\mathbf{I}*\mathbf{K})_{i,j}=\sum_{m}\sum_{n}\mathbf{I}_{i+m,j+n}\mathbf{K}_{m,n}
+\end{equation}
+
+\subsubsection*{池化操作}
+
+\begin{itemize}[leftmargin=2em]
+  \item 最大池化：取窗口内最大值
+  \item 平均池化：取窗口内平均值
+\end{itemize}
+
+\subsubsection*{CNN 的优势}
+
+\begin{keybox}
+\begin{itemize}[leftmargin=1.5em]
+  \item 局部连接：减少参数数量
+  \item 权值共享：进一步减少参数
+  \item 平移不变性：对位置变化鲁棒
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{深度学习框架}
+
+\subsubsection*{TensorFlow}
+
+\begin{itemize}[leftmargin=2em]
+  \item Google 开发的开源框架
+  \item 支持静态图和动态图
+  \item 丰富的 API 和工具
+\end{itemize}
+
+\subsubsection*{PyTorch}
+
+\begin{itemize}[leftmargin=2em]
+  \item Facebook 开发的开源框架
+  \item 动态图设计，更灵活
+  \item 与 NumPy 接口相似，易于上手
+\end{itemize}
+
+\subsubsection*{基本操作示例}
+
+\textbf{PyTorch 示例：}
+
+\begin{verbatim}
+import torch
+x = torch.tensor([1.0, 2.0, 3.0])
+y = torch.randn(3, 4)
+z = torch.matmul(x, y)
+\end{verbatim}
+
+\notespace[2cm]
+
+\subsection{优化算法}
+
+\subsubsection*{随机梯度下降（SGD）}
+
+\begin{equation}
+\mathbf{w}_{t+1}=\mathbf{w}_t-\alpha\nabla_{\mathbf{w}}L(\mathbf{w}_t)
+\end{equation}
+
+\subsubsection*{Adam}
+
+结合动量和自适应学习率：
+\begin{equation}
+\mathbf{m}_t=\beta_1\mathbf{m}_{t-1}+(1-\beta_1)\nabla L
+\end{equation}
+\begin{equation}
+\mathbf{v}_t=\beta_2\mathbf{v}_{t-1}+(1-\beta_2)(\nabla L)^2
+\end{equation}
+\begin{equation}
+\mathbf{w}_{t+1}=\mathbf{w}_t-\alpha\frac{\mathbf{m}_t}{\sqrt{\mathbf{v}_t}+\epsilon}
+\end{equation}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第十章 DQN 及其变种
+%==================================================================
+\section{DQN 及其变种}
+
+\subsection{DQN 的提出}
+
+\begin{keybox}
+\textbf{核心思想：} 使用深度神经网络逼近 Q 函数，结合经验回放和目标网络，实现稳定学习。
+\end{keybox}
+
+\subsubsection*{面临的挑战}
+
+\begin{itemize}[leftmargin=2em]
+  \item 数据相关性：强化学习顺序采集的数据高度相关
+  \item 目标不稳定：目标值依赖于当前网络参数
+  \item 过估计问题：最大化操作导致 Q 值过高估计
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{经验回放}
+
+\textbf{基本思想：} 将每次交互的经验 $(s,a,r,s')$ 存入经验池，训练时随机采样。
+
+\begin{keybox}
+\textbf{经验回放的作用：}
+\begin{itemize}[leftmargin=1.5em]
+  \item 打破数据相关性，使数据更接近独立同分布
+  \item 提高数据利用效率，每个经验可多次使用
+  \item 支持批量训练，提高训练稳定性
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{目标网络}
+
+\textbf{基本思想：} 使用独立的目标网络计算 TD 目标，定期更新目标网络参数。
+
+\textbf{损失函数：}
+\begin{equation}
+L(\theta)=\E\bigl[\bigl(r+\gamma\max_{a'}Q(s',a';\theta^-)-Q(s,a;\theta)\bigr)^2\bigr]
+\end{equation}
+其中 $\theta^-$ 为目标网络参数。
+
+\textbf{更新方式：}
+\begin{itemize}[leftmargin=2em]
+  \item 定期更新：每隔 $C$ 步将 $\theta^- \leftarrow \theta$
+  \item 软更新：$\theta^- \leftarrow \tau\theta+(1-\tau)\theta^-$
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{Double DQN}
+
+\textbf{问题：} 标准 DQN 存在过估计问题。
+
+\textbf{解决方案：} 使用两个网络，一个负责选择动作，另一个负责评估值。
+
+\textbf{目标值计算：}
+\begin{equation}
+y=r+\gamma Q\bigl(s',\argmax_{a'}Q(s',a';\theta);\theta^- \bigr)
+\end{equation}
+
+\begin{notebox}
+\textbf{区别：} 标准 DQN 用同一网络选择和评估；Double DQN 分离选择和评估，减少过估计。
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{优先经验回放}
+
+\textbf{基本思想：} 根据 TD 误差大小优先采样重要经验。
+
+\textbf{优先级定义：}
+\begin{equation}
+p_i=|\delta_i|+\epsilon
+\end{equation}
+
+\textbf{采样概率：}
+\begin{equation}
+P(i)=\frac{p_i^\alpha}{\sum_k p_k^\alpha}
+\end{equation}
+
+\textbf{重要性权重：}
+\begin{equation}
+w_i=\left(\frac{1}{N\cdot P(i)}\right)^\beta
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{Dueling DQN}
+
+\textbf{基本思想：} 将 Q 函数分解为状态值函数和优势函数。
+
+\textbf{网络结构：}
+\begin{equation}
+Q(s,a)=V(s)+A(s,a)-\frac{1}{|A|}\sum_{a'}A(s,a')
+\end{equation}
+
+其中：
+\begin{itemize}[leftmargin=2em]
+  \item $V(s)$：状态值函数流
+  \item $A(s,a)$：优势函数流
+\end{itemize}
+
+\begin{keybox}
+\textbf{优势：} 对于状态值相同但动作值不同的场景，学习效率更高；对动作无关的状态变化更鲁棒。
+\end{keybox}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第十一章 策略搜索方法
+%==================================================================
+\section{策略搜索方法}
+
+\subsection{基于值函数的方法的局限}
+
+\begin{keybox}
+\textbf{局限性：}
+\begin{itemize}[leftmargin=1.5em]
+  \item 需要先学习值函数，再从值函数推导策略
+  \item 当动作空间很大或连续时，$\argmax_a Q(s,a)$ 计算困难
+  \item 策略可能过早收敛到次优解
+\end{itemize}
+\end{keybox}
+
+\subsection{直接策略搜索的优势}
+
+\begin{itemize}[leftmargin=2em]
+  \item 直接在策略空间中优化，不需要中间的值函数
+  \item 自然适用于连续动作空间
+  \item 可以学习随机策略，有利于探索
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{策略参数化}
+
+策略由参数 $\theta$ 决定：$\pi_\theta(a|s)$。
+
+\subsubsection*{离散动作空间}
+
+常用玻尔兹曼分布：
+\begin{equation}
+\pi_\theta(a|s)=\frac{\exp\bigl(h(s,a;\theta)\bigr)}{\sum_{b}\exp\bigl(h(s,b;\theta)\bigr)}
+\end{equation}
+
+\subsubsection*{连续动作空间}
+
+常用高斯策略：
+\begin{equation}
+\pi_\theta(a|s)=\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(a-\mu(s;\theta))^2}{2\sigma^2}\right)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{目标函数}
+
+\subsubsection*{目标函数定义}
+
+\begin{equation}
+J(\theta)=\E_{\pi_\theta}\bigl[v_{\pi_\theta}(s_0)\bigr]
+\end{equation}
+
+\subsubsection*{目标函数的梯度}
+
+\begin{keybox}
+\textbf{策略梯度定理：}
+\begin{equation}
+\nabla_\theta J(\theta)=\E_{\pi_\theta}\bigl[\nabla_\theta\log\pi_\theta(a|s)\,Q^{\pi_\theta}(s,a)\bigr]
+\end{equation}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{REINFORCE 算法}
+
+\textbf{基本思想：} 用采样回报 $G_t$ 替代 $Q^{\pi_\theta}(s,a)$。
+
+\textbf{更新公式：}
+\begin{equation}
+\theta_{t+1}=\theta_t+\alpha\,G_t\,\nabla_\theta\log\pi_\theta(a_t|s_t)
+\end{equation}
+
+\begin{notebox}
+\textbf{特点：} 无偏估计，但方差较大；属于蒙特卡洛方法，需要完整 episode。
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{Actor-Critic 方法}
+
+\textbf{基本思想：} 使用学习到的值函数作为 Critic，减少方差。
+
+\textbf{更新公式：}
+\begin{equation}
+\theta_{t+1}=\theta_t+\alpha\,Q_w(s_t,a_t)\,\nabla_\theta\log\pi_\theta(a_t|s_t)
+\end{equation}
+
+其中 $Q_w$ 为 Critic 网络逼近的行为值函数。
+
+\begin{keybox}
+\textbf{优势：}
+\begin{itemize}[leftmargin=1.5em]
+  \item 方差比 REINFORCE 小
+  \item 可以在线学习，不需要完整 episode
+  \item 结合了值函数方法和策略梯度方法的优势
+\end{itemize}
+\end{keybox}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第十二章 随机策略梯度
+%==================================================================
+\section{随机策略梯度}
+
+\subsection{策略梯度定理}
+
+\begin{keybox}
+\textbf{核心定理：}
+\begin{equation}
+\nabla_\theta J(\theta)=\int_S\rho^{\pi}(s)\int_A\nabla_\theta\pi_\theta(a|s)Q^{\pi}(s,a)\,da\,ds
+\end{equation}
+\end{keybox}
+
+\subsubsection*{等价形式}
+
+利用 $\nabla_\theta\pi_\theta(a|s)=\pi_\theta(a|s)\nabla_\theta\log\pi_\theta(a|s)$：
+
+\begin{equation}
+\nabla_\theta J(\theta)=\E_{s\sim\rho^{\pi},a\sim\pi_\theta}\bigl[\nabla_\theta\log\pi_\theta(a|s)\,Q^{\pi}(s,a)\bigr]
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{蒙特卡洛策略梯度（REINFORCE）}
+
+\textbf{算法流程：}
+
+\begin{algorithmic}[1]
+\For{每个 episode}
+  \State 按 $\pi_\theta$ 生成轨迹 $s_0,a_0,r_1,\dots,s_{T-1},a_{T-1},r_T$
+  \For{$t=0$ 到 $T-1$}
+    \State $G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_{k+1}$
+    \State $\theta\leftarrow\theta+\alpha\gamma^t G_t\nabla_\theta\log\pi_\theta(a_t|s_t)$
+  \EndFor
+\EndFor
+\end{algorithmic}
+
+\begin{notebox}
+\textbf{特点：} 使用实际回报 $G_t$ 作为 $Q^{\pi}(s,a)$ 的估计；无偏但方差大。
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{Actor-Critic 结构}
+
+\subsubsection*{基本框架}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Actor}：策略网络 $\pi_\theta(a|s)$，负责选择动作
+  \item \textbf{Critic}：值函数网络 $V_w(s)$ 或 $Q_w(s,a)$，负责评估动作
+\end{itemize}
+
+\subsubsection*{Actor 更新}
+
+\begin{equation}
+\theta\leftarrow\theta+\alpha\nabla_\theta\log\pi_\theta(a|s)\,A(s,a)
+\end{equation}
+
+其中 $A(s,a)=Q(s,a)-V(s)$ 为优势函数。
+
+\subsubsection*{Critic 更新}
+
+TD 学习：
+\begin{equation}
+w\leftarrow w+\alpha\bigl[r+\gamma V_w(s')-V_w(s)\bigr]\nabla_w V_w(s)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{优势函数估计}
+
+\subsubsection*{优势函数的作用}
+
+\begin{keybox}
+\textbf{优势函数：} $A(s,a)=Q(s,a)-V(s)$
+
+\textbf{含义：} 动作 $a$ 相对于平均水平的优劣程度。使用优势函数可以减少方差，提高学习稳定性。
+\end{keybox}
+
+\subsubsection*{优势函数估计方法}
+
+\textbf{1. TD 误差：}
+\begin{equation}
+\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)
+\end{equation}
+
+\textbf{2. GAE（Generalized Advantage Estimation）：}
+\begin{equation}
+A_t=\sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}
+\end{equation}
+
+其中 $\lambda$ 为平衡参数。
+
+\notespace[2cm]
+
+\subsection{相容函数}
+
+\begin{keybox}
+\textbf{相容条件：} 若 Critic 满足以下条件，则策略梯度无偏：
+\begin{enumerate}[leftmargin=1.5em]
+  \item $Q_w(s,a)=\nabla_\theta\log\pi_\theta(a|s)^T w$
+  \item 参数 $w$ 使均方误差最小
+\end{enumerate}
+\end{keybox}
+
+\textbf{相容函数形式：}
+\begin{equation}
+Q_w(s,a)=\nabla_\theta\log\pi_\theta(a|s)^T w
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{随机 Off-policy Actor-Critic}
+
+\textbf{采样策略：} $\beta(a|s)$
+
+\textbf{目标策略：} $\pi_\theta(a|s)$
+
+\textbf{目标函数：}
+\begin{equation}
+J_\beta(\pi_\theta)=\int_S\rho^\beta(s)V^\pi(s)\,ds
+\end{equation}
+
+\textbf{重要性采样修正：}
+\begin{equation}
+\nabla_\theta J(\theta)=\E_{s\sim\rho^\beta,a\sim\beta}\bigl[\frac{\pi_\theta(a|s)}{\beta(a|s)}\nabla_\theta\log\pi_\theta(a|s)Q^\pi(s,a)\bigr]
+\end{equation}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第十三章 TRPO 与 PPO
+%==================================================================
+\section{TRPO 与 PPO}
+
+\subsection{策略梯度算法的缺点}
+
+\begin{keybox}
+\textbf{主要问题：}
+\begin{itemize}[leftmargin=1.5em]
+  \item 步长选择困难
+  \item 策略过早收敛到次优确定性策略
+  \item 步长不合适时学习过程可能崩溃
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{替代回报函数}
+
+\textbf{基本思想：} 寻找一个易于优化的替代目标函数。
+
+\subsubsection*{优势函数}
+
+\begin{equation}
+A^{\pi_{\text{old}}}(s,a)=Q^{\pi_{\text{old}}}(s,a)-V^{\pi_{\text{old}}}(s)
+\end{equation}
+
+\subsubsection*{替代目标函数}
+
+\begin{equation}
+L_{\pi_{\text{old}}}(\pi)=\eta(\pi_{\text{old}})+\sum_s\rho_{\pi_{\text{old}}}(s)\sum_a\pi(a|s)A^{\pi_{\text{old}}}(s,a)
+\end{equation}
+
+\subsubsection*{重要性采样形式}
+
+\begin{equation}
+L_{\theta_{\text{old}}}(\theta)=\hat{\E}_t\left[\frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}\hat{A}_t\right]
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{理论下界}
+
+\begin{keybox}
+\textbf{定理：} 令 $\alpha=D_{\max}^{TV}(\pi_{\text{old}},\pi_{\text{new}})$，则
+\begin{equation}
+\eta(\pi_{\text{new}})\ge L_{\pi_{\text{old}}}(\pi_{\text{new}})-\frac{4\epsilon\gamma}{(1-\gamma)^2}\alpha^2
+\end{equation}
+其中 $\epsilon=\max_{s,a}|A^{\pi_{\text{old}}}(s,a)|$。
+\end{keybox}
+
+\textbf{含义：} 若新旧策略差异过大，替代目标对真实回报的近似会变差。
+
+\notespace[2cm]
+
+\subsection{TRPO 实用算法}
+
+\textbf{优化问题：}
+\begin{equation}
+\max_\theta L_{\theta_{\text{old}}}(\theta) \quad \text{s.t.} \quad \bar{D}_{KL}^{\rho_{\theta_{\text{old}}}(\theta_{\text{old}},\theta)}\le\delta
+\end{equation}
+
+\subsubsection*{关键技巧}
+
+\begin{enumerate}[leftmargin=2em]
+  \item 忽略状态分布变化
+  \item 使用重要性采样
+  \item 利用平均 KL 散度替代逐状态约束
+  \item 利用当前策略对应的状态分布
+\end{enumerate}
+
+\subsubsection*{共轭梯度法}
+
+求解自然梯度方向：$x=A^{-1}g$，其中 $A$ 为 Fisher 信息矩阵。
+
+\notespace[2cm]
+
+\subsection{PPO 算法}
+
+\subsubsection*{CLIP 目标函数}
+
+\begin{keybox}
+\begin{equation}
+L^{CLIP}(\theta)=\hat{\E}_t\left[\min\left(r_t(\theta)\hat{A}_t,\,\text{clip}\bigl(r_t(\theta),1-\epsilon,1+\epsilon\bigr)\hat{A}_t\right)\right]
+\end{equation}
+其中 $r_t(\theta)=\dfrac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}$。
+\end{keybox}
+
+\textbf{含义：}
+\begin{itemize}[leftmargin=2em]
+  \item 当 $\hat{A}_t>0$ 时，若 $r_t$ 超过 $1+\epsilon$，则限制其继续增大
+  \item 当 $\hat{A}_t<0$ 时，若 $r_t$ 小于 $1-\epsilon$，则限制其继续减小
+\end{itemize}
+
+\subsubsection*{PPO 总目标函数}
+
+\begin{equation}
+L(\theta)=\hat{\E}_t\left[L_t^{CLIP}(\theta)-c_1 L_t^{VF}(\theta)+c_2 S[\pi_\theta](s_t)\right]
+\end{equation}
+
+其中 $L^{VF}$ 为值函数损失，$S$ 为策略熵。
+
+\notespace[2cm]
+
+\subsection{回报函数对比}
+
+\begin{summarybox}
+\textbf{策略梯度：}
+\begin{equation}
+L^{PG}(\theta)=\hat{\E}_t\left[\log\pi_\theta(a_t|s_t)\hat{A}_t\right]
+\end{equation}
+
+\textbf{TRPO：}
+\begin{equation}
+L^{TRPO}(\theta)=\hat{\E}_t\left[\frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}\hat{A}_t\right]
+\end{equation}
+并加入 KL 约束。
+
+\textbf{PPO：}
+\begin{equation}
+L^{CLIP}(\theta)=\hat{\E}_t\left[\min\left(r_t(\theta)\hat{A}_t,\,\text{clip}\bigl(r_t(\theta),1-\epsilon,1+\epsilon\bigr)\hat{A}_t\right)\right]
+\end{equation}
+\end{summarybox}
+
+\notespace[2cm]
+
+\subsection{信息论基础}
+
+\subsubsection*{熵}
+
+离散系统熵：
+\begin{equation}
+H(X)=-\sum_x p(x)\log p(x)
+\end{equation}
+
+\subsubsection*{KL 散度}
+
+\begin{equation}
+D_{KL}(p||q)=\sum_x p(x)\log\frac{p(x)}{q(x)}
+\end{equation}
+
+\begin{notebox}
+\textbf{在 TRPO 中：} KL 散度用于约束新旧策略之间的差异，控制更新步长。
+\end{notebox}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第十四章 确定性策略梯度
+%==================================================================
+\section{确定性策略梯度}
+
+\subsection{随机策略与确定性策略}
+
+\begin{keybox}
+\textbf{区别：}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{随机策略}：$a\sim\pi_\theta(a|s)$，需要对状态空间和动作空间积分
+  \item \textbf{确定性策略}：$a=\mu_\theta(s)$，只需对状态空间积分
+\end{itemize}
+\textbf{当动作空间维数较高时，确定性策略方法更有优势。}
+\end{keybox}
+
+\subsubsection*{随机策略的参数化}
+
+随机策略可写为确定性策略 + 随机扰动：
+\begin{equation}
+a=\mu_\theta(s)+\epsilon, \quad \epsilon\sim\mathcal{N}(0,\sigma^2)
+\end{equation}
+
+即 $a\sim\mathcal{N}(\mu_\theta(s),\sigma^2)$。
+
+\notespace[2cm]
+
+\subsection{确定性值函数}
+
+行为值函数：
+\begin{equation}
+Q^\pi(s_t,a_t)=\E\left[\sum_{i=t}^{\infty}\gamma^{i-t}r_i\,\middle|\, s_t,a_t\right]
+\end{equation}
+
+迭代形式：
+\begin{equation}
+Q^\pi(s_t,a_t)=\E\left[r(s_t,a_t)+\gamma Q^\pi(s_{t+1},a_{t+1})\right]
+\end{equation}
+
+若目标策略为确定性策略 $\mu$：
+\begin{equation}
+Q^\mu(s_t,a_t)=\E\left[r(s_t,a_t)+\gamma Q^\mu(s_{t+1},\mu(s_{t+1}))\right]
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{确定性策略梯度定理}
+
+\begin{keybox}
+\textbf{核心思想：} 根据链式法则，梯度通过 $Q^\mu(s,a)$ 对动作的导数，以及动作对参数 $\theta$ 的导数传递。
+
+\textbf{策略梯度定理：}
+\begin{equation}
+\nabla_\theta J(\mu_\theta)=\E_{s\sim\rho^\mu}\bigl[\nabla_\theta\mu_\theta(s)\nabla_a Q^\mu(s,a)\big|_{a=\mu_\theta(s)}\bigr]
+\end{equation}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{相容函数逼近}
+
+\subsubsection*{条件 1：动作梯度匹配}
+
+\begin{equation}
+\nabla_a Q_w(s,a)\big|_{a=\mu_\theta(s)}=\nabla_\theta\mu_\theta(s)^T w
+\end{equation}
+
+\subsubsection*{条件 2：最小化均方误差}
+
+\begin{equation}
+\mathrm{MSE}(w)=\E\bigl[\varepsilon(s;\theta,w)^T\varepsilon(s;\theta,w)\bigr]
+\end{equation}
+
+其中 $\varepsilon(s;\theta,w)=\nabla_a Q_w(s,a)\big|_{a=\mu_\theta(s)}-\nabla_a Q^\mu(s,a)\big|_{a=\mu_\theta(s)}$。
+
+\subsubsection*{满足条件 1 的相容函数形式}
+
+\begin{equation}
+Q_w(s,a)=(a-\mu_\theta(s))^T\nabla_\theta\mu_\theta(s)^T w+V^\mu(s)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{DDPG 算法}
+
+\subsubsection*{面临的问题}
+
+\begin{itemize}[leftmargin=2em]
+  \item 神经网络训练假设数据独立同分布，而强化学习顺序采集的数据存在相关性
+  \item 若能采用 mini-batch 优化，可更充分利用数据
+\end{itemize}
+
+\subsubsection*{DQN 的成功经验}
+
+经验回放（Experience Replay）、独立目标网络（Target Network）。
+
+\begin{keybox}
+\textbf{DDPG 的核心机制：}
+\begin{itemize}[leftmargin=1.5em]
+  \item 行动策略为随机策略
+  \item 使用目标网络
+  \item 使用经验回放
+  \item 目标网络参数进行延迟/软更新
+  \item 采用 Actor-Critic 结构处理连续动作问题
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{TD3：DDPG 的扩展}
+
+\subsubsection*{DDPG 存在的问题}
+
+\begin{itemize}[leftmargin=2em]
+  \item 值函数过高估计
+  \item 值函数方差较高
+  \item 策略网络与值函数网络之间存在耦合关系
+\end{itemize}
+
+\subsubsection*{解决思路}
+
+\begin{itemize}[leftmargin=2em]
+  \item 使用独立目标网络
+  \item \textbf{Twin Delayed 机制}：目标网络更新延迟、策略更新延迟、目标策略平滑
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{D4PG}
+
+\begin{notebox}
+\textbf{全称：} Distributed Distributional Deep Deterministic Policy Gradient
+
+\textbf{核心思想：} 任何改善 Critic 学习质量的方法，都会直接改善 Actor 更新质量。值分布建模了函数逼近等带来的随机性，利用值分布更新 Critic 可以直接提升算法表现。
+\end{notebox}
+
+\subsubsection*{D4PG 使用的关键技巧}
+
+\begin{itemize}[leftmargin=2em]
+  \item 分布式值函数强化学习，得到更细致的 Critic
+  \item 分布式并行 Actor
+  \item $N$-step 回报
+  \item 优先经验回放采样
+\end{itemize}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 第十五章 博弈论与多智能体强化学习
+%==================================================================
+\section{博弈论与多智能体强化学习}
+
+\subsection{多智能体系统与分类}
+
+\subsubsection*{按任务类型分类}
+
+\begin{itemize}[leftmargin=2em]
+  \item 完全协作多智能体系统
+  \item 完全竞争多智能体系统
+  \item 混合策略多智能体系统
+\end{itemize}
+
+\subsubsection*{多智能体强化学习的挑战}
+
+\begin{keybox}
+\begin{itemize}[leftmargin=1.5em]
+  \item MDP 假设环境是静态的；但从单智能体视角看，其他智能体本身是动态环境，因此环境不再平稳
+  \item 当智能体之间是竞争关系时，最优策略往往不存在，需要求解均衡解
+\end{itemize}
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{博弈论基本分类}
+
+\subsubsection*{按参与人行动先后顺序}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{静态博弈}：参与人同时选择行动（如猜丁壳），常用标准型表述（矩阵博弈）
+  \item \textbf{动态博弈}：参与人的动作有先后顺序，且后行动者可观察前行动者的选择（如围棋），常用扩展型表述（博弈树）
+\end{itemize}
+
+\subsubsection*{按参与人对信息掌握程度}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{完美信息博弈}：参与人对相关信息已知（如棋类游戏）
+  \item \textbf{不完美信息博弈}：参与人对相关信息并不完全知道（如牌类游戏）
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{完美信息静态博弈的基本概念}
+
+\subsubsection*{基本要素}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{参与者}：参与博弈的智能体 $i$
+  \item \textbf{动作空间}：$A_i$，联合动作 $a=(a_1,a_2,\dots,a_n)$
+  \item \textbf{策略}：$\sigma_i$
+  \begin{itemize}
+    \item 纯策略：选择某一行为的概率为 $1$
+    \item 混合策略：选择某一行为的概率小于 $1$
+  \end{itemize}
+  \item \textbf{联合策略}：$\sigma=(\sigma_1,\sigma_2,\dots,\sigma_n)$
+  \item \textbf{回报函数}：$R_i(a)$
+  \item \textbf{值函数}：$V_i(\sigma)$
+\end{itemize}
+
+\notespace[2cm]
+
+\subsection{最优响应与纳什均衡}
+
+\subsubsection*{最优响应}
+
+当其他玩家策略固定时，玩家 $k$ 的最优响应：
+\begin{equation}
+R_k(\sigma_{-k})=\bigl\{\sigma_k'\in A_k\,\big|\,\mu_k(\sigma_k',\sigma_{-k})\ge\mu_k(\sigma_k,\sigma_{-k}),\ \forall\sigma_k\in A_k\bigr\}
+\end{equation}
+
+\subsubsection*{纳什均衡}
+
+\begin{keybox}
+当所有玩家都采取各自的最优响应时，称该联合策略为纳什均衡。
+\begin{equation}
+V_i(\sigma_i^*,\sigma_{-i}^*)\ge V_i(\sigma_i,\sigma_{-i}^*), \quad \forall i,\ \forall\sigma_i
+\end{equation}
+\end{keybox}
+
+\textbf{例子：} 囚徒困境中，$(\text{坦白},\text{坦白})$ 是纳什均衡策略。
+
+\notespace[2cm]
+
+\subsection{双人零和博弈}
+
+双人联合行为对应的回报构成矩阵，因此称为矩阵博弈。
+
+\begin{keybox}
+求解双人零和矩阵博弈中的纳什均衡，等价于求解相应的极小极大问题，进一步可转化为线性规划问题，使用单纯形法求解。
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{非完美信息博弈：扩展式博弈}
+
+七元组描述：$(H,Z,P,p,u,I,\sigma)$
+
+\begin{itemize}[leftmargin=2em]
+  \item $H$：历史节点集合
+  \item $Z$：终止状态集合
+  \item $P$：玩家集合
+  \item $p$：非终止状态到玩家的映射
+  \item $u$：终止状态到实数的映射（回报）
+  \item $I$：信息集，其中所有节点对玩家 $i$ 来说不可区分
+  \item $\sigma$：策略
+\end{itemize}
+
+\begin{notebox}
+\textbf{perfect recall（完美回放）：} 指玩家对于先前已知的信息不会发生任何程度的遗忘。
+\end{notebox}
+
+\notespace[2cm]
+
+\subsection{随机博弈（马尔科夫博弈）}
+
+随机博弈（Stochastic game）核心元素：$n$（玩家个数）、联合状态转移概率、联合立即回报、联合动作空间、局部策略、联合策略。
+
+\subsubsection*{值函数特征}
+
+在马尔科夫博弈中，每个智能体的行为值函数依赖于联合动作。
+
+\notespace[2cm]
+
+\subsection{多智能体强化学习}
+
+\subsubsection*{回报定义}
+
+对于智能体 $i$：
+\begin{equation}
+V_i^\pi(s)=\E_\pi\left\{\sum_{t=0}^{\infty}\gamma^t r_i(t+1)\,\middle|\, s(0)=s\right\}
+\end{equation}
+其中 $\pi=(\pi_1,\pi_2,\dots,\pi_n)$ 为联合策略。
+
+\begin{keybox}
+\textbf{注意：} 一般情况下，不可能同时最大化每个智能体的目标函数，因为不同智能体的目标可能相互矛盾。最优响应与纳什均衡的概念可扩展到马尔科夫博弈中。
+\end{keybox}
+
+\notespace[2cm]
+
+\subsection{多智能体 Q-learning}
+
+\subsubsection*{更新形式}
+
+\begin{equation}
+Q(s,a)\leftarrow(1-\alpha)Q(s,a)+\alpha\bigl[R+\gamma V(s')\bigr]
+\end{equation}
+
+\subsubsection*{下一个状态值函数 $V(s')$ 的获取方式}
+
+\textbf{1. 对手建模方法：} 统计其他智能体可能联合动作的频率 $F(s,a_{-i})$：
+\begin{equation}
+V_i(s)=\max_{a_i\in A_i}\sum_{a_{-i}\in A_{-i}}F(s,a_{-i})\,Q_i(s,a_i,a_{-i})
+\end{equation}
+
+\textbf{2. 假设对手按固定规则选动作}（如零和博弈中最小最大原则）：
+\begin{equation}
+V(s)=\min_\mu\max_\sigma\sum_{a\in A}\sigma(a)\mu(a')Q(s,a,a')
+\end{equation}
+
+\textbf{3. 假设下一个状态执行均衡策略}（Nash-Q、相关均衡、Stackelberg 均衡）：
+\begin{equation}
+V(s)=\text{Nash}_s\,Q(s,\cdot)
+\end{equation}
+
+\notespace[2cm]
+
+\subsection{多智能体强化学习算法类型}
+
+\subsubsection*{1. 完全协作强化学习算法}
+
+示例：Cooperative and Distributed Reinforcement Learning of Drones for Field Coverage。
+
+\subsubsection*{2. 完全竞争：Minimax Q-learning}
+
+定义值函数时采用最小最大思想。若相关博弈模型已知，可利用线性规划方法求解。
+
+\subsubsection*{3. 混合任务：Nash-Q 学习}
+
+\begin{itemize}[leftmargin=2em]
+  \item 利用二次规划更新行为值函数
+  \item 通过求解均衡策略进行更新
+  \item 收敛条件：每个状态处的博弈都有一个全局最优点或者鞍点（过于严格，实际中很难满足）
+\end{itemize}
+
+\subsubsection*{4. 混合任务：朋友或敌人 Q-learning}
+
+其他玩家要么被视为"朋友"（共同最大化），要么被视为"敌人"（共同最小化）。$N$ 玩家一般和随机博弈可被看作一个动作集扩展的两玩家零和博弈。
+
+\notespace[2cm]
+
+\subsection{WoLF 策略爬山算法}
+
+\begin{keybox}
+\textbf{基本思想：} WoLF-PHC 算法仅需要每个玩家自己的动作信息，可显著约减空间复杂度。组合了两个方法：
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Win or Learn Fast（WoLF）}：做得比期望差时快速学习，做得好时谨慎学习
+  \item \textbf{Policy Hill-Climbing（PHC）}：策略爬山算法，满足合理性要求
+\end{itemize}
+\end{keybox}
+
+\textbf{特点：} 策略爬山算法仅能保证在静态环境下，单智能体收敛到最优策略。
+
+\notespace[2cm]
+
+\subsection{基于微分对策的方法}
+
+内容要点：运动学方程、性能指标函数、定义双人零和微分对策、推导 Hamilton-Jacobi-Isaacs 方程。
+
+\notespace[2cm]
+
+\subsection{MADDPG}
+
+\begin{notebox}
+\textbf{MADDPG 算法框架：} 多智能体深度确定性策略梯度方法，结合了 DDPG 和多智能体学习。
+
+\textbf{核心思想：} 每个智能体有自己的 Actor-Critic 结构，Critic 可以观察其他智能体的策略。
+\end{notebox}
+
+\notespace[3cm]
+
+\newpage
+
+%==================================================================
+% 附录：参考材料
+%==================================================================
+\section*{附录：参考材料}
+
+\subsection*{主要参考书籍}
+
+\begin{itemize}[leftmargin=2em]
+  \item Sutton, Barto: \textit{Reinforcement Learning: An Introduction}
+  \item 郭宪、方勇纯：《深入浅出强化学习：原理入门》
+  \item 郭宪、宋俊潇、方勇纯：《深入浅出强化学习：编程实战》
+\end{itemize}
+
+\subsection*{主要参考论文}
+
+\begin{itemize}[leftmargin=2em]
+  \item DQN: Mnih et al., 2015
+  \item Double DQN: van Hasselt et al., 2016
+  \item Prioritized Experience Replay: Schaul et al., 2016
+  \item Dueling DQN: Wang et al., 2016
+  \item DDPG: Lillicrap et al., 2016
+  \item TD3: Fujimoto et al., 2018
+  \item TRPO: Schulman et al., 2015
+  \item PPO: Schulman et al., 2017
+  \item MADDPG: Lowe et al., 2017
+\end{itemize}
+
+\notespace[5cm]
+
+\end{document}

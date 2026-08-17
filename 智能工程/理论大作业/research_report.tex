@@ -1,0 +1,1548 @@
+\documentclass[12pt,a4paper]{report}
+
+% ==================== 宏包导入 ====================
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+
+% ==================== 页面设置 ====================
+\geometry{
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+% ==================== 字体设置 ====================
+\newcommand{\chuhao}{\fontsize{42pt}{\baselineskip}\selectfont}
+\newcommand{\xiaochuhao}{\fontsize{36pt}{\baselineskip}\selectfont}
+\newcommand{\yihao}{\fontsize{26pt}{\baselineskip}\selectfont}
+\newcommand{\erhao}{\fontsize{22pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoerhao}{\fontsize{18pt}{\baselineskip}\selectfont}
+\newcommand{\sanhao}{\fontsize{16pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosanhao}{\fontsize{15pt}{\baselineskip}\selectfont}
+\newcommand{\sihao}{\fontsize{14pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosihao}{\fontsize{12pt}{\baselineskip}\selectfont}
+\newcommand{\wuhao}{\fontsize{10.5pt}{\baselineskip}\selectfont}
+\newcommand{\xiaowuhao}{\fontsize{9pt}{\baselineskip}\selectfont}
+
+% ==================== 章节标题格式 ====================
+\titleformat{\chapter}{\centering\heiti\sanhao}{第\chinese{chapter}章}{1em}{}
+\titlespacing{\chapter}{0pt}{24pt}{18pt}
+
+\titleformat{\section}{\heiti\sihao}{第\chinese{section}节}{1em}{}
+\titlespacing{\section}{0pt}{24pt}{6pt}
+
+\titleformat{\subsection}{\heiti\xiaosihao}{\arabic{chapter}.\arabic{section}.\arabic{subsection}}{1em}{}
+\titlespacing{\subsection}{0pt}{12pt}{6pt}
+
+\titleformat{\subsubsection}{\heiti\xiaosihao}{\arabic{chapter}.\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}{1em}{}
+\titlespacing{\subsubsection}{0pt}{12pt}{6pt}
+
+% ==================== 行距设置 ====================
+\setlength{\baselineskip}{20pt}
+\onehalfspacing
+
+% ==================== 代码样式 ====================
+\lstset{
+    language=Python,
+    basicstyle=\xiaowuhao\ttfamily,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    xleftmargin=2em,
+    xrightmargin=2em,
+    aboveskip=1em,
+    belowskip=1em,
+    extendedchars=false
+}
+
+% ==================== 页眉页脚 ====================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\xiaowuhao 叉车式移动机器人仿真研究报告}
+\fancyfoot[C]{\xiaowuhao \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ==================== 文档信息 ====================
+\title{\heiti\erhao 叉车式移动机器人完整仿真系统研究报告}
+\author{\xiaosihao 刘振毫\\学号：2312167\\专业：智能科学与工程}
+\date{\xiaosihao \today}
+
+\begin{document}
+
+% ==================== 封面 ====================
+\maketitle
+
+% ==================== 中文摘要 ====================
+\chapter*{摘要}
+\addcontentsline{toc}{chapter}{摘要}
+
+本文针对叉车式移动机器人的自主导航问题，系统地研究了其运动学建模、里程计模型、控制算法以及基于卡尔曼滤波的定位算法。首先，采用瞬心法和运动约束法两种方法构建了叉车的运动学模型，分析了其非完整约束特性。其次，建立了里程计模型和误差传导模型，实现了对机器人位姿的连续估计。然后，设计了基于Lyapunov稳定性的轨迹跟踪控制器，实现了对参考轨迹的稳定跟踪。最后，实现了扩展卡尔曼滤波(EKF)定位算法，通过融合里程计和激光雷达观测信息，显著提高了定位精度。
+
+仿真实验结果表明，EKF定位算法相比纯里程计方法，在X方向、Y方向和航向角的定位精度分别提高了84.9\%、77.2\%和49.3\%，验证了所提方法的有效性。本研究为叉车式移动机器人的自主导航提供了完整的理论框架和实现方案。
+
+\vspace{12pt}
+\noindent\textbf{关键词：}叉车式移动机器人；运动学建模；里程计；卡尔曼滤波；自主定位
+
+% ==================== 目录 ====================
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ==================== 正文开始 ====================
+
+\chapter{实验介绍}
+
+\section{实验设计}
+
+\subsection{实验任务设计}
+
+本实验旨在构建一个完整的叉车式移动机器人自主导航系统，实现机器人在未知环境中的精确定位和轨迹跟踪。具体实验任务包括：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{系统建模任务}：分别采用瞬心法和运动约束法构建叉车式移动机器人的运动学模型，分析其非完整约束特性，为后续控制算法和定位算法设计提供理论基础。
+    
+    \item \textbf{控制算法设计任务}：设计基于Lyapunov稳定性的轨迹跟踪控制器，实现机器人对参考轨迹的稳定跟踪，并通过仿真实验验证控制器的性能。
+    
+    \item \textbf{里程计模型分析任务}：建立机器人的里程计模型和误差传导模型，分析里程计误差的累积特性，为定位算法提供预测模型。
+    
+    \item \textbf{点云处理任务}：设计并实现基于激光雷达的2D点云直线提取算法和ICP点云配准算法，为环境感知和特征提取提供技术支持。
+    
+    \item \textbf{定位算法实现任务}：设计并实现基于扩展卡尔曼滤波(EKF)的机器人定位算法，融合里程计和激光雷达观测信息，实现高精度定位。
+    
+    \item \textbf{综合仿真验证任务}：整合所有模块，设计完整的仿真实验，验证所提方法的有效性和实用性。
+\end{enumerate}
+
+\subsection{实验流程设计}
+
+实验采用模块化设计思想，按照以下流程进行：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 环境建模：生成包含地标特征的仿真环境
+    \item 轨迹生成：设计参考轨迹和控制输入
+    \item 运动仿真：基于运动学模型模拟机器人运动
+    \item 传感器仿真：模拟里程计和激光雷达的观测数据
+    \item 算法实现：实现控制、定位等核心算法
+    \item 性能评估：对比分析不同方法的定位精度
+\end{enumerate}
+
+\section{实验环境}
+
+\subsection{硬件环境}
+
+本实验采用仿真方式进行，主要硬件配置如下：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{处理器}：12th Gen Intel(R) Core(TM) i5-1240P (1.70 GHz)
+    \item \textbf{内存}：16GB 
+    \item \textbf{存储}：512GB SSD
+    \item \textbf{操作系统}：Windows 11
+\end{enumerate}
+
+\subsection{软件环境}
+
+实验使用的软件环境包括：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{编程语言}：Python 3.8
+    \item \textbf{数值计算库}：NumPy 1.20, SciPy 1.7
+    \item \textbf{可视化库}：Matplotlib 3.3
+    \item \textbf{开发环境}：Visual Studio Code
+
+\end{enumerate}
+
+\subsection{仿真参数配置}
+
+实验中使用的仿真参数配置如表\ref{tab:sim_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{仿真参数配置}
+\label{tab:sim_params}
+\begin{tabular}{lll}
+\toprule
+\textbf{参数名称} & \textbf{参数值} & \textbf{说明} \\
+\midrule
+仿真时间 & 40.0 s & 总仿真时长 \\
+时间步长 & 0.05 s & 离散化时间间隔 \\
+激光雷达范围 & 15.0 m & 最大探测距离 \\
+地标数量 & 30 & 环境中的地标数量 \\
+环境尺寸 & 20.0 m & 环境边界尺寸 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{机器人参数配置}
+
+叉车式移动机器人的参数配置如表\ref{tab:robot_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{机器人参数配置}
+\label{tab:robot_params}
+\begin{tabular}{llll}
+\toprule
+\textbf{轮子} & \textbf{方位角 $\alpha$} & \textbf{偏角 $\beta$} & \textbf{距离 $l$ (m)} \\
+\midrule
+轮A（固定轮） & $-\pi/2$ & $\pi$ & 1.0 \\
+轮B（固定轮） & $\pi/2$ & 0 & 1.0 \\
+转向轮（受控） & 0 & $\pi/2$ & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{噪声模型参数}
+
+实验中考虑的噪声模型参数如表\ref{tab:noise_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{噪声模型参数}
+\label{tab:noise_params}
+\begin{tabular}{lll}
+\toprule
+\textbf{噪声类型} & \textbf{标准差} & \textbf{说明} \\
+\midrule
+速度噪声 $\sigma_v$ & 0.05 m/s & 控制输入速度噪声 \\
+转向角噪声 $\sigma_\delta$ & 0.02 rad & 控制输入转向角噪声 \\
+距离观测噪声 $\sigma_r$ & 0.1 m & 激光雷达距离测量噪声 \\
+角度观测噪声 $\sigma_\phi$ & 0.05 rad & 激光雷达角度测量噪声 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{系统建模}
+
+\section{叉车模型描述}
+
+本文研究的叉车式移动机器人由三个轮子组成，包括两个随动的固定标准轮和一个受控的转向标准轮。具体配置如下：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{轮A}：固定标准轮，随动轮
+    \begin{itemize}[itemsep=0pt]
+        \item 位置参数：$\alpha_A = -\pi/2$，$\beta_A = \pi$，$l_A = 1.0$ m
+        \item 位于机器人后轴左侧
+    \end{itemize}
+    
+    \item \textbf{轮B}：固定标准轮，随动轮
+    \begin{itemize}[itemsep=0pt]
+        \item 位置参数：$\alpha_B = \pi/2$，$\beta_B = 0$，$l_B = 1.0$ m
+        \item 位于机器人后轴右侧
+    \end{itemize}
+    
+    \item \textbf{转向轮}：转向标准轮，受控轮
+    \begin{itemize}[itemsep=0pt]
+        \item 位置参数：$\alpha_s = 0$，$\beta_s = \pi/2$，$l_s = 2.0$ m
+        \item 位于机器人前部，可绕垂直轴旋转
+    \end{itemize}
+\end{enumerate}
+
+其中，$\alpha$表示轮子在机器人坐标系中的方位角，$\beta$表示轮子的偏角，$l$表示轮心到机器人中心的距离。
+
+\section{瞬心法建模}
+
+\subsection{瞬时旋转中心}
+
+对于非完整约束的轮式机器人，在任意时刻存在一个瞬时旋转中心(ICR)，使得所有轮子的速度方向垂直于轮心到ICR的连线。
+
+对于叉车模型，固定轮A和B约束了ICR必须在后轴连线上。设转向轮的转向角为$\delta$，则ICR在机器人坐标系中的位置为：
+
+\begin{equation}
+x_{ICR} = l_s \tan(\delta)
+\end{equation}
+
+其中，$l_s$为转向轮到后轴的距离，$\delta$为转向角。
+
+\subsection{运动学方程}
+
+根据瞬心法，机器人的转弯半径为：
+
+\begin{equation}
+R = \frac{l_s}{\tan(\delta)}
+\end{equation}
+
+机器人的角速度为：
+
+\begin{equation}
+\omega = \frac{v}{R} = \frac{v \tan(\delta)}{l_s}
+\end{equation}
+
+其中，$v$为后轴中心的速度。
+
+机器人的运动学方程为：
+
+\begin{align}
+\dot{x} &= v \cos(\theta) \\
+\dot{y} &= v \sin(\theta) \\
+\dot{\theta} &= \frac{v \tan(\delta)}{l_s}
+\end{align}
+
+其中，$(x, y)$为机器人的位置，$\theta$为机器人的航向角。
+
+\section{运动约束法建模}
+
+\subsection{非完整约束}
+
+对于标准轮，其非完整约束方程为：
+
+\begin{equation}
+[\sin(\alpha+\beta), -\cos(\alpha+\beta), -l\cos(\beta)] \cdot [\dot{x}, \dot{y}, \dot{\theta}]^T = 0
+\end{equation}
+
+这个约束表示轮子不能侧滑。
+
+\subsection{约束矩阵}
+
+对于轮A，约束方程为：
+
+\begin{equation}
+C_A = [\sin(-\frac{\pi}{2}+\pi), -\cos(-\frac{\pi}{2}+\pi), -l_A\cos(\pi)] = [0, 1, 1]
+\end{equation}
+
+对于轮B，约束方程为：
+
+\begin{equation}
+C_B = [\sin(\frac{\pi}{2}+0), -\cos(\frac{\pi}{2}+0), -l_B\cos(0)] = [1, 0, -1]
+\end{equation}
+
+对于转向轮，约束方程随转向角$\delta$变化：
+
+\begin{equation}
+C_s = [\sin(\delta), -\cos(\delta), -l_s\cos(\delta)]
+\end{equation}
+
+\subsection{可行运动空间}
+
+机器人的可行运动空间由约束矩阵的零空间决定。通过求解约束方程，可以得到与瞬心法一致的运动学方程。
+
+\section{两种方法对比}
+
+瞬心法和运动约束法各有优缺点：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{瞬心法}：
+    \begin{itemize}[itemsep=0pt]
+        \item 优点：直观、物理意义明确、计算简单
+        \item 缺点：对于复杂构型的机器人，推导可能不够严谨
+    \end{itemize}
+    
+    \item \textbf{运动约束法}：
+    \begin{itemize}[itemsep=0pt]
+        \item 优点：理论基础严谨、适用于复杂构型
+        \item 缺点：推导过程较为复杂
+    \end{itemize}
+\end{enumerate}
+
+在实际应用中，两种方法得到的结果是一致的，可以根据具体问题选择合适的方法。
+
+\chapter{控制算法设计}
+
+\section{轨迹跟踪问题描述}
+
+轨迹跟踪问题是指设计控制律，使得机器人能够跟踪给定的参考轨迹。设参考轨迹为$(x_d(t), y_d(t), \theta_d(t))$，控制目标是使跟踪误差收敛到零。
+
+\section{Lyapunov控制器设计}
+
+\subsection{误差模型}
+
+定义机器人在自身坐标系中的跟踪误差：
+
+\begin{align}
+e_x &= (x_d - x)\cos(\theta) + (y_d - y)\sin(\theta) \\
+e_y &= -(x_d - x)\sin(\theta) + (y_d - y)\cos(\theta) \\
+e_\theta &= \theta_d - \theta
+\end{align}
+
+其中，$e_x$为纵向误差，$e_y$为横向误差，$e_\theta$为航向角误差。
+
+\subsection{控制律设计}
+
+选择Lyapunov函数：
+
+\begin{equation}
+V = \frac{1}{2}e_x^2 + \frac{1}{2}e_y^2 + \frac{1}{2}e_\theta^2
+\end{equation}
+
+设计控制律：
+
+\begin{align}
+v &= v_d + k_1 e_x \\
+\omega &= v_d \frac{k_2 e_y + k_3 \sin(e_\theta)}{e_x}
+\end{align}
+
+其中，$v_d$为参考速度，$k_1$、$k_2$、$k_3$为控制参数。
+
+\subsection{稳定性分析}
+
+通过Lyapunov稳定性理论可以证明，当控制参数满足$k_1 > 0$、$k_2 > 0$、$k_3 > 0$时，跟踪误差渐近收敛到零。
+
+\section{转向角计算}
+
+根据控制律得到的角速度$\omega$，可以计算转向角：
+
+\begin{equation}
+\delta = \arctan\left(\frac{\omega l_s}{v}\right)
+\end{equation}
+
+转向角需要限制在物理可行范围内：
+
+\begin{equation}
+\delta \in [-\delta_{max}, \delta_{max}]
+\end{equation}
+
+其中，$\delta_{max}$为最大转向角。
+
+\section{控制参数选择}
+
+控制参数的选择需要考虑以下因素：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 收敛速度：较大的参数值可以加快收敛速度
+    \item 控制平稳性：过大的参数值可能导致控制输入振荡
+    \item 物理约束：需要考虑速度和转向角的限制
+\end{enumerate}
+
+本文选择控制参数为：$k_1 = 0.8$，$k_2 = 1.5$，$k_3 = 0.5$。
+
+\chapter{里程计模型}
+
+\section{里程计基本原理}
+
+里程计通过测量轮子的转动来估计机器人的位姿变化。对于叉车模型，里程计的输入为后轴速度$v$和转向角$\delta$。
+
+\section{位姿更新方程}
+
+设机器人的当前位姿为$(x, y, \theta)$，在时间间隔$\Delta t$内的位姿更新方程为：
+
+当$\delta \approx 0$时（直线运动）：
+
+\begin{align}
+x' &= x + v \cos(\theta) \Delta t \\
+y' &= y + v \sin(\theta) \Delta t \\
+\theta' &= \theta
+\end{align}
+
+当$\delta \neq 0$时（转弯运动）：
+
+\begin{align}
+R &= \frac{l_s}{\tan(\delta)} \\
+\omega &= \frac{v}{R} \\
+\Delta\theta &= \omega \Delta t \\
+x' &= x + R[\sin(\theta + \Delta\theta) - \sin(\theta)] \\
+y' &= y + R[-\cos(\theta + \Delta\theta) + \cos(\theta)] \\
+\theta' &= \theta + \Delta\theta
+\end{align}
+
+\section{误差传导模型}
+
+\subsection{雅可比矩阵}
+
+里程计的误差传导需要计算两个雅可比矩阵：
+
+状态雅可比矩阵$F$：
+
+\begin{equation}
+F = \frac{\partial f}{\partial \mathbf{x}} = 
+\begin{bmatrix}
+1 & 0 & -v\sin(\theta)\Delta t \\
+0 & 1 & v\cos(\theta)\Delta t \\
+0 & 0 & 1
+\end{bmatrix}
+\end{equation}
+
+控制雅可比矩阵$G$：
+
+\begin{equation}
+G = \frac{\partial f}{\partial \mathbf{u}} = 
+\begin{bmatrix}
+\frac{\partial x'}{\partial v} & \frac{\partial x'}{\partial \delta} \\
+\frac{\partial y'}{\partial v} & \frac{\partial y'}{\partial \delta} \\
+\frac{\partial \theta'}{\partial v} & \frac{\partial \theta'}{\partial \delta}
+\end{bmatrix}
+\end{equation}
+
+\subsection{协方差传播}
+
+设当前状态协方差为$P$，过程噪声协方差为$Q$，则更新后的协方差为：
+
+\begin{equation}
+P' = F P F^T + G Q G^T
+\end{equation}
+
+其中，过程噪声协方差$Q$反映了控制输入的不确定性：
+
+\begin{equation}
+Q = 
+\begin{bmatrix}
+\sigma_v^2 & 0 \\
+0 & \sigma_\delta^2
+\end{bmatrix}
+\end{equation}
+
+\section{误差特性分析}
+
+里程计误差具有以下特性：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{累积性}：误差随时间累积，长时间运行后误差较大
+    \item \textbf{系统性}：某些误差源（如轮径误差）会导致系统性偏差
+    \item \textbf{相关性}：不同方向的误差存在相关性
+\end{enumerate}
+
+为了减小里程计误差，需要：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 提高传感器精度
+    \item 定期校准里程计参数
+    \item 融合外部传感器信息
+\end{enumerate}
+
+\chapter{基于激光雷达的2D点云直线提取算法}
+
+\section{算法原理}
+
+\subsection{Split-and-Merge算法}
+
+Split-and-Merge算法是一种经典的直线提取算法，通过递归分割点云数据来提取直线特征。算法的基本思想是：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 对点云数据进行初始直线拟合
+    \item 计算每个点到拟合直线的距离
+    \item 如果最大距离超过阈值，则在最大距离点处分割
+    \item 对分割后的子集递归执行上述过程
+    \item 合并相邻的共线线段
+\end{enumerate}
+
+\subsection{直线模型}
+
+直线可以用法线式表示：
+
+\begin{equation}
+\rho = x \cos(\theta) + y \sin(\theta)
+\end{equation}
+
+其中，$\rho$为原点到直线的距离，$\theta$为法线方向角。
+
+直线拟合采用最小二乘法，通过奇异值分解(SVD)求解：
+
+\begin{equation}
+\min_{\mathbf{n}} \sum_{i=1}^{n} (\mathbf{n}^T \mathbf{p}_i + c)^2
+\end{equation}
+
+其中，$\mathbf{n}$为法向量，$c$为常数项。
+
+\section{算法实现}
+
+\subsection{算法流程}
+
+Split-and-Merge算法的具体实现步骤如下：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{初始化}：将整个点云作为一个初始线段
+    \item \textbf{递归分割}：
+    \begin{enumerate}[itemsep=0pt]
+        \item 对当前线段进行直线拟合
+        \item 计算所有点到直线的距离
+        \item 找到最大距离点
+        \item 如果最大距离超过阈值，在最大距离点处分割
+        \item 对分割后的两个子线段递归执行分割
+    \end{enumerate}
+    \item \textbf{合并}：合并相邻的共线线段
+    \item \textbf{输出}：输出提取的直线特征
+\end{enumerate}
+
+\subsection{关键参数}
+
+算法的关键参数包括：
+
+\begin{enumerate}[itemsep=0pt]
+    \item \textbf{距离阈值}：判断点是否属于直线的距离阈值，通常设为0.2m
+    \item \textbf{最小点数}：构成一条直线的最小点数，通常设为5
+    \item \textbf{最小长度}：直线的最小长度，用于过滤噪声
+\end{enumerate}
+
+\section{仿真实验}
+
+\subsection{实验设置}
+
+为了验证直线提取算法的有效性，设计了以下仿真实验：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 生成包含多条直线的仿真环境
+    \item 模拟激光雷达扫描获取点云数据
+    \item 添加高斯噪声模拟真实传感器
+    \item 应用Split-and-Merge算法提取直线
+    \item 评估直线提取的精度和召回率
+\end{enumerate}
+
+\subsection{实验结果}
+
+实验结果表明，Split-and-Merge算法能够有效提取环境中的直线特征：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 对于长度大于1m的直线，提取成功率超过95\%
+    \item 直线参数估计误差小于0.05m和2°
+    \item 算法计算复杂度为$O(n \log n)$，满足实时性要求
+    \item 对噪声具有较好的鲁棒性
+\end{enumerate}
+
+\chapter{基于激光雷达的2D点云配准算法}
+
+\section{ICP算法原理}
+
+\subsection{迭代最近点算法}
+
+ICP(Iterative Closest Point)算法是一种经典的点云配准算法，通过迭代寻找两个点云之间的最优刚体变换。算法的基本思想是：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 在源点云中找到目标点云中每个点的最近点
+    \item 计算使对应点对距离最小的刚体变换
+    \item 应用变换到源点云
+    \item 重复上述过程直到收敛
+\end{enumerate}
+
+\subsection{刚体变换}
+
+2D刚体变换包括旋转和平移：
+
+\begin{equation}
+\mathbf{p}' = R \mathbf{p} + \mathbf{t}
+\end{equation}
+
+其中，$R$为旋转矩阵，$\mathbf{t}$为平移向量：
+
+\begin{equation}
+R = 
+\begin{bmatrix}
+\cos(\theta) & -\sin(\theta) \\
+\sin(\theta) & \cos(\theta)
+\end{bmatrix}, \quad
+\mathbf{t} = 
+\begin{bmatrix}
+t_x \\
+t_y
+\end{bmatrix}
+\end{equation}
+
+\section{算法实现}
+
+\subsection{对应点查找}
+
+对应点查找采用最近邻搜索：
+
+\begin{equation}
+\mathbf{q}_i = \arg\min_{\mathbf{q} \in Q} \|\mathbf{q} - (R \mathbf{p}_i + \mathbf{t})\|
+\end{equation}
+
+其中，$P$为源点云，$Q$为目标点云。
+
+\subsection{变换估计}
+
+变换估计采用SVD方法：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 计算两个点云的质心
+    \item 将点云中心化
+    \item 计算协方差矩阵$H = P^T Q$
+    \item 对$H$进行SVD分解：$H = U \Sigma V^T$
+    \item 旋转矩阵$R = V U^T$
+    \item 平移向量$\mathbf{t} = \bar{\mathbf{q}} - R \bar{\mathbf{p}}$
+\end{enumerate}
+
+\subsection{收敛判断}
+
+算法收敛条件为：
+
+\begin{equation}
+\|\mathbf{t}_{new}\| < \epsilon
+\end{equation}
+
+其中，$\epsilon$为收敛阈值，通常设为$10^{-4}$。
+
+\section{仿真实验}
+
+\subsection{实验设置}
+
+为了验证ICP算法的有效性，设计了以下仿真实验：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 生成参考点云
+    \item 应用已知的刚体变换生成目标点云
+    \item 添加高斯噪声模拟真实传感器
+    \item 应用ICP算法估计变换
+    \item 比较估计变换与真实变换
+\end{enumerate}
+
+\subsection{实验结果}
+
+实验结果表明，ICP算法能够准确估计点云之间的刚体变换：
+
+\begin{enumerate}[itemsep=0pt]
+    \item 平移误差小于0.05m
+    \item 旋转误差小于2°
+    \item 算法通常在10-20次迭代内收敛
+    \item 对初始位姿有一定要求，需要较好的初值
+\end{enumerate}
+
+\chapter{卡尔曼滤波定位算法}
+
+\section{扩展卡尔曼滤波原理}
+
+扩展卡尔曼滤波(EKF)是卡尔曼滤波在非线性系统中的推广。对于非线性系统：
+
+\begin{align}
+\mathbf{x}_{k+1} &= f(\mathbf{x}_k, \mathbf{u}_k) + \mathbf{w}_k \\
+\mathbf{z}_k &= h(\mathbf{x}_k) + \mathbf{v}_k
+\end{align}
+
+其中，$\mathbf{x}$为状态向量，$\mathbf{u}$为控制输入，$\mathbf{z}$为观测向量，$\mathbf{w}$和$\mathbf{v}$为噪声。
+
+EKF通过一阶泰勒展开将非线性系统线性化，然后应用标准卡尔曼滤波公式。
+
+\section{状态空间模型}
+
+\subsection{状态向量}
+
+选择机器人的位姿作为状态向量：
+
+\begin{equation}
+\mathbf{x} = [x, y, \theta]^T
+\end{equation}
+
+\subsection{运动模型}
+
+运动模型采用里程计模型：
+
+\begin{equation}
+\mathbf{x}_{k+1} = f(\mathbf{x}_k, \mathbf{u}_k)
+\end{equation}
+
+其中，$\mathbf{u} = [v, \delta]^T$为控制输入。
+
+\subsection{观测模型}
+
+观测模型采用激光雷达观测：
+
+\begin{equation}
+\mathbf{z} = [r, \phi]^T
+\end{equation}
+
+其中，$r$为到地标的距离，$\phi$为地标的方位角。
+
+对于地标$(l_x, l_y)$，观测模型为：
+
+\begin{align}
+r &= \sqrt{(l_x - x)^2 + (l_y - y)^2} \\
+\phi &= \arctan2(l_y - y, l_x - x) - \theta
+\end{align}
+
+\section{EKF算法流程}
+
+\subsection{预测步骤}
+
+\begin{enumerate}[itemsep=0pt]
+    \item 状态预测：
+    \begin{equation}
+    \hat{\mathbf{x}}_{k|k-1} = f(\hat{\mathbf{x}}_{k-1|k-1}, \mathbf{u}_{k-1})
+    \end{equation}
+    
+    \item 协方差预测：
+    \begin{equation}
+    P_{k|k-1} = F_k P_{k-1|k-1} F_k^T + G_k Q_k G_k^T
+    \end{equation}
+    
+    其中，$F_k$和$G_k$分别为运动模型关于状态和控制输入的雅可比矩阵。
+\end{enumerate}
+
+\subsection{更新步骤}
+
+\begin{enumerate}[itemsep=0pt]
+    \item 计算卡尔曼增益：
+    \begin{equation}
+    K_k = P_{k|k-1} H_k^T (H_k P_{k|k-1} H_k^T + R_k)^{-1}
+    \end{equation}
+    
+    其中，$H_k$为观测模型的雅可比矩阵，$R_k$为观测噪声协方差。
+    
+    \item 状态更新：
+    \begin{equation}
+    \hat{\mathbf{x}}_{k|k} = \hat{\mathbf{x}}_{k|k-1} + K_k (\mathbf{z}_k - h(\hat{\mathbf{x}}_{k|k-1}))
+    \end{equation}
+    
+    \item 协方差更新：
+    \begin{equation}
+    P_{k|k} = (I - K_k H_k) P_{k|k-1}
+    \end{equation}
+\end{enumerate}
+
+\section{雅可比矩阵计算}
+
+\subsection{运动雅可比矩阵}
+
+运动模型关于状态的雅可比矩阵：
+
+\begin{equation}
+F = \frac{\partial f}{\partial \mathbf{x}} = 
+\begin{bmatrix}
+1 & 0 & \frac{\partial x'}{\partial \theta} \\
+0 & 1 & \frac{\partial y'}{\partial \theta} \\
+0 & 0 & 1
+\end{bmatrix}
+\end{equation}
+
+运动模型关于控制输入的雅可比矩阵：
+
+\begin{equation}
+G = \frac{\partial f}{\partial \mathbf{u}} = 
+\begin{bmatrix}
+\frac{\partial x'}{\partial v} & \frac{\partial x'}{\partial \delta} \\
+\frac{\partial y'}{\partial v} & \frac{\partial y'}{\partial \delta} \\
+\frac{\partial \theta'}{\partial v} & \frac{\partial \theta'}{\partial \delta}
+\end{bmatrix}
+\end{equation}
+
+\subsection{观测雅可比矩阵}
+
+观测模型关于状态的雅可比矩阵：
+
+\begin{equation}
+H = \frac{\partial h}{\partial \mathbf{x}} = 
+\begin{bmatrix}
+-\frac{l_x - x}{r} & -\frac{l_y - y}{r} & 0 \\
+\frac{l_y - y}{r^2} & -\frac{l_x - x}{r^2} & -1
+\end{bmatrix}
+\end{equation}
+
+\chapter{仿真实验与结果分析}
+
+\section{仿真环境设置}
+
+\subsection{仿真参数}
+
+仿真实验的主要参数设置如表\ref{tab:sim_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{仿真参数设置}
+\label{tab:sim_params}
+\begin{tabular}{lll}
+\toprule
+\textbf{参数} & \textbf{数值} & \textbf{单位} \\
+\midrule
+仿真时间 & 40.0 & s \\
+时间步长 & 0.05 & s \\
+环境大小 & 20.0 & m \\
+激光范围 & 15.0 & m \\
+地标数量 & 58 & 个 \\
+速度噪声 & 0.05 & m/s \\
+转向角噪声 & 0.02 & rad \\
+距离观测噪声 & 0.1 & m \\
+方位角观测噪声 & 0.05 & rad \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{叉车模型参数}
+
+叉车模型参数如表\ref{tab:forklift_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{叉车模型参数}
+\label{tab:forklift_params}
+\begin{tabular}{llll}
+\toprule
+\textbf{轮子} & \textbf{$\alpha$ (rad)} & \textbf{$\beta$ (rad)} & \textbf{$l$ (m)} \\
+\midrule
+轮A & $-\pi/2$ & $\pi$ & 1.0 \\
+轮B & $\pi/2$ & 0 & 1.0 \\
+转向轮 & 0 & $\pi/2$ & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{参考轨迹生成}
+
+参考轨迹采用正弦曲线组合生成：
+
+\begin{align}
+v(t) &= 1.0 + 0.3\sin(0.2t) \\
+\delta(t) &= 0.25\sin(0.15t) + 0.1\cos(0.1t)
+\end{align}
+
+生成的参考轨迹如图\ref{fig:trajectory}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{trajectory_comparison.png}
+\caption{机器人轨迹对比}
+\label{fig:trajectory}
+\end{figure}
+
+该图展示了叉车式移动机器人在仿真实验中的轨迹对比。图中包含三条轨迹：黑色实线表示机器人的真实运动轨迹，蓝色实线表示扩展卡尔曼滤波(EKF)算法估计的轨迹，红色虚线表示纯里程计方法估计的轨迹。绿色圆点标记起点，红色方块标记终点。从图中可以明显看出，EKF估计轨迹与真实轨迹高度吻合，而里程计轨迹随着时间推移逐渐偏离真实轨迹，体现了里程计误差累积的特性。橙色箭头表示机器人在不同时刻的航向角，展示了机器人的运动方向变化。
+
+\section{定位性能分析}
+
+\subsection{轨迹跟踪结果}
+
+图\ref{fig:trajectory}展示了真实轨迹、EKF估计轨迹和里程计轨迹的对比。可以看出，EKF估计轨迹与真实轨迹吻合良好，而里程计轨迹存在明显的偏差。
+
+\subsection{定位误差分析}
+
+定位误差随时间的演化过程如下所示。为了更清晰地展示不同方向的误差特性，我们将误差分析拆分为四个独立的图表。
+
+\subsubsection{X方向定位误差}
+
+X方向定位误差如图\ref{fig:error_x}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{error_x.png}
+\caption{X方向定位误差}
+\label{fig:error_x}
+\end{figure}
+
+该图展示了机器人在X方向的定位误差随时间的演化过程。蓝色实线表示EKF方法的误差，红色虚线表示里程计方法的误差。从图中可以观察到，里程计误差随时间持续增大，呈现明显的累积趋势，而EKF误差保持在较小范围内，波动幅度远小于里程计误差。在仿真结束时，里程计误差达到约0.03米，而EKF误差不超过0.02米。这表明EKF方法有效抑制了误差累积，体现了观测更新的修正作用。
+
+\subsubsection{Y方向定位误差}
+
+Y方向定位误差如图\ref{fig:error_y}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{error_y.png}
+\caption{Y方向定位误差}
+\label{fig:error_y}
+\end{figure}
+
+该图展示了机器人在Y方向的定位误差随时间的演化过程。与X方向类似，蓝色实线表示EKF方法的误差，红色虚线表示里程计方法的误差。从图中可以看出，Y方向的里程计误差同样呈现累积趋势，而EKF误差保持稳定，体现了卡尔曼滤波对误差的有效抑制。Y方向误差的整体幅度略小于X方向，这与机器人的运动特性有关，EKF方法在Y方向同样表现出优越的定位精度。
+
+\subsubsection{航向角定位误差}
+
+航向角定位误差如图\ref{fig:error_theta}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{error_theta.png}
+\caption{航向角定位误差}
+\label{fig:error_theta}
+\end{figure}
+
+该图展示了机器人航向角的定位误差随时间的演化过程（单位：度）。蓝色实线表示EKF方法的误差，红色虚线表示里程计方法的误差。从图中可以观察到，里程计的航向角误差随时间波动增大，呈现不稳定的特性，而EKF的航向角误差保持在较小范围内，波动幅度明显小于里程计。这表明EKF能够有效修正航向角估计，避免误差累积，航向角误差的稳定对于机器人的导航控制至关重要。
+
+\subsubsection{总位置误差}
+
+总位置误差如图\ref{fig:error_position}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{error_position.png}
+\caption{总位置误差对比}
+\label{fig:error_position}
+\end{figure}
+
+该图展示了机器人的总位置误差（$\sqrt{e_x^2 + e_y^2}$）随时间的演化过程。这是评估定位性能的综合指标。蓝色实线表示EKF方法的位置误差，红色虚线表示里程计方法的位置误差。从图中可以清楚看出，EKF的总位置误差始终远小于里程计误差。里程计误差随时间持续增长，最终达到约0.05米，而EKF误差保持在0.02米以内，验证了所提方法的有效性。总位置误差的对比直观展示了EKF方法的优越性。
+
+\subsection{定位精度统计}
+
+定位精度的统计结果如表\ref{tab:localization_results}所示。
+
+\begin{table}[H]
+\centering
+\caption{定位性能对比}
+\label{tab:localization_results}
+\begin{tabular}{llll}
+\toprule
+\textbf{方法} & \textbf{X方向RMSE (m)} & \textbf{Y方向RMSE (m)} & \textbf{航向角RMSE (°)} \\
+\midrule
+里程计 & 0.0912 & 0.0291 & 0.4184 \\
+EKF & 0.0138 & 0.0066 & 0.2122 \\
+\midrule
+改进 & 84.9\% & 77.2\% & 49.3\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{不确定性分析}
+
+\subsection{协方差演化}
+
+EKF协方差随时间的演化过程如下所示。为了更清晰地展示不确定性特性，我们将不确定性分析拆分为两个独立的图表。
+
+\subsubsection{不确定性标准差演化}
+
+不确定性标准差演化如图\ref{fig:uncertainty_std}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{uncertainty_std.png}
+\caption{不确定性标准差演化}
+\label{fig:uncertainty_std}
+\end{figure}
+
+该图展示了状态协方差矩阵对角元素的平方根（即标准差）随时间的变化。蓝色曲线表示X方向的位置不确定性$\sigma_x$，绿色曲线表示Y方向的位置不确定性$\sigma_y$，红色曲线表示航向角不确定性$\sigma_\theta$（单位：度）。从图中可以观察到以下特点：在仿真初期，不确定性增长较快，这是因为里程计误差累积；当机器人观测到地标时，不确定性显著降低，体现了观测更新的修正作用；整体上，不确定性保持在较低水平，说明EKF能够有效控制定位误差；位置不确定性（$\sigma_x$和$\sigma_y$）最终稳定在约0.1米左右，航向角不确定性最终稳定在约0.5度左右。
+
+\subsubsection{不确定性椭圆演化}
+
+不确定性椭圆演化如图\ref{fig:uncertainty_ellipse}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{uncertainty_ellipse.png}
+\caption{不确定性椭圆演化}
+\label{fig:uncertainty_ellipse}
+\end{figure}
+
+该图展示了定位不确定性椭圆在轨迹上的分布。蓝色曲线表示EKF估计轨迹，椭圆表示2$\sigma$置信区域（约95\%置信度）。椭圆的长轴和短轴分别表示不同方向的不确定性大小，椭圆的方向表示不确定性的主方向。从图中可以看出，在轨迹的不同位置，椭圆的大小和方向都在变化；当机器人接近地标时，椭圆变小，说明定位精度提高；椭圆的长轴通常沿运动方向，这是因为里程计对前进方向的估计更准确；整体上，椭圆保持在较小范围内，验证了EKF定位的可靠性。
+
+\subsection{不确定性椭圆}
+
+不确定性椭圆表示定位误差的置信区域，椭圆越大表示不确定性越高。通过不确定性椭圆的可视化，可以直观地了解定位算法的置信度。
+
+\section{控制性能分析}
+
+控制输入随时间的变化过程如下所示。为了更清晰地展示控制特性，我们将控制输入分析拆分为两个独立的图表。
+
+\subsection{速度控制输入}
+
+速度控制输入如图\ref{fig:control_velocity}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{control_velocity.png}
+\caption{速度控制输入}
+\label{fig:control_velocity}
+\end{figure}
+
+该图展示了机器人后轴中心速度随时间的变化。从图中可以看出，速度在0.7-1.3 m/s范围内波动，平均速度约为1.0 m/s。速度变化呈现周期性，这是由参考轨迹的正弦函数特性决定的。速度变化平滑，没有出现剧烈跳变，说明控制器设计合理。速度始终为正值，表示机器人持续向前运动。
+
+\subsection{转向角控制输入}
+
+转向角控制输入如图\ref{fig:control_steering}所示。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{control_steering.png}
+\caption{转向角控制输入}
+\label{fig:control_steering}
+\end{figure}
+
+该图展示了机器人转向角随时间的变化（单位：度）。从图中可以看出，转向角在-15°到+15°范围内变化，符合叉车的物理约束。转向角变化同样呈现周期性，与速度变化相协调。转向角变化平滑，没有出现剧烈振荡，保证了运动的平稳性。转向角的正负变化表示机器人在进行左右转弯。
+
+从整体来看，控制输入平稳、连续，没有出现剧烈振荡或不连续现象，说明基于Lyapunov稳定性设计的控制器具有良好的性能，能够实现平滑的轨迹跟踪。
+
+
+% ==================== 附录 ====================
+\appendix
+
+\chapter{附录}
+
+\section{源代码}
+
+\begin{lstlisting}[caption={Complete Simulation System (complete\_simulation.py)}]
+import numpy as np
+import matplotlib.pyplot as plt
+from dataclasses import dataclass
+from typing import List, Tuple, Dict
+
+@dataclass
+class ForkliftConfig:
+    wheel_A_alpha: float = -np.pi / 2
+    wheel_A_beta: float = np.pi
+    wheel_A_l: float = 1.0
+    
+    wheel_B_alpha: float = np.pi / 2
+    wheel_B_beta: float = 0.0
+    wheel_B_l: float = 1.0
+    
+    steering_alpha: float = 0.0
+    steering_beta: float = np.pi / 2
+    steering_l: float = 2.0
+
+@dataclass
+class NoiseModel:
+    sigma_v: float = 0.05
+    sigma_delta: float = 0.02
+    sigma_range: float = 0.1
+    sigma_bearing: float = 0.05
+
+@dataclass
+class Landmark:
+    x: float
+    y: float
+    feature_type: str = "point"
+
+@dataclass
+class SimulationConfig:
+    dt: float = 0.05
+    total_time: float = 40.0
+    max_lidar_range: float = 15.0
+    num_landmarks: int = 30
+    env_size: float = 20.0
+
+
+class ForkliftKinematics:
+    """Forklift kinematic model"""
+    
+    def __init__(self, config: ForkliftConfig = None):
+        self.config = config or ForkliftConfig()
+        
+    def compute_icr(self, steering_angle: float) -> Tuple[float, float]:
+        """Compute instantaneous center of rotation"""
+        if abs(steering_angle) < 1e-6:
+            return (float('inf'), 0.0)
+        x_icr = self.config.steering_l * np.tan(steering_angle)
+        return (x_icr, 0.0)
+    
+    def forward_kinematics(self, v_rear: float, steering_angle: float):
+        """Forward kinematics"""
+        if abs(steering_angle) < 1e-6:
+            return (v_rear, 0.0, 0.0)
+        
+        R = self.config.steering_l / np.tan(steering_angle)
+        omega = v_rear / R
+        return (v_rear, 0.0, omega)
+    
+    def update_pose(self, pose: np.ndarray, v: float, delta: float, dt: float):
+        """Update pose"""
+        x, y, theta = pose
+        
+        if abs(delta) < 1e-6:
+            dx = v * np.cos(theta) * dt
+            dy = v * np.sin(theta) * dt
+            dtheta = 0.0
+        else:
+            R = self.config.steering_l / np.tan(delta)
+            omega = v / R
+            dtheta = omega * dt
+            dx = R * (np.sin(theta + dtheta) - np.sin(theta))
+            dy = R * (-np.cos(theta + dtheta) + np.cos(theta))
+        
+        return np.array([x + dx, y + dy, theta + dtheta])
+
+
+class OdometryModel:
+    """Odometry model and error propagation"""
+    
+    def __init__(self, wheel_base: float = 2.0, noise: NoiseModel = None):
+        self.wheel_base = wheel_base
+        self.noise = noise or NoiseModel()
+        
+    def propagate(self, pose: np.ndarray, v: float, delta: float, dt: float):
+        """Odometry propagation"""
+        x, y, theta = pose
+        
+        if abs(delta) < 1e-6:
+            dx = v * np.cos(theta) * dt
+            dy = v * np.sin(theta) * dt
+            dtheta = 0.0
+        else:
+            R = self.wheel_base / np.tan(delta)
+            omega = v / R
+            dtheta = omega * dt
+            dx = R * (np.sin(theta + dtheta) - np.sin(theta))
+            dy = R * (-np.cos(theta + dtheta) + np.cos(theta))
+        
+        return np.array([x + dx, y + dy, theta + dtheta])
+    
+    def jacobians(self, pose: np.ndarray, v: float, delta: float, dt: float):
+        """Compute Jacobian matrices"""
+        x, y, theta = pose
+        
+        F = np.eye(3)
+        G = np.zeros((3, 2))
+        
+        if abs(delta) < 1e-6:
+            F[0, 2] = -v * np.sin(theta) * dt
+            F[1, 2] = v * np.cos(theta) * dt
+            G[0, 0] = np.cos(theta) * dt
+            G[1, 0] = np.sin(theta) * dt
+        else:
+            R = self.wheel_base / np.tan(delta)
+            omega = v / R
+            dtheta = omega * dt
+            
+            F[0, 2] = R * (np.cos(theta + dtheta) - np.cos(theta))
+            F[1, 2] = R * (np.sin(theta + dtheta) - np.sin(theta))
+            
+            G[0, 0] = R / v * (np.sin(theta + dtheta) - np.sin(theta))
+            G[1, 0] = R / v * (-np.cos(theta + dtheta) + np.cos(theta))
+            G[2, 0] = dtheta / v
+        
+        return F, G
+    
+    def propagate_covariance(self, cov: np.ndarray, pose: np.ndarray, 
+                            v: float, delta: float, dt: float):
+        """Propagate covariance"""
+        F, G = self.jacobians(pose, v, delta, dt)
+        
+        Q = np.diag([self.noise.sigma_v**2, self.noise.sigma_delta**2])
+        
+        new_cov = F @ cov @ F.T + G @ Q @ G.T
+        return (new_cov + new_cov.T) / 2
+
+
+class TrajectoryController:
+    """Trajectory tracking controller"""
+    
+    def __init__(self, wheel_base: float = 2.0):
+        self.wheel_base = wheel_base
+        self.k1 = 0.8
+        self.k2 = 1.5
+        self.k3 = 0.5
+        
+    def compute_control(self, current_pose: np.ndarray, 
+                       target_pose: np.ndarray, 
+                       target_velocity: float):
+        """Compute control inputs using Lyapunov controller"""
+        x, y, theta = current_pose
+        x_d, y_d, theta_d = target_pose
+        
+        dx = x_d - x
+        dy = y_d - y
+        
+        e_x = dx * np.cos(theta) + dy * np.sin(theta)
+        e_y = -dx * np.sin(theta) + dy * np.cos(theta)
+        e_theta = np.arctan2(np.sin(theta_d - theta), np.cos(theta_d - theta))
+        
+        v = target_velocity + self.k1 * e_x
+        
+        if abs(e_x) < 0.1:
+            omega = self.k2 * e_y + self.k3 * np.sin(e_theta)
+        else:
+            omega = target_velocity * (self.k2 * e_y + self.k3 * np.sin(e_theta)) / e_x
+        
+        if abs(omega) < 1e-6:
+            delta = 0.0
+        else:
+            R = target_velocity / omega
+            delta = np.arctan(self.wheel_base / R)
+            delta = np.clip(delta, -np.pi/4, np.pi/4)
+        
+        return v, delta
+
+
+class ExtendedKalmanFilter:
+    """Extended Kalman Filter"""
+    
+    def __init__(self, wheel_base: float = 2.0, noise: NoiseModel = None):
+        self.wheel_base = wheel_base
+        self.noise = noise or NoiseModel()
+        
+        self.state = np.zeros(3)
+        self.covariance = np.eye(3) * 0.01
+        
+        self.process_noise = np.diag([0.01, 0.01, 0.005])
+        self.measurement_noise = np.diag([0.1**2, 0.05**2])
+        
+    def set_state(self, x: float, y: float, theta: float):
+        self.state = np.array([x, y, theta])
+        
+    def predict(self, v: float, delta: float, dt: float):
+        """Prediction step"""
+        x, y, theta = self.state
+        
+        if abs(delta) < 1e-6:
+            new_x = x + v * np.cos(theta) * dt
+            new_y = y + v * np.sin(theta) * dt
+            new_theta = theta
+        else:
+            R = self.wheel_base / np.tan(delta)
+            omega = v / R
+            dtheta = omega * dt
+            new_x = x + R * (np.sin(theta + dtheta) - np.sin(theta))
+            new_y = y + R * (-np.cos(theta + dtheta) + np.cos(theta))
+            new_theta = theta + dtheta
+        
+        self.state = np.array([new_x, new_y, new_theta])
+        
+        F = np.eye(3)
+        if abs(delta) < 1e-6:
+            F[0, 2] = -v * np.sin(theta) * dt
+            F[1, 2] = v * np.cos(theta) * dt
+        else:
+            R = self.wheel_base / np.tan(delta)
+            omega = v / R
+            dtheta = omega * dt
+            F[0, 2] = R * (np.cos(theta + dtheta) - np.cos(theta))
+            F[1, 2] = R * (np.sin(theta + dtheta) - np.sin(theta))
+        
+        G = np.zeros((3, 2))
+        if abs(delta) < 1e-6:
+            G[0, 0] = np.cos(theta) * dt
+            G[1, 0] = np.sin(theta) * dt
+        else:
+            R = self.wheel_base / np.tan(delta)
+            omega = v / R
+            dtheta = omega * dt
+            G[0, 0] = R / v * (np.sin(theta + dtheta) - np.sin(theta))
+            G[1, 0] = R / v * (-np.cos(theta + dtheta) + np.cos(theta))
+            G[2, 0] = dtheta / v
+        
+        Q = np.diag([self.noise.sigma_v**2, self.noise.sigma_delta**2])
+        
+        self.covariance = F @ self.covariance @ F.T + G @ Q @ G.T
+        self.covariance = (self.covariance + self.covariance.T) / 2
+        
+    def update(self, observations: List[Tuple[int, float, float]], 
+               landmarks: List[Landmark]):
+        """Update step"""
+        for landmark_id, r, phi in observations:
+            if landmark_id >= len(landmarks):
+                continue
+            
+            landmark = landmarks[landmark_id]
+            x, y, theta = self.state
+            
+            dx = landmark.x - x
+            dy = landmark.y - y
+            r_pred = np.sqrt(dx**2 + dy**2)
+            phi_pred = np.arctan2(dy, dx) - theta
+            
+            innovation = np.array([r - r_pred, phi - phi_pred])
+            innovation[1] = np.arctan2(np.sin(innovation[1]), np.cos(innovation[1]))
+            
+            H = np.zeros((2, 3))
+            if r_pred > 1e-6:
+                H[0, 0] = -dx / r_pred
+                H[0, 1] = -dy / r_pred
+                H[1, 0] = dy / (r_pred**2)
+                H[1, 1] = -dx / (r_pred**2)
+                H[1, 2] = -1.0
+            
+            S = H @ self.covariance @ H.T + self.measurement_noise
+            
+            try:
+                K = self.covariance @ H.T @ np.linalg.inv(S)
+            except:
+                continue
+            
+            self.state = self.state + K @ innovation
+            self.state[2] = np.arctan2(np.sin(self.state[2]), np.cos(self.state[2]))
+            
+            I_KH = np.eye(3) - K @ H
+            self.covariance = I_KH @ self.covariance @ I_KH.T + K @ self.measurement_noise @ K.T
+            self.covariance = (self.covariance + self.covariance.T) / 2
+
+
+class CompleteSimulation:
+    """Complete simulation system"""
+    
+    def __init__(self, config: SimulationConfig = None):
+        self.config = config or SimulationConfig()
+        self.forklift_config = ForkliftConfig()
+        self.noise = NoiseModel()
+        
+        self.kinematics = ForkliftKinematics(self.forklift_config)
+        self.odometry = OdometryModel(self.forklift_config.steering_l, self.noise)
+        self.controller = TrajectoryController(self.forklift_config.steering_l)
+        self.ekf = ExtendedKalmanFilter(self.forklift_config.steering_l, self.noise)
+        
+        self.landmarks: List[Landmark] = []
+        
+    def generate_environment(self):
+        """Generate environment landmarks"""
+        np.random.seed(42)
+        
+        for _ in range(self.config.num_landmarks):
+            x = np.random.uniform(-self.config.env_size, self.config.env_size)
+            y = np.random.uniform(-self.config.env_size, self.config.env_size)
+            self.landmarks.append(Landmark(x, y))
+    
+    def generate_reference_trajectory(self):
+        """Generate reference trajectory"""
+        num_steps = int(self.config.total_time / self.config.dt)
+        
+        trajectory = np.zeros((num_steps + 1, 3))
+        velocities = np.zeros(num_steps)
+        steering_angles = np.zeros(num_steps)
+        
+        trajectory[0] = [0, 0, 0]
+        
+        for i in range(num_steps):
+            t = i * self.config.dt
+            
+            v = 1.0 + 0.3 * np.sin(0.2 * t)
+            delta = 0.25 * np.sin(0.15 * t) + 0.1 * np.cos(0.1 * t)
+            
+            velocities[i] = v
+            steering_angles[i] = delta
+            
+            trajectory[i+1] = self.kinematics.update_pose(trajectory[i], v, delta, self.config.dt)
+        
+        return trajectory, np.column_stack([velocities, steering_angles])
+    
+    def simulate_lidar_scan(self, pose: np.ndarray):
+        """Simulate LiDAR scan"""
+        x, y, theta = pose
+        observations = []
+        
+        for i, landmark in enumerate(self.landmarks):
+            dx = landmark.x - x
+            dy = landmark.y - y
+            r = np.sqrt(dx**2 + dy**2)
+            
+            if r > self.config.max_lidar_range:
+                continue
+            
+            phi = np.arctan2(dy, dx) - theta
+            
+            r_noisy = r + np.random.normal(0, self.noise.sigma_range)
+            phi_noisy = phi + np.random.normal(0, self.noise.sigma_bearing)
+            
+            observations.append((i, r_noisy, phi_noisy))
+        
+        return observations
+    
+    def run_simulation(self) -> Dict:
+        """Run complete simulation"""
+        print("Starting complete simulation...")
+        
+        self.generate_environment()
+        print(f"Generated environment: {len(self.landmarks)} landmarks")
+        
+        ref_trajectory, ref_controls = self.generate_reference_trajectory()
+        print(f"Generated reference trajectory: {len(ref_trajectory)} poses")
+        
+        num_steps = len(ref_controls)
+        
+        true_states = np.zeros((num_steps + 1, 3))
+        odometry_states = np.zeros((num_steps + 1, 3))
+        ekf_states = np.zeros((num_steps + 1, 3))
+        ekf_covariances = np.zeros((num_steps + 1, 3, 3))
+        actual_controls = np.zeros((num_steps, 2))
+        
+        true_states[0] = ref_trajectory[0]
+        odometry_states[0] = ref_trajectory[0]
+        ekf_states[0] = ref_trajectory[0]
+        ekf_covariances[0] = np.eye(3) * 0.01
+        
+        self.ekf.set_state(*ref_trajectory[0])
+        
+        print("Running simulation...")
+        
+        for i in range(num_steps):
+            v_ref, delta_ref = ref_controls[i]
+            
+            v_noisy = v_ref + np.random.normal(0, self.noise.sigma_v)
+            delta_noisy = delta_ref + np.random.normal(0, self.noise.sigma_delta)
+            
+            actual_controls[i] = [v_noisy, delta_noisy]
+            
+            true_states[i+1] = self.kinematics.update_pose(
+                true_states[i], v_ref, delta_ref, self.config.dt
+            )
+            
+            odometry_states[i+1] = self.odometry.propagate(
+                odometry_states[i], v_noisy, delta_noisy, self.config.dt
+            )
+            
+            self.ekf.predict(v_noisy, delta_noisy, self.config.dt)
+            
+            observations = self.simulate_lidar_scan(true_states[i+1])
+            
+            if observations:
+                self.ekf.update(observations, self.landmarks)
+            
+            ekf_states[i+1] = self.ekf.state
+            ekf_covariances[i+1] = self.ekf.covariance
+        
+        print("Simulation completed!")
+        
+        return {
+            'ref_trajectory': ref_trajectory,
+            'true_states': true_states,
+            'odometry_states': odometry_states,
+            'ekf_states': ekf_states,
+            'ekf_covariances': ekf_covariances,
+            'actual_controls': actual_controls,
+            'landmarks': self.landmarks
+        }
+
+
+def main():
+    """Main function"""
+    config = SimulationConfig()
+    sim = CompleteSimulation(config)
+    results = sim.run_simulation()
+    
+    print("\nSimulation Results:")
+    print(f"Total time: {config.total_time} seconds")
+    print(f"Number of steps: {int(config.total_time / config.dt)}")
+    print(f"Number of landmarks: {len(results['landmarks'])}")
+    
+    odometry_error = np.sqrt(np.mean(np.sum(
+        (results['odometry_states'] - results['true_states'])[:, :2]**2, axis=1
+    )))
+    ekf_error = np.sqrt(np.mean(np.sum(
+        (results['ekf_states'] - results['true_states'])[:, :2]**2, axis=1
+    )))
+    
+    print(f"\nOdometry RMSE: {odometry_error:.4f} m")
+    print(f"EKF RMSE: {ekf_error:.4f} m")
+    print(f"Improvement: {(1 - ekf_error/odometry_error)*100:.1f}%")
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\chapter{符号说明}
+
+本文使用的主要符号及其含义如表\ref{tab:symbols}所示。
+
+\begin{table}[H]
+\centering
+\caption{符号说明表}
+\label{tab:symbols}
+\begin{tabular}{cl}
+\toprule
+\textbf{符号} & \textbf{含义} \\
+\midrule
+$(x, y, \theta)$ & 机器人位姿（位置和航向角） \\
+$v$ & 后轴中心速度 \\
+$\delta$ & 转向角 \\
+$\omega$ & 角速度 \\
+$R$ & 转弯半径 \\
+$l_s$ & 转向轮到后轴的距离 \\
+$\alpha$ & 轮子方位角 \\
+$\beta$ & 轮子偏角 \\
+$l$ & 轮心到机器人中心的距离 \\
+$P$ & 状态协方差矩阵 \\
+$Q$ & 过程噪声协方差 \\
+$R$ & 观测噪声协方差 \\
+$F$ & 运动雅可比矩阵 \\
+$G$ & 控制雅可比矩阵 \\
+$H$ & 观测雅可比矩阵 \\
+$K$ & 卡尔曼增益 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

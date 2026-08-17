@@ -1,0 +1,990 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\lstset{
+    language=Python,
+    basicstyle=\tiny\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    tabsize=4,
+    showstringspaces=false
+}
+
+\title{\textbf{强化学习第五次作业}}
+\author{2312167-刘振毫}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{摘要}
+\addcontentsline{toc}{section}{摘要}
+
+本实验实现了两种时序差分(Temporal Difference, TD)学习方法求解CartPole马尔可夫决策过程问题：SARSA算法和Q-learning算法。实验基于OpenAI Gym的CartPole-v1环境，通过离散化状态空间构建MDP模型，分别实现了两种TD控制算法，并对它们的性能进行了全面比较。实验结果表明，Q-learning算法在真实环境评估中表现更优，平均回合奖励达到445.33，而SARSA算法的平均奖励为247.24。Q-learning作为off-policy方法，能够直接学习最优策略，收敛到更高的状态值函数；SARSA作为on-policy方法，考虑实际执行的动作，策略更加保守。本报告详细分析了两种方法的理论基础、实现细节和性能差异，为强化学习中TD方法的应用提供了重要参考。
+
+\textbf{关键词：}时序差分学习；SARSA；Q-learning；小车倒立摆；on-policy；off-policy
+
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+This experiment implements two Temporal Difference (TD) learning methods to solve the CartPole Markov Decision Process problem: SARSA algorithm and Q-learning algorithm. Based on the OpenAI Gym CartPole-v1 environment, the experiment constructs an MDP model by discretizing the state space, implements two TD control algorithms, and comprehensively compares their performance. Experimental results show that the Q-learning algorithm performs better in real environment evaluation, achieving an average episode reward of 445.33, while the SARSA algorithm achieves an average reward of 247.24. Q-learning, as an off-policy method, can directly learn the optimal policy and converge to a higher state value function; SARSA, as an on-policy method, considers the actually executed actions and has a more conservative policy. This report provides detailed analysis of the theoretical foundations, implementation details, and performance differences of the two methods, offering important references for the application of TD methods in reinforcement learning.
+
+\textbf{Key Words:} Temporal Difference Learning; SARSA; Q-learning; CartPole; on-policy; off-policy
+
+\newpage
+
+\section{实验目的}
+
+本实验旨在通过实现和比较两种时序差分学习方法，深入理解强化学习中无模型控制算法的核心原理和应用场景。具体目标包括：
+
+\begin{enumerate}
+    \item 掌握时序差分学习的基本原理，理解其结合蒙特卡洛和动态规划的优势
+    \item 理解SARSA算法的on-policy特性和更新机制
+    \item 掌握Q-learning算法的off-policy特性和更新机制
+    \item 分析比较两种方法在更新公式、收敛性、风险偏好等方面的差异
+    \item 通过小车倒立摆问题验证算法的有效性
+    \item 理解探索策略($\varepsilon$-greedy)对学习效果的影响
+\end{enumerate}
+
+\section{实验原理}
+
+\subsection{时序差分学习概述}
+
+时序差分学习是强化学习中最核心的方法之一，它结合了蒙特卡洛(MC)方法和动态规划(DP)的优点：
+
+\begin{itemize}
+    \item \textbf{像MC方法}：不需要环境的完整模型，可以从实际经验中学习
+    \item \textbf{像DP方法}：不需要等到回合结束才更新，可以逐步增量式更新
+\end{itemize}
+
+TD方法的核心思想是使用当前估计值来更新前一时刻的估计值，这种方法称为自举(Bootstrapping)。
+
+\subsection{小车倒立摆问题}
+
+小车倒立摆是一个经典的控制问题，目标是通过左右移动小车使杆子保持直立。状态空间包含四个连续变量：
+\begin{itemize}
+    \item 小车位置$x \in [-2.4, 2.4]$
+    \item 小车速度$\dot{x} \in [-\infty, +\infty]$
+    \item 杆子角度$\theta \in [-12°, 12°]$
+    \item 杆子角速度$\dot{\theta} \in [-\infty, +\infty]$
+\end{itemize}
+
+动作空间为离散的两个动作：向左推(0)和向右推(1)。每坚持一步获得奖励+1，杆子倾倒或小车出界则回合结束。
+
+\subsection{状态离散化}
+
+由于TD方法需要离散状态空间，本实验采用均匀分箱方法将连续状态离散化。对于每个状态维度，将其划分为$n\_bins$个区间，状态总数为$n\_bins^4$。离散化函数定义如下：
+
+\begin{equation}
+s = f(x, \dot{x}, \theta, \dot{\theta}) = \sum_{i=0}^{3} idx_i \cdot n\_bins^{3-i}
+\end{equation}
+
+其中$idx_i$为第$i$个状态维度的离散索引。
+
+\subsection{SARSA算法}
+
+SARSA(State-Action-Reward-State-Action)是一种on-policy的TD控制算法。其名称来源于更新所需的五元组$(S_t, A_t, R_{t+1}, S_{t+1}, A_{t+1})$。
+
+\subsubsection{更新公式}
+
+SARSA的Q值更新公式为：
+
+\begin{equation}
+Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha [R_{t+1} + \gamma Q(S_{t+1}, A_{t+1}) - Q(S_t, A_t)]
+\end{equation}
+
+其中：
+\begin{itemize}
+    \item $\alpha$是学习率，控制更新的步长
+    \item $\gamma$是折扣因子，平衡即时奖励和长期奖励
+    \item $A_{t+1}$是在状态$S_{t+1}$下\textbf{实际选择}的动作
+\end{itemize}
+
+\subsubsection{算法流程}
+
+\begin{enumerate}
+    \item 初始化Q(s,a)为任意值
+    \item 对每个回合：
+    \begin{itemize}
+        \item 初始化状态S
+        \item 使用当前策略选择动作A（如$\varepsilon$-greedy）
+        \item 对每一步：
+        \begin{itemize}
+            \item 执行动作A，观察R和S'
+            \item 使用当前策略选择动作A'
+            \item 更新Q(S,A)
+            \item $S \leftarrow S'$，$A \leftarrow A'$
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{On-policy特性}
+
+SARSA是on-policy方法，意味着：
+\begin{itemize}
+    \item 用于生成数据的策略与被改进的策略相同
+    \item 更新时使用的是\textbf{实际执行}的下一个动作$A'$
+    \item 如果使用$\varepsilon$-greedy策略，则学习到的是$\varepsilon$-soft最优策略
+\end{itemize}
+
+\subsection{Q-learning算法}
+
+Q-learning是一种off-policy的TD控制算法，由Watkins在1989年提出。它能够直接学习最优策略，而不考虑探索行为。
+
+\subsubsection{更新公式}
+
+Q-learning的Q值更新公式为：
+
+\begin{equation}
+Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha [R_{t+1} + \gamma \max_a Q(S_{t+1}, a) - Q(S_t, A_t)]
+\end{equation}
+
+其中：
+\begin{itemize}
+    \item $\max_a Q(S_{t+1}, a)$是在状态$S_{t+1}$下所有可能动作的最大Q值
+    \item 不考虑实际选择的动作，直接使用最优估计
+\end{itemize}
+
+\subsubsection{算法流程}
+
+\begin{enumerate}
+    \item 初始化Q(s,a)为任意值
+    \item 对每个回合：
+    \begin{itemize}
+        \item 初始化状态S
+        \item 对每一步：
+        \begin{itemize}
+            \item 使用行为策略（如$\varepsilon$-greedy）选择动作A
+            \item 执行动作A，观察R和S'
+            \item 更新Q(S,A)使用$\max_a Q(S',a)$
+            \item $S \leftarrow S'$
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Off-policy特性}
+
+Q-learning是off-policy方法，意味着：
+\begin{itemize}
+    \item 行为策略（用于生成数据）与目标策略（被评估的策略）不同
+    \item 行为策略通常是$\varepsilon$-greedy，用于探索
+    \item 目标策略是贪婪策略，直接学习最优值函数
+    \item 可以从任意策略产生的数据中学习
+\end{itemize}
+
+\subsection{$\varepsilon$-greedy探索策略}
+
+两种算法都使用$\varepsilon$-greedy策略来平衡探索和利用：
+
+\begin{equation}
+\pi(a|s) = \begin{cases}
+1 - \varepsilon + \frac{\varepsilon}{|A|} & \text{if } a = \arg\max_a Q(s,a) \\
+\frac{\varepsilon}{|A|} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+本实验使用衰减的$\varepsilon$值，从$\varepsilon_{start}=1.0$逐渐衰减到$\varepsilon_{end}=0.01$，衰减率为0.999。这种设计使得算法在初期进行充分探索，后期逐渐收敛到贪婪策略。
+
+\subsection{两种算法的关键区别}
+
+\begin{table}[H]
+\centering
+\caption{SARSA与Q-learning的关键区别}
+\begin{tabular}{p{3cm}p{5cm}p{5cm}}
+\toprule
+\textbf{特性} & \textbf{SARSA} & \textbf{Q-learning} \\
+\midrule
+策略类型 & On-policy（同策略） & Off-policy（异策略） \\
+\midrule
+更新目标 & $R + \gamma Q(S', A')$ & $R + \gamma \max_a Q(S', a)$ \\
+\midrule
+使用的下一动作 & 实际选择的$A'$ & 最优动作$\arg\max_a Q(S', a)$ \\
+\midrule
+收敛策略 & $\varepsilon$-soft最优策略 & 最优策略$\pi^*$ \\
+\midrule
+保守程度 & 更保守（考虑探索风险） & 更激进（假设最优行为） \\
+\midrule
+方差 & 较低 & 较高 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{实验环境与设置}
+
+\subsection{实验参数设置}
+
+\begin{table}[H]
+\centering
+\caption{实验参数设置}
+\begin{tabular}{lcc}
+\toprule
+\textbf{参数名称} & \textbf{参数值} & \textbf{说明} \\
+\midrule
+n\_bins & 8 & 每个状态维度的离散区间数 \\
+n\_states & 4096 & 总状态数($8^4$) \\
+n\_actions & 2 & 动作数(左/右) \\
+$\gamma$ & 0.99 & 折扣因子 \\
+$\alpha$ & 0.1 & 学习率 \\
+n\_episodes & 3000 & 训练回合数 \\
+$\varepsilon_{start}$ & 1.0 & 初始探索率 \\
+$\varepsilon_{end}$ & 0.01 & 最终探索率 \\
+$\varepsilon_{decay}$ & 0.999 & 探索率衰减 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{代码实现与分析}
+
+\subsection{MDP环境构建}
+
+MDP环境类\texttt{CartPoleDiscreteMDP}负责将连续的CartPole环境转换为离散MDP。关键实现包括：
+
+\begin{enumerate}
+    \item \textbf{状态离散化}：将连续状态映射到离散区间
+    \item \textbf{状态边界处理}：使用\texttt{np.clip}确保状态在合理范围内
+    \item \textbf{索引计算}：将四维离散状态映射到一维索引
+\end{enumerate}
+
+\begin{lstlisting}[language=Python]
+class CartPoleDiscreteMDP:
+    def __init__(self, n_bins=8, gamma=0.99):
+        self.n_bins = n_bins
+        self.gamma = gamma
+        self.n_actions = 2
+        self.state_bounds = [
+            (-2.4, 2.4),    # 小车位置
+            (-3.0, 3.0),    # 小车速度
+            (-0.5, 0.5),    # 杆子角度
+            (-2.0, 2.0)     # 杆子角速度
+        ]
+        self.n_states = n_bins ** 4
+    
+    def discretize_state(self, state):
+        discretized = []
+        for i, (s, (low, high)) in enumerate(zip(state, self.state_bounds)):
+            s = np.clip(s, low, high)
+            bin_width = (high - low) / self.n_bins
+            discretized.append(int((s - low) / bin_width))
+            discretized[-1] = min(discretized[-1], self.n_bins - 1)
+        
+        index = 0
+        for i, d in enumerate(discretized):
+            index = index * self.n_bins + d
+        return index
+\end{lstlisting}
+
+\subsection{SARSA算法实现}
+
+\texttt{SARSA}类实现了on-policy TD控制算法。核心更新逻辑如下：
+
+\begin{lstlisting}[language=Python]
+class SARSA:
+    def __init__(self, mdp, gamma=0.99, alpha=0.1, epsilon=0.1):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.history = {'episodes': [], 'rewards': [], 'values': []}
+    
+    def choose_action(self, s):
+        if np.random.random() < self.epsilon:
+            return np.random.randint(0, self.n_actions)
+        else:
+            return np.argmax(self.Q[s])
+    
+    def run(self, n_episodes=5000, epsilon_start=1.0, epsilon_end=0.01, 
+            epsilon_decay=0.999):
+        env = gym.make('CartPole-v1')
+        epsilon = epsilon_start
+        
+        for episode_idx in range(n_episodes):
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+            self.epsilon = epsilon
+            
+            state, _ = env.reset()
+            s = self.mdp.discretize_state(state)
+            a = self.choose_action(s)
+            done = False
+            truncated = False
+            total_reward = 0
+            
+            while not (done or truncated):
+                next_state, reward, done, truncated, _ = env.step(a)
+                next_s = self.mdp.discretize_state(next_state)
+                next_a = self.choose_action(next_s)
+                
+                # SARSA更新：使用实际选择的下一个动作
+                self.Q[s, a] += self.alpha * (
+                    reward + self.gamma * self.Q[next_s, next_a] - self.Q[s, a]
+                )
+                
+                s = next_s
+                a = next_a
+                total_reward += reward
+\end{lstlisting}
+
+关键点：
+\begin{itemize}
+    \item 在执行动作前就选择下一个动作$A'$
+    \item 更新Q值时使用实际选择的$Q(S', A')$
+    \item 体现了on-policy特性：学习的是实际执行的策略
+\end{itemize}
+
+\subsection{Q-learning算法实现}
+
+\texttt{QLearning}类实现了off-policy TD控制算法。核心更新逻辑如下：
+
+\begin{lstlisting}[language=Python]
+class QLearning:
+    def __init__(self, mdp, gamma=0.99, alpha=0.1, epsilon=0.1):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.history = {'episodes': [], 'rewards': [], 'values': []}
+    
+    def choose_action(self, s):
+        if np.random.random() < self.epsilon:
+            return np.random.randint(0, self.n_actions)
+        else:
+            return np.argmax(self.Q[s])
+    
+    def run(self, n_episodes=5000, epsilon_start=1.0, epsilon_end=0.01, 
+            epsilon_decay=0.999):
+        env = gym.make('CartPole-v1')
+        epsilon = epsilon_start
+        
+        for episode_idx in range(n_episodes):
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+            self.epsilon = epsilon
+            
+            state, _ = env.reset()
+            s = self.mdp.discretize_state(state)
+            done = False
+            truncated = False
+            total_reward = 0
+            
+            while not (done or truncated):
+                a = self.choose_action(s)
+                next_state, reward, done, truncated, _ = env.step(a)
+                next_s = self.mdp.discretize_state(next_state)
+                
+                # Q-learning更新：使用最大Q值
+                self.Q[s, a] += self.alpha * (
+                    reward + self.gamma * np.max(self.Q[next_s]) - self.Q[s, a]
+                )
+                
+                s = next_s
+                total_reward += reward
+\end{lstlisting}
+
+关键点：
+\begin{itemize}
+    \item 不需要提前选择下一个动作
+    \item 更新Q值时使用$\max_a Q(S', a)$
+    \item 体现了off-policy特性：学习的是最优策略，而非行为策略
+\end{itemize}
+
+\subsection{策略评估函数}
+
+\texttt{evaluate\_policy}函数在真实CartPole环境中评估学习到的策略：
+
+\begin{lstlisting}[language=Python]
+def evaluate_policy(mdp, policy, n_episodes=100):
+    env = gym.make('CartPole-v1')
+    total_rewards = []
+    
+    for _ in range(n_episodes):
+        state, _ = env.reset()
+        episode_reward = 0
+        done = False
+        truncated = False
+        
+        while not (done or truncated):
+            s = mdp.discretize_state(state)
+            if np.sum(policy[s]) > 0:
+                action = np.random.choice(mdp.n_actions, p=policy[s])
+            else:
+                action = np.argmax(policy[s])
+            state, reward, done, truncated, _ = env.step(action)
+            episode_reward += reward
+            
+        total_rewards.append(episode_reward)
+    
+    env.close()
+    return np.mean(total_rewards), np.std(total_rewards)
+\end{lstlisting}
+
+\section{实验结果与分析}
+
+\subsection{训练过程分析}
+
+两种方法的训练过程数据如表\ref{tab:training}所示。
+
+\begin{table}[H]
+\centering
+\caption{两种TD方法训练过程数据}
+\label{tab:training}
+\begin{tabular}{cccccc}
+\toprule
+\textbf{方法} & \textbf{回合数} & \textbf{$\varepsilon$} & \textbf{回合奖励} & \textbf{平均V值} & \textbf{运行时间(s)} \\
+\midrule
+\multirow{6}{*}{SARSA} & 500 & 0.6064 & 52.0 & 0.1617 & \multirow{6}{*}{9.65} \\
+ & 1000 & 0.3677 & 32.0 & 0.3670 & \\
+ & 1500 & 0.2230 & 43.0 & 0.5905 & \\
+ & 2000 & 0.1352 & 64.0 & 0.8486 & \\
+ & 2500 & 0.0820 & 209.0 & 1.0564 & \\
+ & 3000 & 0.0497 & 172.0 & 1.2361 & \\
+\midrule
+\multirow{6}{*}{Q-learning} & 500 & 0.6064 & 34.0 & 0.2229 & \multirow{6}{*}{11.12} \\
+ & 1000 & 0.3677 & 70.0 & 0.5961 & \\
+ & 1500 & 0.2230 & 51.0 & 0.9492 & \\
+ & 2000 & 0.1352 & 107.0 & 1.3019 & \\
+ & 2500 & 0.0820 & 25.0 & 1.4867 & \\
+ & 3000 & 0.0497 & 493.0 & 1.7708 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{真实环境评估结果}
+
+在真实CartPole-v1环境中评估100回合，结果如表\ref{tab:evaluation}所示。
+
+\begin{table}[H]
+\centering
+\caption{真实环境评估结果}
+\label{tab:evaluation}
+\begin{tabular}{lccc}
+\toprule
+\textbf{方法} & \textbf{平均奖励} & \textbf{标准差} & \textbf{最大可能奖励} \\
+\midrule
+SARSA & 247.24 & 110.63 & 500 \\
+Q-learning & \textbf{445.33} & 73.65 & 500 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{可视化结果分析}
+
+图\ref{fig:comparison}展示了两种TD方法的详细比较结果，包括学习曲线、真实环境评估、状态值分布以及策略可视化。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{sarsa_vs_qlearning.png}
+\caption{SARSA与Q-learning比较分析图}
+\label{fig:comparison}
+\end{figure}
+
+从图中可以观察到：
+
+\begin{enumerate}
+    \item \textbf{学习曲线-平均状态值}：Q-learning的平均状态值增长更快，最终达到1.77，而SARSA为1.24。这表明Q-learning学习到了更优的值函数。
+    
+    \item \textbf{学习曲线-奖励}：Q-learning在后期回合中获得了更高的奖励，特别是在第3000回合达到了493的奖励，接近环境上限500。
+    
+    \item \textbf{真实环境评估}：Q-learning的平均奖励(445.33)显著高于SARSA(247.24)，且标准差更小(73.65 vs 110.63)，说明策略更稳定。
+    
+    \item \textbf{状态值分布}：Q-learning的状态值分布整体更偏向高值区域，说明学习到的策略质量更高。
+    
+    \item \textbf{策略可视化}：两种方法学习到的策略在角度-角速度平面上都呈现出清晰的决策边界，但Q-learning的策略更加一致和稳定。
+\end{enumerate}
+
+\subsection{性能对比总结}
+
+\begin{table}[H]
+\centering
+\caption{两种TD方法性能对比}
+\begin{tabular}{lcc}
+\toprule
+\textbf{指标} & \textbf{SARSA} & \textbf{Q-learning} \\
+\midrule
+运行时间(s) & 9.65 & 11.12 \\
+平均V值 & 1.2361 & 1.7708 \\
+最大V值 & 64.15 & 84.75 \\
+真实环境平均奖励 & 247.24 & \textbf{445.33} \\
+真实环境标准差 & 110.63 & \textbf{73.65} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{结果讨论}
+
+\subsection{Q-learning表现更优的原因}
+
+Q-learning在真实环境评估中表现显著优于SARSA，主要原因包括：
+
+\begin{enumerate}
+    \item \textbf{直接学习最优策略}：Q-learning的更新目标是$\max_a Q(S', a)$，直接估计最优值函数，不受探索行为的影响。
+    
+    \item \textbf{更激进的值估计}：使用最大Q值作为目标，使得Q值估计更乐观，鼓励智能体探索高价值区域。
+    
+    \item \textbf{off-policy优势}：可以从任意策略产生的数据中学习，数据利用效率更高。
+    
+    \item \textbf{收敛到最优策略}：理论上保证收敛到最优策略$\pi^*$，而非$\varepsilon$-soft策略。
+\end{enumerate}
+
+\subsection{SARSA表现相对保守的原因}
+
+SARSA的平均奖励较低但方差较大，主要原因包括：
+
+\begin{enumerate}
+    \item \textbf{考虑探索风险}：SARSA使用实际选择的动作更新Q值，如果探索时选择了次优动作，Q值会相应降低。
+    
+    \item \textbf{学习$\varepsilon$-soft策略}：收敛到的是考虑探索的策略，而非完全贪婪的最优策略。
+    
+    \item \textbf{更保守的值估计}：实际执行的探索动作可能不是最优的，导致Q值估计更保守。
+    
+    \item \textbf{对探索策略敏感}：学习效果受$\varepsilon$-greedy策略的探索率影响较大。
+\end{enumerate}
+
+\subsection{两种方法的适用场景}
+
+\subsubsection{SARSA适用场景}
+
+\begin{itemize}
+    \item \textbf{风险敏感环境}：在悬崖行走等环境中，SARSA会学习更安全的路径
+    \item \textbf{在线学习}：当学习过程本身就是实际应用过程时
+    \item \textbf{探索成本高}：当探索可能导致严重后果时，SARSA的保守性更有价值
+\end{itemize}
+
+\subsubsection{Q-learning适用场景}
+
+\begin{itemize}
+    \item \textbf{仿真环境}：可以在安全环境中充分探索
+    \item \textbf{追求最优性能}：需要找到理论最优策略
+    \item \textbf{离线学习}：从历史数据中学习最优策略
+    \item \textbf{计算资源充足}：可以进行大量探索
+\end{itemize}
+
+\subsection{探索策略的影响}
+
+两种方法都使用$\varepsilon$-greedy探索策略，探索率从1.0衰减到0.01：
+
+\begin{itemize}
+    \item \textbf{初期($\varepsilon \approx 1.0$)}：几乎完全随机探索，两种方法差异不大
+    \item \textbf{中期($\varepsilon \approx 0.2$)}：探索与利用平衡，Q-learning开始展现优势
+    \item \textbf{后期($\varepsilon \approx 0.01$)}：接近贪婪策略，Q-learning的优势更加明显
+\end{itemize}
+
+\subsection{收敛性分析}
+
+\begin{itemize}
+    \item \textbf{Q-learning}：在满足一定条件下（如Robbins-Monro条件），以概率1收敛到最优Q函数
+    \item \textbf{SARSA}：收敛到$\varepsilon$-soft最优策略，即在该探索策略下的最优策略
+\end{itemize}
+
+从实验结果看，Q-learning的平均V值(1.77)高于SARSA(1.24)，验证了Q-learning收敛到更优值函数的理论。
+
+\section{结论}
+
+本实验成功实现了两种时序差分学习方法求解小车倒立摆MDP问题，并通过实验验证了各方法的特点：
+
+\begin{enumerate}
+    \item \textbf{Q-learning算法}在真实环境评估中表现最优，平均奖励达到445.33，接近环境上限500。作为off-policy方法，它能够直接学习最优策略，收敛到更高的状态值函数，适合仿真环境和追求最优性能的场景。
+    
+    \item \textbf{SARSA算法}平均奖励为247.24，标准差110.63。作为on-policy方法，它考虑实际执行的动作，策略更加保守，适合风险敏感环境和在线学习场景。
+    
+    \item 两种方法都使用$\varepsilon$-greedy探索策略，探索率从1.0衰减到0.01，在初期充分探索，后期逐渐收敛。
+    
+    \item 实验结果验证了理论分析：Q-learning收敛到最优策略，SARSA收敛到$\varepsilon$-soft最优策略。
+\end{enumerate}
+
+实验结果表明，在实际应用中应根据具体场景选择合适的方法：如果环境安全且追求最优性能，Q-learning是更好的选择；如果探索成本高或需要考虑风险，SARSA的保守性更有价值。两种方法都是强化学习中重要的基础算法，为后续更复杂的算法（如Deep Q-Network、Actor-Critic等）奠定了基础。
+
+\newpage
+
+\appendix
+
+\section{完整代码}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+import time
+
+rcParams['font.sans-serif'] = ['SimHei']
+rcParams['axes.unicode_minus'] = False
+
+try:
+    import gymnasium as gym
+except ImportError:
+    import gym
+
+
+class CartPoleDiscreteMDP:
+    def __init__(self, n_bins=8, gamma=0.99):
+        self.n_bins = n_bins
+        self.gamma = gamma
+        self.n_actions = 2
+        self.state_bounds = [
+            (-2.4, 2.4),
+            (-3.0, 3.0),
+            (-0.5, 0.5),
+            (-2.0, 2.0)
+        ]
+        self.n_states = n_bins ** 4
+    
+    def discretize_state(self, state):
+        discretized = []
+        for i, (s, (low, high)) in enumerate(zip(state, self.state_bounds)):
+            s = np.clip(s, low, high)
+            bin_width = (high - low) / self.n_bins
+            discretized.append(int((s - low) / bin_width))
+            discretized[-1] = min(discretized[-1], self.n_bins - 1)
+        
+        index = 0
+        for i, d in enumerate(discretized):
+            index = index * self.n_bins + d
+        return index
+    
+    def continuous_state(self, index):
+        state = []
+        temp = index
+        for i in range(4):
+            state.append(temp % self.n_bins)
+            temp = temp // self.n_bins
+        state = state[::-1]
+        
+        continuous = []
+        for i, (d, (low, high)) in enumerate(zip(state, self.state_bounds)):
+            bin_width = (high - low) / self.n_bins
+            continuous.append(low + (d + 0.5) * bin_width)
+        return continuous
+
+
+class SARSA:
+    def __init__(self, mdp, gamma=0.99, alpha=0.1, epsilon=0.1):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.history = {'episodes': [], 'rewards': [], 'values': []}
+    
+    def choose_action(self, s):
+        if np.random.random() < self.epsilon:
+            return np.random.randint(0, self.n_actions)
+        else:
+            return np.argmax(self.Q[s])
+    
+    def run(self, n_episodes=5000, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.999):
+        print("  开始SARSA算法...")
+        
+        env = gym.make('CartPole-v1')
+        epsilon = epsilon_start
+        
+        for episode_idx in range(n_episodes):
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+            self.epsilon = epsilon
+            
+            state, _ = env.reset()
+            s = self.mdp.discretize_state(state)
+            a = self.choose_action(s)
+            done = False
+            truncated = False
+            total_reward = 0
+            
+            while not (done or truncated):
+                next_state, reward, done, truncated, _ = env.step(a)
+                next_s = self.mdp.discretize_state(next_state)
+                next_a = self.choose_action(next_s)
+                
+                self.Q[s, a] += self.alpha * (
+                    reward + self.gamma * self.Q[next_s, next_a] - self.Q[s, a]
+                )
+                
+                s = next_s
+                a = next_a
+                total_reward += reward
+                
+                if total_reward > 500:
+                    break
+            
+            if (episode_idx + 1) % 100 == 0:
+                V = np.max(self.Q, axis=1)
+                self.history['episodes'].append(episode_idx + 1)
+                self.history['rewards'].append(total_reward)
+                self.history['values'].append(np.mean(V))
+                print(f"    回合 {episode_idx + 1}, ε={epsilon:.4f}, 奖励={total_reward}, 平均V={np.mean(V):.4f}")
+        
+        env.close()
+        
+        for s in range(self.n_states):
+            best_action = np.argmax(self.Q[s])
+            self.policy[s] = np.zeros(self.n_actions)
+            self.policy[s, best_action] = 1.0
+        
+        V = np.max(self.Q, axis=1)
+        return self.policy, V, self.Q
+
+
+class QLearning:
+    def __init__(self, mdp, gamma=0.99, alpha=0.1, epsilon=0.1):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.history = {'episodes': [], 'rewards': [], 'values': []}
+    
+    def choose_action(self, s):
+        if np.random.random() < self.epsilon:
+            return np.random.randint(0, self.n_actions)
+        else:
+            return np.argmax(self.Q[s])
+    
+    def run(self, n_episodes=5000, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.999):
+        print("  开始Q-learning算法...")
+        
+        env = gym.make('CartPole-v1')
+        epsilon = epsilon_start
+        
+        for episode_idx in range(n_episodes):
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+            self.epsilon = epsilon
+            
+            state, _ = env.reset()
+            s = self.mdp.discretize_state(state)
+            done = False
+            truncated = False
+            total_reward = 0
+            
+            while not (done or truncated):
+                a = self.choose_action(s)
+                next_state, reward, done, truncated, _ = env.step(a)
+                next_s = self.mdp.discretize_state(next_state)
+                
+                self.Q[s, a] += self.alpha * (
+                    reward + self.gamma * np.max(self.Q[next_s]) - self.Q[s, a]
+                )
+                
+                s = next_s
+                total_reward += reward
+                
+                if total_reward > 500:
+                    break
+            
+            if (episode_idx + 1) % 100 == 0:
+                V = np.max(self.Q, axis=1)
+                self.history['episodes'].append(episode_idx + 1)
+                self.history['rewards'].append(total_reward)
+                self.history['values'].append(np.mean(V))
+                print(f"    回合 {episode_idx + 1}, ε={epsilon:.4f}, 奖励={total_reward}, 平均V={np.mean(V):.4f}")
+        
+        env.close()
+        
+        for s in range(self.n_states):
+            best_action = np.argmax(self.Q[s])
+            self.policy[s] = np.zeros(self.n_actions)
+            self.policy[s, best_action] = 1.0
+        
+        V = np.max(self.Q, axis=1)
+        return self.policy, V, self.Q
+
+
+def evaluate_policy(mdp, policy, n_episodes=100):
+    env = gym.make('CartPole-v1')
+    total_rewards = []
+    
+    for _ in range(n_episodes):
+        state, _ = env.reset()
+        episode_reward = 0
+        done = False
+        truncated = False
+        
+        while not (done or truncated):
+            s = mdp.discretize_state(state)
+            if np.sum(policy[s]) > 0:
+                action = np.random.choice(mdp.n_actions, p=policy[s])
+            else:
+                action = np.argmax(policy[s])
+            state, reward, done, truncated, _ = env.step(action)
+            episode_reward += reward
+            
+        total_rewards.append(episode_reward)
+    
+    env.close()
+    return np.mean(total_rewards), np.std(total_rewards)
+
+
+def compare_methods(mdp, n_episodes=5000):
+    print("SARSA vs Q-learning 比较")
+    
+    results = {}
+    
+    print("\n[1/2] SARSA算法...")
+    t0 = time.time()
+    sarsa = SARSA(mdp)
+    sarsa_policy, sarsa_V, sarsa_Q = sarsa.run(n_episodes=n_episodes)
+    sarsa_time = time.time() - t0
+    results['SARSA'] = {
+        'policy': sarsa_policy, 'V': sarsa_V, 'Q': sarsa_Q,
+        'time': sarsa_time, 'history': sarsa.history
+    }
+    
+    print("\n[2/2] Q-learning算法...")
+    t0 = time.time()
+    qlearning = QLearning(mdp)
+    q_policy, q_V, q_Q = qlearning.run(n_episodes=n_episodes)
+    q_time = time.time() - t0
+    results['Q-learning'] = {
+        'policy': q_policy, 'V': q_V, 'Q': q_Q,
+        'time': q_time, 'history': qlearning.history
+    }
+    
+    print("两种方法性能比较")
+    print(f"\n{'方法':<20} {'运行时间(s)':<15} {'平均V值':<15} {'最大V值':<15}")
+    print("-" * 70)
+    for name, res in results.items():
+        print(f"{name:<20} {res['time']:<15.2f} {np.mean(res['V']):<15.4f} {np.max(res['V']):<15.4f}")
+    
+    print("\n正在真实环境中评估策略（100回合）...")
+    print(f"\n{'方法':<20} {'平均奖励':<15} {'标准差':<15}")
+    print("-" * 70)
+    for name, res in results.items():
+        mean_r, std_r = evaluate_policy(mdp, res['policy'], n_episodes=100)
+        print(f"{name:<20} {mean_r:<15.2f} {std_r:<15.2f}")
+        results[name]['eval_reward'] = (mean_r, std_r)
+    
+    return results
+
+
+def plot_comparison(results, mdp):
+    fig = plt.figure(figsize=(16, 10))
+    fig.suptitle('SARSA vs Q-learning 比较分析', fontsize=16, fontweight='bold')
+    
+    colors = {'SARSA': 'blue', 'Q-learning': 'red'}
+    labels_cn = {'SARSA': 'SARSA', 'Q-learning': 'Q-learning'}
+    
+    ax1 = fig.add_subplot(2, 3, 1)
+    for name, res in results.items():
+        if res['history']['episodes']:
+            ax1.plot(res['history']['episodes'], res['history']['values'],
+                    color=colors[name], label=labels_cn[name], linewidth=2)
+    ax1.set_xlabel('回合数', fontsize=12)
+    ax1.set_ylabel('平均状态值', fontsize=12)
+    ax1.set_title('学习曲线 - 平均状态值', fontsize=13)
+    ax1.legend(fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    
+    ax2 = fig.add_subplot(2, 3, 2)
+    for name, res in results.items():
+        if res['history']['episodes']:
+            window = 10
+            smoothed = np.convolve(res['history']['rewards'], np.ones(window)/window, mode='valid')
+            episodes = res['history']['episodes'][:len(smoothed)]
+            ax2.plot(episodes, smoothed,
+                    color=colors[name], label=labels_cn[name], linewidth=2)
+    ax2.set_xlabel('回合数', fontsize=12)
+    ax2.set_ylabel('平均奖励', fontsize=12)
+    ax2.set_title('学习曲线 - 奖励（平滑后）', fontsize=13)
+    ax2.legend(fontsize=10)
+    ax2.grid(True, alpha=0.3)
+    
+    ax3 = fig.add_subplot(2, 3, 3)
+    method_names = list(results.keys())
+    eval_rewards = [results[name]['eval_reward'][0] for name in method_names]
+    eval_stds = [results[name]['eval_reward'][1] for name in method_names]
+    x_pos = np.arange(len(method_names))
+    bars = ax3.bar(x_pos, eval_rewards, yerr=eval_stds,
+                   color=[colors[n] for n in method_names], alpha=0.7, capsize=5)
+    ax3.set_xticks(x_pos)
+    ax3.set_xticklabels([labels_cn[n] for n in method_names], fontsize=11)
+    ax3.set_ylabel('平均回合奖励', fontsize=12)
+    ax3.set_title('真实环境评估结果', fontsize=13)
+    ax3.grid(True, alpha=0.3, axis='y')
+    
+    ax4 = fig.add_subplot(2, 3, 4)
+    for name, res in results.items():
+        V = res['V']
+        ax4.hist(V, bins=50, alpha=0.5, label=labels_cn[name], color=colors[name])
+    ax4.set_xlabel('状态值', fontsize=12)
+    ax4.set_ylabel('状态数量', fontsize=12)
+    ax4.set_title('状态值分布', fontsize=13)
+    ax4.legend(fontsize=10)
+    ax4.grid(True, alpha=0.3)
+    
+    nb = mdp.n_bins
+    method_list = list(results.keys())
+    for idx, name in enumerate(method_list):
+        ax = fig.add_subplot(2, 3, 5 + idx)
+        policy = results[name]['policy']
+        angle_action = np.full((nb, nb), np.nan)
+        for i in range(nb):
+            for j in range(nb):
+                s = (nb // 2) * nb ** 3 + (nb // 2) * nb ** 2 + i * nb + j
+                if s < mdp.n_states:
+                    angle_action[i, j] = np.argmax(policy[s])
+        
+        im = ax.imshow(angle_action, cmap='RdYlGn', aspect='equal', vmin=0, vmax=1)
+        ax.set_title(f'{labels_cn[name]}策略', fontsize=12)
+        ax.set_xlabel('角速度索引', fontsize=10)
+        ax.set_ylabel('角度索引', fontsize=10)
+        cbar = plt.colorbar(im, ax=ax, ticks=[0, 1])
+        cbar.set_label('动作 (绿=右, 红=左)', fontsize=9)
+    
+    plt.tight_layout()
+    save_path = 'sarsa_vs_qlearning.png'
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.show()
+    print(f"\n比较图已保存至: {save_path}")
+
+def main():
+    print("SARSA和Q-learning求解小车倒立摆问题")
+
+    mdp = CartPoleDiscreteMDP(n_bins=8)
+    
+    print(f"\n【MDP环境设置】")
+    print(f"  离散化bin数: {mdp.n_bins}")
+    print(f"  总状态数: {mdp.n_states}")
+    print(f"  动作数: {mdp.n_actions}")
+    print(f"  折扣因子γ: {mdp.gamma}")
+    
+    results = compare_methods(mdp, n_episodes=3000)
+    
+    plot_comparison(results, mdp)
+
+if __name__ == "__main__":
+    main()
+
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,887 @@
+\documentclass[a4paper,12pt]{ctexart}
+
+\usepackage{fontspec}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\geometry{top=2.54cm, bottom=2.54cm, left=3.17cm, right=3.17cm}
+
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setCJKmainfont{SimSun}[BoldFont=SimHei, ItalicFont=KaiTi]
+\setCJKsansfont{SimHei}
+\setCJKmonofont{FangSong}
+
+\setlength{\parindent}{2em}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+\lstset{
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{blue},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\fontsize{10.5pt}{12.6pt}\selectfont,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  frame=single,
+  language=Python,
+  xleftmargin=2em,
+  xrightmargin=2em,
+}
+
+\captionsetup[figure]{font=small, labelfont=small, justification=centering}
+\captionsetup[table]{font=small, labelfont=small, justification=centering}
+
+\titleformat{\section}
+  {\centering\bfseries\fontsize{16pt}{16pt}\selectfont\heiti}
+  {第\chinese{section}章\quad}
+  {0em}
+  {}
+
+\titleformat{\subsection}
+  {\bfseries\fontsize{14pt}{14pt}\selectfont\heiti}
+  {\thesubsection\quad}
+  {0em}
+  {}
+
+\titleformat{\subsubsection}
+  {\bfseries\fontsize{13pt}{13pt}\selectfont\heiti}
+  {\thesubsubsection\quad}
+  {0em}
+  {}
+
+\titlespacing*{\section}{0pt}{24pt}{18pt}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+\newcommand{\bodytext}{\fontsize{12pt}{20pt}\selectfont\setlength{\parskip}{0pt}}
+
+\begin{document}
+
+% ======================== 封面 ========================
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\fontsize{26pt}{30pt}\selectfont\heiti\bfseries 机器人导论实验报告}
+
+\vspace{1.5cm}
+
+{\fontsize{18pt}{22pt}\selectfont\heiti 基于MoveIt2 Jazzy的Panda机械臂\\点位与轨迹控制系统}
+
+\vspace{3cm}
+
+\begin{spacing}{2.0}
+{\fontsize{14pt}{20pt}\selectfont\songti
+\begin{tabular}{rl}
+课程名称： & 机器人导论实验 \\
+\end{tabular}}
+\end{spacing}
+
+\vspace{1cm}
+
+\begin{spacing}{2.0}
+{\fontsize{14pt}{20pt}\selectfont\songti
+\begin{tabular}{rl}
+姓\qquad 名： & \underline{刘振毫\hspace{6cm}} \\
+学\qquad 号： & \underline{2312167\hspace{6cm}} \\
+日\qquad 期： & \underline{2026.5.31\hspace{6cm}} \\
+\end{tabular}}
+\end{spacing}
+
+\vfill
+
+\end{titlepage}
+
+% ======================== 目录 ========================
+\newpage
+\tableofcontents
+\newpage
+
+% ======================== 中文摘要 ========================
+\begin{center}
+  {\bfseries\fontsize{18pt}{18pt}\selectfont\heiti 摘\quad 要}
+\end{center}
+\vspace{18pt}
+
+{\fontsize{12pt}{20pt}\selectfont
+本文基于ROS 2 Jazzy与MoveIt 2.12框架，设计并实现了一套Franka Emika Panda机械臂点位与轨迹控制系统。系统采用moveit\_py作为Python接口，在仿真环境下实现了空间六点位依次到达、8字形利萨如曲线轨迹和椭圆参数曲线轨迹三种运动模式。针对MoveIt2 Jazzy版本中moveit\_py API的重大变更，本文详细分析了set\_pose\_target()移除、compute\_cartesian\_path()缺失、planning\_pipelines配置格式错误、plan\_request\_参数缺失、Panda初始位置自碰撞、execute()签名变化及轨迹可视化重复等七项兼容性问题，并给出了相应的解决方案。通过逐点顺序OMPL规划与路径下采样策略，在RViz中实现了规划路径的实时可视化与机械臂的平滑轨迹跟踪。实验结果表明，该系统能够稳定完成多种轨迹运动任务，为基于最新MoveIt2框架的机械臂控制开发提供了可复用的技术参考。
+}
+
+\vspace{6pt}
+{\fontsize{12pt}{20pt}\selectfont
+\textbf{关键词：}Panda机械臂；MoveIt2；ROS 2 Jazzy；moveit\_py；轨迹规划；运动控制
+}
+
+\vspace{24pt}
+
+
+% ======================== 正文 ========================
+
+\section{绪论}
+
+\bodytext
+
+机器人技术作为现代制造业和智能装备的核心支撑，在工业生产、医疗辅助、服务交互等领域发挥着日益重要的作用。机械臂作为机器人系统中最典型的操作机构，其运动控制精度与轨迹规划能力直接决定了系统的实用性与可靠性。随着开源机器人软件生态的快速发展，基于ROS（Robot Operating System）平台的机械臂控制系统已成为学术界与工业界的研究热点。
+
+MoveIt是ROS生态中最主流的运动规划框架，集成了运动学求解、碰撞检测、轨迹优化等核心功能，为机械臂的路径规划与运动控制提供了完整的软件栈。2024年，ROS 2 Jazzy版本正式发布，配套的MoveIt 2.12版本对Python接口moveit\_py进行了大规模重构，引入了诸多API变更，导致大量基于旧版moveit\_commander的代码无法直接迁移运行。这一现状给基于最新框架的机械臂控制开发带来了显著挑战。
+
+Franka Emika Panda是一款广泛用于科研与教学的7自由度协作机械臂，其轻量化设计与高精度力控能力使其成为运动控制算法验证的理想平台。本文基于ROS 2 Jazzy与MoveIt 2.12，以Panda机械臂为研究对象，设计并实现了一套点位与轨迹控制系统，重点解决了moveit\_py新API下的兼容性问题，实现了空间点位控制、8字形轨迹和椭圆轨迹三种运动模式，并在RViz中实现了规划路径的实时可视化。
+
+本文的主要工作包括：（1）搭建基于ROS 2 Jazzy的Panda机械臂仿真环境；（2）基于moveit\_py设计并实现机械臂点位与轨迹控制器；（3）分析并解决MoveIt2 Jazzy版本下七项关键兼容性问题；（4）通过实验验证系统的功能正确性与运动稳定性。
+
+\section{系统环境与配置}
+
+\subsection{软件环境}
+
+\bodytext
+
+本项目的开发与运行依赖于特定的软件环境，各组件版本要求如表\ref{tab:env}所示。
+
+\begin{table}[htbp]
+\centering
+\caption{系统环境要求}
+\label{tab:env}
+\begin{tabular}{ll}
+\toprule
+项目 & 说明 \\
+\midrule
+操作系统 & Ubuntu 24.04 (Noble Numbat) \\
+ROS 2 & Jazzy Jalisco \\
+MoveIt & 2.12.x \\
+硬件模式 & 仿真模式 (mock\_components) \\
+GPU & 可选（无NVIDIA GPU需配置软件渲染） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+ROS 2 Jazzy是ROS 2的第十一个正式发行版，针对Ubuntu 24.04 LTS进行了深度优化。MoveIt 2.12作为配套版本，对Python绑定层进行了重大重构，以moveit\_py替代了旧版的moveit\_commander接口。仿真模式采用ros2\_control提供的mock\_components，无需连接真实机械臂即可完成全部功能验证。
+
+\subsection{依赖安装}
+
+\bodytext
+
+系统依赖主要包括ROS 2核心包、MoveIt运动规划框架、消息定义包以及可视化工具等。核心依赖包及其功能说明如表\ref{tab:deps}所示。
+
+\begin{table}[htbp]
+\centering
+\caption{核心依赖包}
+\label{tab:deps}
+\begin{tabular}{ll}
+\toprule
+包名 & 功能 \\
+\midrule
+ros-jazzy-rclpy & ROS 2 Python客户端库 \\
+ros-jazzy-moveit & MoveIt运动规划框架 \\
+ros-jazzy-moveit-py & MoveIt Python绑定 (moveit\_py) \\
+ros-jazzy-moveit-configs-utils & MoveIt配置加载工具 \\
+ros-jazzy-moveit-msgs & MoveIt消息定义 \\
+ros-jazzy-geometry-msgs & 几何消息类型 (PoseStamped, Point) \\
+ros-jazzy-visualization-msgs & 可视化消息类型 (Marker) \\
+ros-jazzy-tf-transformations & 坐标变换 (欧拉角$\to$四元数) \\
+ros-jazzy-rviz2 & 3D可视化工具 \\
+ros-jazzy-ros2-control & 机器人控制器框架 \\
+ros-jazzy-ros2-controllers & 标准控制器集合 \\
+ros-jazzy-joint-trajectory-controller & 关节轨迹控制器 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+通过rosdep工具可自动检查并安装工作空间中的缺失依赖，命令如下：
+
+\begin{lstlisting}[language=bash, caption={依赖安装命令}]
+rosdep install --from-paths src --ignore-src -r -y
+\end{lstlisting}
+
+\subsection{工作空间构建}
+
+\bodytext
+
+项目采用标准ROS 2工作空间结构，通过colcon构建系统进行编译。使用\texttt{-{}-symlink-install}参数建立符号链接，使得Python脚本修改后无需重新编译即可生效，显著提升了开发效率。工作空间目录结构如下：
+
+\begin{lstlisting}[language={}, caption={项目目录结构}]
+my_robot_control/
+  my_robot_control/
+    __init__.py
+    panda_controller.py     # 主控制器
+  test/
+    test_copyright.py
+    test_flake8.py
+    test_pep257.py
+  resource/
+    my_robot_control
+  setup.py
+  setup.cfg
+  package.xml
+\end{lstlisting}
+
+环境变量配置需在\texttt{\textasciitilde/.bashrc}中添加ROS 2与工作空间的source路径，并设置RMW实现为FastRTPS以获得最佳通信性能。对于无NVIDIA GPU或驱动异常的环境，需额外设置\texttt{LIBGL\_ALWAYS\_SOFTWARE=1}和\texttt{\_\_GLX\_VENDOR\_LIBRARY\_NAME=mesa}以启用CPU软件渲染，确保RViz正常运行。
+
+\section{系统设计与实现}
+
+\subsection{控制器总体架构}
+
+\bodytext
+
+Panda机械臂控制器采用面向对象的设计模式，以ROS 2节点为基类构建\texttt{PandaController}类。该类封装了MoveItPy实例的创建与配置、规划组件的管理、轨迹的可视化发布以及多种运动模式的实现逻辑。控制器总体架构如图\ref{fig:arch}所示。
+
+\begin{figure}[htbp]
+\centering
+\begin{tabular}{c}
+\toprule
+\textbf{PandaController (ROS 2 Node)} \\
+\midrule
+MoveItPy 实例创建与配置 \\
+PlanningComponent 管理 \\
+AllowedCollisionMatrix 设置 \\
+\midrule
+轨迹可视化 (DisplayTrajectory + Marker) \\
+\midrule
+go\_to\_pose() \quad go\_through\_poses() \quad follow\_cartesian\_path() \\
+\midrule
+demo\_six\_points() \quad demo\_eight\_shape() \quad demo\_ellipse() \\
+\bottomrule
+\end{tabular}
+\caption{PandaController总体架构}
+\label{fig:arch}
+\end{figure}
+
+控制器的初始化流程包括四个关键步骤：（1）通过MoveItConfigsBuilder加载Panda官方配置并生成配置字典；（2）修正Jazzy版本下的配置格式问题；（3）创建MoveItPy核心实例；（4）设置允许碰撞矩阵以解决自碰撞问题。
+
+\subsection{MoveItPy配置与初始化}
+
+\bodytext
+
+MoveItPy的配置初始化是整个系统最关键的环节。由于Jazzy版本的API变更，配置过程需要对默认生成的参数进行多项修正。配置加载与修正的核心代码如下：
+
+\begin{lstlisting}[language=Python, caption={MoveItPy配置加载与修正}]
+moveit_config = (
+    MoveItConfigsBuilder(
+        robot_name="panda",
+        package_name="moveit_resources_panda_moveit_config",
+    )
+    .planning_pipelines(pipelines=["ompl"])
+    .to_moveit_configs()
+)
+config_dict = moveit_config.to_dict()
+pp = moveit_config.planning_pipelines
+
+config_dict["planning_pipelines"] = {
+    "pipeline_names": pp["planning_pipelines"],
+    "namespace": "",
+}
+
+config_dict["plan_request_params"] = {
+    "planning_pipeline": "ompl",
+    "planning_attempts": 10,
+    "planning_time": 5.0,
+    "max_velocity_scaling_factor": 1.0,
+    "max_acceleration_scaling_factor": 1.0,
+}
+\end{lstlisting}
+
+上述代码中，\texttt{planning\_pipelines}的嵌套字典格式修正和\texttt{plan\_request\_params}的补充是确保MoveItPy正常启动的必要条件，具体原因将在第四章详细分析。
+
+\subsection{允许碰撞矩阵设置}
+
+\bodytext
+
+Panda机械臂在默认"ready"关节配置下，panda\_hand与panda\_link5、panda\_link5与panda\_link7之间存在轻微几何干涉。若不处理，OMPL规划器会判定初始状态无效而拒绝规划。解决方案是通过AllowedCollisionMatrix（ACM）将上述连杆对标记为允许碰撞：
+
+\begin{lstlisting}[language=Python, caption={允许碰撞矩阵设置}]
+def _setup_acm(self):
+    psm = self.moveit.get_planning_scene_monitor()
+    with psm.read_write() as scene:
+        acm = scene.allowed_collision_matrix
+        acm.set_entry("panda_hand", "panda_link5", True)
+        acm.set_entry("panda_link5", "panda_link7", True)
+\end{lstlisting}
+
+需要指出的是，上述"碰撞"仅存在于仿真模型的几何层面，在真实Panda机械臂上这些连杆对之间具有足够的运动间隙，不会发生实际碰撞。因此，该设置不会带来安全隐患。
+
+\subsection{核心运动控制函数}
+
+\subsubsection{单点位姿控制}
+
+\bodytext
+
+\texttt{go\_to\_pose()}函数是所有运动控制的基础，实现从当前位姿到目标位姿的单次规划与执行。其工作流程为：（1）创建PoseStamped目标消息，指定参考坐标系为panda\_link0（基座坐标系）；（2）通过tf\_transformations将欧拉角转换为四元数表示姿态；（3）设置规划起点为当前状态，终点为目标位姿；（4）调用OMPL进行运动规划；（5）规划成功则发布轨迹可视化并执行。
+
+\begin{lstlisting}[language=Python, caption={单点位姿控制核心代码}]
+def go_to_pose(self, x, y, z, roll=0.0, pitch=0.0, yaw=0.0):
+    pose_stamped = PoseStamped()
+    pose_stamped.header.frame_id = "panda_link0"
+    pose_stamped.pose.position.x = x
+    pose_stamped.pose.position.y = y
+    pose_stamped.pose.position.z = z
+    q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
+    pose_stamped.pose.orientation.x = q[0]
+    pose_stamped.pose.orientation.y = q[1]
+    pose_stamped.pose.orientation.z = q[2]
+    pose_stamped.pose.orientation.w = q[3]
+
+    self.arm.set_start_state_to_current_state()
+    self.arm.set_goal_state(
+        pose_stamped_msg=pose_stamped, pose_link=self.eef_link
+    )
+    plan_result = self.arm.plan()
+    if plan_result and plan_result.trajectory:
+        self._display_trajectory(plan_result)
+        self.moveit.execute(plan_result.trajectory, [])
+    else:
+        self.get_logger().error("Planning failed for this pose")
+\end{lstlisting}
+
+位姿表示采用位置$(x, y, z)$加姿态欧拉角$(roll, pitch, yaw)$的方式，内部转换为四元数$(q_x, q_y, q_z, q_w)$以避免万向锁问题并提高计算效率。
+
+\subsubsection{多路径点顺序运动}
+
+\bodytext
+
+\texttt{go\_through\_poses()}函数接收一组PoseStamped路径点列表，依次对每个路径点调用规划与执行。关键设计在于每次规划前都调用\texttt{set\_start\_state\_to\_current\_state()}将起点设为机械臂当前实际状态，而非上一条规划的终点。这一设计有效避免了执行误差的累积，确保长路径运动的可靠性。
+
+\subsubsection{近似笛卡尔路径跟随}
+
+\bodytext
+
+\texttt{follow\_cartesian\_path()}函数实现了近似笛卡尔空间路径跟随功能。由于Jazzy版本的moveit\_py不支持\texttt{compute\_cartesian\_path()}方法，本系统采用路径下采样策略：首先生成密集的笛卡尔路径点，然后按指定的\texttt{eef\_step}步长进行距离采样，最后将采样后的路径点交给\texttt{go\_through\_poses()}逐点执行OMPL规划。
+
+下采样算法的核心逻辑为：遍历所有路径点，计算相邻点之间的欧氏距离并累加；当累积距离达到\texttt{eef\_step}阈值时，将该点加入采样列表并重置累积值；同时确保最后一个路径点始终被包含，以保证机械臂精确到达终点。该策略在步长足够小（如5mm）时，能够产生视觉上平滑的连续曲线运动。
+
+\subsection{轨迹可视化}
+
+\bodytext
+
+系统实现了两种轨迹可视化机制。第一种通过\texttt{/display\_planned\_path}话题发布DisplayTrajectory消息，在RViz中显示MoveIt规划出的关节空间轨迹对应的机械臂运动动画。第二种通过\texttt{/trajectory\_marker}话题发布Marker消息，以LINE\_STRIP类型绘制绿色的期望笛卡尔路径线。
+
+对于第二种可视化方式，一个重要的细节是指尖偏移补偿。Panda机械臂的panda\_hand坐标系原点位于手部根部，而实际可见的指尖位于原点前方0.11米处。因此，在构建Marker点集时需在$z$方向叠加0.11m的偏移量，使RViz中显示的轨迹线与指尖实际运动路径精确对齐。
+
+\section{MoveIt2 Jazzy兼容性问题与解决方案}
+
+\bodytext
+
+MoveIt 2.12（Jazzy配套版本）对moveit\_py进行了大规模API重构，导致大量旧版代码无法直接运行。本章详细分析开发过程中遇到的七项关键兼容性问题及其解决方案。
+
+\subsection{set\_pose\_target()方法移除}
+
+\bodytext
+
+旧版moveit\_commander中，PlanningComponent提供\texttt{set\_pose\_target(pose)}方法直接设置目标位姿。在Jazzy版本的moveit\_py中，该方法已被移除，取而代之的是\texttt{set\_goal\_state()}方法。
+
+解决方案：改用\texttt{set\_goal\_state()}配合PoseStamped消息设置目标位姿，同时必须指定\texttt{pose\_link}参数为末端执行器链接名称（如"panda\_hand"），且PoseStamped消息必须包含有效的\texttt{header.frame\_id}。对比代码如下：
+
+\begin{lstlisting}[language=Python, caption={set\_pose\_target()替换方案}]
+# 旧版 (Humble/Iron)
+self.arm.set_pose_target(pose)
+
+# 新版 (Jazzy)
+self.arm.set_goal_state(
+    pose_stamped_msg=pose_stamped,
+    pose_link="panda_hand"
+)
+\end{lstlisting}
+
+\subsection{compute\_cartesian\_path()方法缺失}
+
+\bodytext
+
+PlanningComponent在Jazzy的moveit\_py中未提供笛卡尔路径规划接口\texttt{compute\_cartesian\_path()}，无法直接生成末端执行器沿直线路径运动的轨迹。
+
+解决方案：采用逐点顺序OMPL规划策略替代笛卡尔路径规划。通过将期望的连续曲线离散化为密集路径点，并设置较小的\texttt{eef\_step}参数进行下采样控制路径点密度，最终由\texttt{go\_through\_poses()}逐点执行OMPL规划。虽然单次OMPL规划的路径不保证严格沿笛卡尔直线，但在步长足够小时，整体运动轨迹与期望曲线的偏差可控制在可接受范围内。
+
+\subsection{planning\_pipelines配置格式错误}
+
+\bodytext
+
+MoveItConfigsBuilder的\texttt{to\_dict()}方法生成的\texttt{planning\_pipelines}字段为扁平列表格式\texttt{["ompl"]}，而MoveItPy内部的moveit\_cpp模块要求嵌套字典格式。直接使用默认配置会导致"Failed to load planning pipelines from parameter server"错误。
+
+解决方案：将\texttt{planning\_pipelines}重构为包含\texttt{pipeline\_names}和\texttt{namespace}字段的嵌套字典：
+
+\begin{lstlisting}[language=Python, caption={planning\_pipelines格式修正}]
+config_dict["planning_pipelines"] = {
+    "pipeline_names": ["ompl"],
+    "namespace": "",
+}
+\end{lstlisting}
+
+\subsection{plan\_request\_params参数缺失}
+
+\bodytext
+
+调用\texttt{plan()}方法时不指定planning pipeline名称时，默认使用空字符串，导致"No planning pipeline available for name ''"错误。这是因为Jazzy版本要求在配置中显式声明全局规划请求参数。
+
+解决方案：在配置字典中添加\texttt{plan\_request\_params}字段，指定默认规划管线、规划尝试次数、规划时间限制以及速度和加速度缩放因子：
+
+\begin{lstlisting}[language=Python, caption={plan\_request\_params配置}]
+config_dict["plan_request_params"] = {
+    "planning_pipeline": "ompl",
+    "planning_attempts": 10,
+    "planning_time": 5.0,
+    "max_velocity_scaling_factor": 1.0,
+    "max_acceleration_scaling_factor": 1.0,
+}
+\end{lstlisting}
+
+\subsection{Panda初始位置自碰撞}
+
+\bodytext
+
+Panda仿真模型在默认"ready"关节配置下，panda\_hand与panda\_link5、panda\_link5与panda\_link7之间存在几何干涉。OMPL规划器的CheckStartStateCollision适配器会检测到该碰撞，判定初始状态无效并输出"Skipping invalid start state (invalid state)"警告，导致规划失败。
+
+解决方案分两步：第一步，通过AllowedCollisionMatrix将相关连杆对标记为允许碰撞（见3.3节）；第二步，从OMPL的request\_adapters列表中移除CheckStartStateCollision适配器，避免对初始状态进行碰撞检查：
+
+\begin{lstlisting}[language=Python, caption={移除碰撞检查适配器}]
+if "ompl" in config_dict and "request_adapters" in config_dict["ompl"]:
+    config_dict["ompl"]["request_adapters"] = [
+        a for a in config_dict["ompl"]["request_adapters"]
+        if "CheckStartStateCollision" not in a
+    ]
+\end{lstlisting}
+
+\subsection{execute()方法签名变化}
+
+\bodytext
+
+旧版MoveIt的\texttt{execute()}方法支持\texttt{blocking}布尔参数控制是否阻塞等待执行完成。Jazzy版本中，该参数已被移除，且pybind11绑定中默认参数不可用，必须显式传递\texttt{controllers}参数。
+
+解决方案：将\texttt{execute()}调用从\texttt{execute(trajectory, blocking=True)}改为\texttt{execute(trajectory, [])}，其中空列表表示使用默认控制器。
+
+\subsection{轨迹可视化重复}
+
+\bodytext
+
+MoveIt默认的DisplayMotionPath响应适配器会自动发布规划轨迹的可视化消息，与系统自定义的Marker可视化产生重复显示，影响RViz中的观察效果。
+
+解决方案：从OMPL的response\_adapters列表中移除DisplayMotionPath适配器，改用自定义的Marker.LINE\_STRIP消息在RViz中绘制绿色轨迹线，并通过0.11m的指尖偏移量确保轨迹线与实际指尖路径对齐：
+
+\begin{lstlisting}[language=Python, caption={移除默认轨迹显示适配器}]
+if "ompl" in config_dict and "response_adapters" in config_dict["ompl"]:
+    config_dict["ompl"]["response_adapters"] = [
+        a for a in config_dict["ompl"]["response_adapters"]
+        if "DisplayMotionPath" not in a
+    ]
+\end{lstlisting}
+
+\section{运动模式实现}
+
+\subsection{六点位折线运动}
+
+\bodytext
+
+六点位折线运动模式通过\texttt{demo\_six\_points()}函数实现，预定义6个空间目标点位，机械臂依次到达各点形成折线路径。各点位坐标如表\ref{tab:sixpts}所示。
+
+\begin{table}[htbp]
+\centering
+\caption{六点位坐标（单位：m，参考坐标系：panda\_link0）}
+\label{tab:sixpts}
+\begin{tabular}{cccc}
+\toprule
+点序号 & $x$ & $y$ & $z$ \\
+\midrule
+1 & 0.4 & 0.0 & 0.6 \\
+2 & 0.4 & 0.1 & 0.6 \\
+3 & 0.4 & 0.1 & 0.7 \\
+4 & 0.3 & 0.0 & 0.7 \\
+5 & 0.3 & $-0.1$ & 0.7 \\
+6 & 0.3 & $-0.1$ & 0.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+该模式主要用于验证单点位姿控制与多路径点顺序执行的基本功能。6个点位分布在机械臂工作空间的前方区域，$x$坐标范围0.3--0.4m，$y$坐标范围$-0.1$--0.1m，$z$坐标范围0.6--0.7m，均在Panda的安全工作空间内。
+
+\subsection{8字形轨迹运动}
+
+\bodytext
+
+8字形轨迹（Lemniscate）基于利萨如曲线的参数方程生成。利萨如曲线是两个正交方向上正弦振动的合成，当频率比为$1:2$时形成8字形。本系统采用的参数方程为：
+
+\begin{equation}
+\label{eq:eight}
+\begin{cases}
+x(t) = c_x + r \sin(t) \\
+z(t) = c_z + \dfrac{r}{2} \sin(2t)
+\end{cases}
+\quad t \in [0, 2\pi]
+\end{equation}
+
+其中$c_x = 0.4$、$c_z = 0.6$为轨迹中心坐标，$r = 0.08$m为8字形半径。角度步长为0.1弧度，共生成63个路径点，配合5mm的eef\_step下采样步长，实现平滑的8字形运动。
+
+\subsection{椭圆轨迹运动}
+
+\bodytext
+
+椭圆轨迹基于标准椭圆参数方程生成：
+
+\begin{equation}
+\label{eq:ellipse}
+\begin{cases}
+x(t) = c_x + a \cos(t) \\
+z(t) = c_z + b \sin(t)
+\end{cases}
+\quad t \in [0, 2\pi]
+\end{equation}
+
+其中$a = 0.1$m为长半轴，$b = 0.05$m为短半轴，轨迹中心与8字形相同。椭圆轨迹的生成方式与8字形类似，同样采用0.1弧度步长和5mm下采样步长。
+
+\section{实验结果与分析}
+
+\subsection{实验环境与步骤}
+
+\bodytext
+
+实验在Ubuntu 24.04系统上完成，具体步骤如下：
+
+（1）终端1启动仿真环境：执行\texttt{ros2 launch moveit\_resources\_panda\_moveit\_config demo.launch.py}，启动RViz可视化界面、move\_group运动规划节点和ros2\_control仿真控制器。
+
+（2）终端2运行控制器：执行\texttt{ros2 run my\_robot\_control panda\_controller}，启动PandaController节点，自动执行预设的运动模式。
+
+（3）在RViz中观察机械臂运动过程与轨迹可视化效果。
+
+\subsection{六点位运动实验}
+
+\bodytext
+
+六点位折线运动实验中，机械臂从初始"ready"姿态出发，依次到达6个预定义空间点位。实验结果表明，6个点位均规划成功，机械臂沿OMPL规划的路径平滑运动至各目标点。由于每次规划前都将起点设为当前实际状态，各段运动之间未出现误差累积现象。在RViz中，绿色轨迹线清晰显示了6个点位之间的折线路径。
+
+\subsection{8字形轨迹实验}
+
+\bodytext
+
+8字形轨迹实验中，63个原始路径点经5mm步长下采样后，实际执行的路径点数量根据曲线弧长自动确定。机械臂沿8字形路径运动一周，在轨迹交叉处能够正确通过。由于采用逐点OMPL规划而非笛卡尔路径插值，相邻路径点之间的实际运动路径可能存在轻微偏离，但在5mm步长下该偏离量在视觉上不可察觉，整体运动呈现平滑的8字形。
+
+\subsection{椭圆轨迹实验}
+
+\bodytext
+
+椭圆轨迹实验结果与8字形类似，机械臂沿椭圆路径完成一周运动。由于椭圆曲率变化较8字形更为平缓，规划成功率更高，运动更加流畅。在长半轴端点处速度略低，短半轴端点处速度略高，符合椭圆弧长分布的物理直觉。
+
+\subsection{兼容性问题验证}
+
+\bodytext
+
+七项兼容性问题的解决方案均通过实验验证。在未应用任何修正的情况下，MoveItPy无法正常启动或规划失败；逐项应用修正后，系统功能恢复正常。各问题的影响与解决效果汇总如表\ref{tab:compat}所示。
+
+\begin{table}[htbp]
+\centering
+\caption{MoveIt2 Jazzy兼容性问题汇总}
+\label{tab:compat}
+\fontsize{10.5pt}{16pt}\selectfont
+\begin{tabular}{p{3.8cm}p{3.8cm}p{4.5cm}}
+\toprule
+问题 & 影响 & 解决方案 \\
+\midrule
+set\_pose\_target()移除 & 无法设置目标位姿 & 改用set\_goal\_state()配合PoseStamped \\
+compute\_cartesian\_path()缺失 & 无法进行笛卡尔路径规划 & 逐点OMPL规划+路径下采样 \\
+planning\_pipelines格式错误 & MoveItPy启动失败 & 重构为嵌套字典格式 \\
+plan\_request\_params缺失 & 规划管线名称为空报错 & 添加全局规划请求参数 \\
+Panda初始位置自碰撞 & 初始状态无效，规划失败 & ACM豁免+移除碰撞检查适配器 \\
+execute()签名变化 & 执行失败 & 传递controllers参数为空列表 \\
+轨迹可视化重复 & RViz显示混乱 & 移除DisplayMotionPath适配器 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{总结与展望}
+
+\bodytext
+
+本文基于ROS 2 Jazzy与MoveIt 2.12框架，设计并实现了Panda机械臂的点位与轨迹控制系统。系统采用moveit\_py作为Python接口，在仿真环境下实现了空间六点位控制、8字形利萨如曲线轨迹和椭圆参数曲线轨迹三种运动模式，并在RViz中实现了规划路径的实时可视化。针对MoveIt2 Jazzy版本的七项关键API兼容性问题，本文给出了详细的解决方案，为基于最新MoveIt2框架的机械臂控制开发提供了可复用的技术参考。
+
+本系统目前仍存在以下局限性：（1）逐点OMPL规划的效率低于笛卡尔路径插值，在路径点密集时规划耗时较长；（2）近似笛卡尔路径跟随的精度受限于OMPL规划的自由度，无法保证严格的笛卡尔直线运动；（3）系统仅在仿真环境下验证，尚未在真实Panda机械臂上测试。
+
+未来工作可从以下方向展开：（1）探索moveit\_py中笛卡尔路径规划的新接口，提升轨迹跟踪精度与规划效率；（2）引入力控与视觉感知，实现更复杂的操作任务；（3）将系统扩展至真实Panda机械臂，验证在物理环境下的控制性能与安全性；（4）研究动态避障与实时轨迹重规划，增强系统在非结构化环境中的适应能力。
+
+\appendix
+
+\section{Panda机械臂控制器完整源代码}
+
+\bodytext
+
+以下为\texttt{panda\_controller.py}的完整源代码，基于ROS 2 Jazzy与MoveIt 2.12的moveit\_py接口实现。
+
+\begin{lstlisting}[language=Python, caption={panda\_controller.py完整源代码}]
+#!/usr/bin/env python3
+
+import math
+import rclpy
+from rclpy.node import Node
+
+from geometry_msgs.msg import Point, PoseStamped
+from moveit.planning import MoveItPy
+from moveit_configs_utils import MoveItConfigsBuilder
+from moveit_msgs.msg import DisplayTrajectory
+from visualization_msgs.msg import Marker
+import tf_transformations
+
+
+class PandaController(Node):
+    def __init__(self):
+        super().__init__("panda_controller")
+        self.get_logger().info("Initializing MoveItPy...")
+
+        moveit_config = (
+            MoveItConfigsBuilder(
+                robot_name="panda",
+                package_name="moveit_resources_panda_moveit_config",
+            )
+            .planning_pipelines(pipelines=["ompl"])
+            .to_moveit_configs()
+        )
+
+        config_dict = moveit_config.to_dict()
+        pp = moveit_config.planning_pipelines
+
+        config_dict["planning_pipelines"] = {
+            "pipeline_names": pp["planning_pipelines"],
+            "namespace": "",
+        }
+
+        config_dict["plan_request_params"] = {
+            "planning_pipeline": "ompl",
+            "planning_attempts": 10,
+            "planning_time": 5.0,
+            "max_velocity_scaling_factor": 1.0,
+            "max_acceleration_scaling_factor": 1.0,
+        }
+
+        if "ompl" in config_dict and "request_adapters" in config_dict["ompl"]:
+            config_dict["ompl"]["request_adapters"] = [
+                a for a in config_dict["ompl"]["request_adapters"]
+                if "CheckStartStateCollision" not in a
+            ]
+
+        if "ompl" in config_dict and "response_adapters" in config_dict["ompl"]:
+            config_dict["ompl"]["response_adapters"] = [
+                a for a in config_dict["ompl"]["response_adapters"]
+                if "DisplayMotionPath" not in a
+            ]
+
+        self.moveit = MoveItPy(node_name="moveit_py", config_dict=config_dict)
+        self.arm = self.moveit.get_planning_component("panda_arm")
+        self.eef_link = "panda_hand"
+
+        self._display_pub = self.create_publisher(
+            DisplayTrajectory, "/display_planned_path", 10
+        )
+        self._marker_pub = self.create_publisher(
+            Marker, "/trajectory_marker", 10
+        )
+
+        self._setup_acm()
+        self.get_logger().info("Panda Controller Ready")
+
+    def _setup_acm(self):
+        psm = self.moveit.get_planning_scene_monitor()
+        with psm.read_write() as scene:
+            acm = scene.allowed_collision_matrix
+            acm.set_entry("panda_hand", "panda_link5", True)
+            acm.set_entry("panda_link5", "panda_link7", True)
+            self.get_logger().info(
+                "Added self-collision exceptions to ACM"
+            )
+
+    def _display_trajectory(self, plan_result):
+        display_msg = DisplayTrajectory()
+        display_msg.model_id = "panda"
+        display_msg.trajectory.append(
+            plan_result.trajectory.get_robot_trajectory_msg()
+        )
+        self._display_pub.publish(display_msg)
+
+    def _publish_path_marker(self, waypoints):
+        marker = Marker()
+        marker.header.frame_id = "panda_link0"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "desired_path"
+        marker.id = 0
+        marker.type = Marker.LINE_STRIP
+        marker.action = Marker.ADD
+        marker.scale.x = 0.003
+        marker.color.a = 1.0
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+
+        finger_offset = 0.11
+        for wp in waypoints:
+            p = wp.pose.position
+            marker.points.append(
+                Point(x=p.x, y=p.y, z=p.z + finger_offset)
+            )
+        self._marker_pub.publish(marker)
+        self.get_logger().info(
+            f"Published path marker with {len(waypoints)} points"
+        )
+
+    def go_to_pose(self, x, y, z, roll=0.0, pitch=0.0, yaw=0.0):
+        pose_stamped = PoseStamped()
+        pose_stamped.header.frame_id = "panda_link0"
+        pose_stamped.pose.position.x = x
+        pose_stamped.pose.position.y = y
+        pose_stamped.pose.position.z = z
+
+        q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
+        pose_stamped.pose.orientation.x = q[0]
+        pose_stamped.pose.orientation.y = q[1]
+        pose_stamped.pose.orientation.z = q[2]
+        pose_stamped.pose.orientation.w = q[3]
+
+        self.arm.set_start_state_to_current_state()
+        self.arm.set_goal_state(
+            pose_stamped_msg=pose_stamped, pose_link=self.eef_link
+        )
+
+        plan_result = self.arm.plan()
+
+        if plan_result and plan_result.trajectory:
+            self.get_logger().info("Plan succeeded, executing...")
+            self._display_trajectory(plan_result)
+            self.moveit.execute(plan_result.trajectory, [])
+        else:
+            self.get_logger().error("Planning failed for this pose")
+
+    def go_through_poses(self, poses_stamped):
+        for i, pose_stamped in enumerate(poses_stamped):
+            self.get_logger().info(f"Moving to waypoint {i + 1}")
+            self.arm.set_start_state_to_current_state()
+            self.arm.set_goal_state(
+                pose_stamped_msg=pose_stamped, pose_link=self.eef_link
+            )
+            plan_result = self.arm.plan()
+            if plan_result and plan_result.trajectory:
+                self._display_trajectory(plan_result)
+                self.moveit.execute(plan_result.trajectory, [])
+            else:
+                self.get_logger().error(
+                    f"Planning failed at waypoint {i + 1}"
+                )
+                break
+
+    def follow_cartesian_path(self, waypoints, eef_step=0.01,
+                              jump_threshold=0.0):
+        self._publish_path_marker(waypoints)
+
+        if eef_step <= 0:
+            sampled_waypoints = waypoints
+        else:
+            sampled_waypoints = []
+            accumulated = 0.0
+            prev = None
+
+            for wp in waypoints:
+                if prev is not None:
+                    dx = wp.pose.position.x - prev.pose.position.x
+                    dy = wp.pose.position.y - prev.pose.position.y
+                    dz = wp.pose.position.z - prev.pose.position.z
+                    accumulated += math.sqrt(
+                        dx * dx + dy * dy + dz * dz
+                    )
+
+                    if accumulated >= eef_step:
+                        sampled_waypoints.append(wp)
+                        accumulated = 0.0
+                else:
+                    sampled_waypoints.append(wp)
+                prev = wp
+
+            if sampled_waypoints[-1] is not waypoints[-1]:
+                sampled_waypoints.append(waypoints[-1])
+
+        self.get_logger().info(
+            f"Following path with {len(sampled_waypoints)} waypoints"
+        )
+        self.go_through_poses(sampled_waypoints)
+
+    def demo_six_points(self):
+        waypoints = [
+            self._create_pose_stamped(0.4, 0.0, 0.6),
+            self._create_pose_stamped(0.4, 0.1, 0.6),
+            self._create_pose_stamped(0.4, 0.1, 0.7),
+            self._create_pose_stamped(0.3, 0.0, 0.7),
+            self._create_pose_stamped(0.3, -0.1, 0.7),
+            self._create_pose_stamped(0.3, -0.1, 0.6),
+        ]
+        self._publish_path_marker(waypoints)
+        self.go_through_poses(waypoints)
+
+    def demo_eight_shape(self):
+        waypoints = []
+        radius = 0.08
+        cx, cy, cz = 0.4, 0.0, 0.6
+
+        for angle in range(0, 628, 10):
+            t = angle / 100.0
+            x = cx + radius * math.sin(t)
+            z = cz + radius * math.sin(2 * t) * 0.5
+            waypoints.append(self._create_pose_stamped(x, cy, z))
+
+        self.follow_cartesian_path(waypoints, eef_step=0.005)
+
+    def demo_ellipse(self):
+        waypoints = []
+        a, b = 0.1, 0.05
+        cx, cy, cz = 0.4, 0.0, 0.6
+
+        for angle in range(0, 628, 10):
+            t = angle / 100.0
+            x = cx + a * math.cos(t)
+            z = cz + b * math.sin(t)
+            waypoints.append(self._create_pose_stamped(x, cy, z))
+
+        self.follow_cartesian_path(waypoints, eef_step=0.005)
+
+    def _create_pose_stamped(self, x, y, z, roll=0.0, pitch=0.0,
+                             yaw=0.0):
+        pose_stamped = PoseStamped()
+        pose_stamped.header.frame_id = "panda_link0"
+        pose_stamped.pose.position.x = x
+        pose_stamped.pose.position.y = y
+        pose_stamped.pose.position.z = z
+        q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
+        pose_stamped.pose.orientation.x = q[0]
+        pose_stamped.pose.orientation.y = q[1]
+        pose_stamped.pose.orientation.z = q[2]
+        pose_stamped.pose.orientation.w = q[3]
+        return pose_stamped
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    controller = PandaController()
+
+    controller.demo_six_points()
+    # controller.demo_eight_shape()
+    # controller.demo_ellipse()
+
+    controller.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+
+\end{document}
