@@ -1,0 +1,2621 @@
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+第五章移动机器人感知技术
+Kalman Filter Based Localization
+孙雷教授
+sunl@nankai.edu.cn
+Tel: 13512967601
+机器人与信息自动化研究所(IRAIS)
+天津市智能机器人技术重点实验室(tjKLIR)
+南开大学
+2026 年4 月27 日
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+1 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+主要内容
+Introduction
+Motivation
+Definitions
+Bayes‑based localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+2 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+Introduction
+• To go from A to B, does the robot need to know where it is?
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+3 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+Introduction
+• How to navigate between A and B
+• Navigation without hitting obstacles
+• Detection of goal location
+• Possible by following always the left wall
+• However, how to detect that the goal is reached
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+4 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+Introduction
+• Following the left wall is an example of “behavior
+based navigation”
+• It can work in some environments but not in all
+• With which accuracy and reliability do we reach
+the goal?
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+5 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+Introduction
+• As opposed to behavior based navigation is “map based navigation”
+• Assuming that the map is known, at every time step the robot has
+to know where it is. How?
+• If we know the start position, we can use wheel odometry or dead reckoning.
+Is this enough? What else can we use?
+• But how do we represent the map for the robot?
+• And how do we represent the position of the robot in the map?
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+6 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+The problem
+• Consider a mobile robot moving in a known environment.
+• As it starts to move, say from a precisely known location, it might keep track of its location
+using odometry.
+• However, after a certain movement the robot will get very uncertain about its position
+⇒update using an observation of its environment
+• Observation leads also to an estimate of the robot position which can then be fused with
+the odometric estimation to get the best possible update of the robots actual position.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+7 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+Definitions
+• Global Localization
+• The robot is not told its initial position
+• Its position must be estimated from scratch
+• Position Tracking
+• A robot knows its initial position and “only”has to accommodate small errors in its
+odometry as it moves
+• Kidnapped Robot Problem
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+8 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Motivation
+Definitions
+How to localize?
+• Localization based on external sensors, beacons or landmarks
+• Odometry
+• Map Based Localization ‑ without external sensors or artificial landmarks, just use robot
+onboard sensors
+• Example: Probabilistic Map Based Localization
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+9 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Basic Concepts
+• Probability theory
+⇒
+error propagation, sensor fusion
+• Belief representation(map/position)
+⇒
+discrete / continuous
+• Motion model
+⇒
+odometry model
+• Sensing
+⇒
+measurement model
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+10 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Probability theory
+Discrete probability distributions：
+𝑝(𝑥) ∈[0, 1] for all 𝑥∈Ω
+and
+∑
+𝑥∈Ω
+𝑝(𝑥) = 1.
+Continuous probability distributions：
+𝐹(𝑥) = 𝑃(𝑋≤𝑥)
+𝐹is a monotonically non‑decreasing, right‑continuous function.
+Probability Density Function(PDF) 𝑝(𝑥):
+𝑝(𝑥) = 𝑑𝐹(𝑥)
+𝑑𝑥
+and
+∫
+𝑥
+𝑝(𝑥)𝑑𝑥
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+11 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Probability theory
+• The Gaussian distribution(the normal distribution):
+𝑝(𝑥) =
+1
+𝜎
+√
+2𝜋
+exp (−(𝑥−𝜇)2
+2𝜎2
+)
+𝜇= 𝐸[𝑋] = ∫
+∞
+−∞
+𝑥𝑝(𝑥)𝑑𝑥
+𝑉𝑎𝑟(𝑋) = 𝜎2 = ∫
+∞
+−∞
+(𝑥−𝜇)2𝑝(𝑥)𝑑𝑥
+• Joint distribution function 𝑝(𝑥, 𝑦)
+• Conditional probability 𝑝(𝑥|𝑦)
+• If two random variables 𝑋1 and 𝑋2 are independent, then
+𝐸[𝑋1𝑋2] = 𝐸[𝑋1]𝐸[𝑋2]
+𝑉𝑎𝑙[𝑋1 + 𝑋2] = 𝑉𝑎𝑙[𝑋1] + 𝑉𝑎𝑙[𝑋2]
+𝑝(𝑥, 𝑦) = 𝑝(𝑥)𝑝(𝑦)
+and
+𝑝(𝑥, 𝑦) = 𝑝(𝑥)𝑝(𝑦)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+12 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Probability theory
+• The Gaussian distribution(the normal distribution):
+𝑝(𝑥) =
+1
+𝜎
+√
+2𝜋
+exp (−(𝑥−𝜇)2
+2𝜎2
+)
+• The expectation 𝐸(𝑥) and the Variance 𝑉𝑎𝑙(𝑋)
+𝜇= 𝐸[𝑋] = ∫
+∞
+−∞
+𝑥𝑝(𝑥)𝑑𝑥
+and
+𝑉𝑎𝑟(𝑋) = 𝜎2 = ∫
+∞
+−∞
+(𝑥−𝜇)2𝑝(𝑥)𝑑𝑥
+• Joint distribution function 𝑝(𝑥, 𝑦)
+• Conditional probability 𝑝(𝑥|𝑦):
+𝑝(𝑥|𝑦) = 𝑝(𝑥, 𝑦)
+𝑝(𝑦)
+• If two random variables 𝑋1 and 𝑋2 are independent, then
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+13 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Probability theory
+• The Gaussian distribution(the normal distribution):
+𝑝(𝑥) =
+1
+𝜎
+√
+2𝜋
+exp (−(𝑥−𝜇)2
+2𝜎2
+)
+• The expectation 𝐸(𝑥) and the Variance 𝑉𝑎𝑙(𝑋)
+𝜇= 𝐸[𝑋] = ∫
+∞
+−∞
+𝑥𝑝(𝑥)𝑑𝑥
+and
+𝑉𝑎𝑟(𝑋) = 𝜎2 = ∫
+∞
+−∞
+(𝑥−𝜇)2𝑝(𝑥)𝑑𝑥
+• Joint distribution function 𝑝(𝑥, 𝑦)
+• Conditional probability 𝑝(𝑥|𝑦):
+𝑝(𝑥|𝑦) = 𝑝(𝑥, 𝑦)
+𝑝(𝑦)
+• If two random variables 𝑋1 and 𝑋2 are independent, then
+𝐸[𝑋1𝑋2] = 𝐸[𝑋1]𝐸[𝑋2]
+and
+𝑉𝑎𝑙[𝑋1 + 𝑋2] = 𝑉𝑎𝑙[𝑋1] + 𝑉𝑎𝑙[𝑋2]
+𝑝(𝑥, 𝑦) = 𝑝(𝑥)𝑝(𝑦)
+and
+𝑝(𝑥|𝑦) = 𝑝(𝑥)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+13 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Probability theory
+• Law of total probability:
+𝑝(𝑥) = ∑
+𝑦
+𝑝(𝑥|𝑦)𝑝(𝑦)
+and
+𝑝(𝑥) = ∫
+𝑦
+𝑝(𝑥|𝑦)𝑝(𝑦)𝑑𝑦
+• Bayes’s theorem：
+𝑝(𝑥|𝑦) = 𝑝(𝑦|𝑥)𝑝(𝑥)
+𝑝(𝑦)
+注意：
+贝叶斯定理的核心思想：
+新信息出现后的𝐴的概率=𝐴的概率× 新信息带来的调整
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+14 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Belief Representation
+• Continuous map with single hypothesis
+probability distribution 𝑝(𝑥)
+• Continuous map with multiple
+hypotheses probability distribution 𝑝(𝑥)
+• Discretized metric map (grid 𝑘) with
+probability distribution 𝑝(𝑥)
+• Discretized topological map (nodes 𝑛)
+with probability distribution 𝑝(𝑥)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+15 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Map‑based localization
+Improving belief state by moving:
+• The robot is placed somewhere in the environment
+but it is not told its location
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+16 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Map‑based localization
+Improving belief state by moving:
+• The robot is placed somewhere in the environment
+but it is not told its location
+• The robot queries its sensors and finds it is next to a
+pillar
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+16 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Map‑based localization
+Improving belief state by moving:
+• The robot is placed somewhere in the environment
+but it is not told its location
+• The robot queries its sensors and finds it is next to a
+pillar
+• The robot moves one meter forward. To account for
+inherent noise in robot motion the new belief is
+smoother
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+16 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Map‑based localization
+Improving belief state by moving:
+• The robot is placed somewhere in the environment
+but it is not told its location
+• The robot queries its sensors and finds it is next to a
+pillar
+• The robot moves one meter forward. To account for
+inherent noise in robot motion the new belief is
+smoother
+• The robot queries its sensors and again it finds itself
+next to a pillar
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+16 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Map‑based localization
+Improving belief state by moving:
+• The robot is placed somewhere in the environment
+but it is not told its location
+• The robot queries its sensors and finds it is next to a
+pillar
+• The robot moves one meter forward. To account for
+inherent noise in robot motion the new belief is
+smoother
+• The robot queries its sensors and again it finds itself
+next to a pillar
+• Finally, it updates its belief by combining this
+information with its previous belief
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+16 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Why a probabilistic approach for mobile robot localization?
+• Because the data coming from the robot sensors are affected by measurement errors, we
+can only compute the probability that the robot is in a given configuration.
+• The key idea in probabilistic robotics is to represent uncertainty using probability theory:
+instead of giving a single best estimate of the current robot configuration, probabilistic
+robotics represents the robot configuration as a probability distribution over the all
+possible robot poses. This probability is called belief.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+17 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Description of the probabilistic localization problem
+• Consider a mobile robot moving in a known environment.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+18 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Description of the probabilistic localization problem
+• Consider a mobile robot moving in a known environment.
+• As it starts to move, say from a precisely known location, it can keep track of its motion
+using odometry.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+18 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Description of the probabilistic localization problem
+• Consider a mobile robot moving in a known environment.
+• As it starts to move, say from a precisely known location, it can keep track of its motion
+using odometry.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+18 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Description of the probabilistic localization problem
+• Consider a mobile robot moving in a known environment.
+• As it starts to move, say from a precisely known location, it can keep track of its motion
+using odometry.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+18 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Description of the probabilistic localization problem
+• Consider a mobile robot moving in a known environment.
+• As it starts to move, say from a precisely known location, it can keep track of its motion
+using odometry.
+• The robot makes an observation and updates its position and uncertainty
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+18 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Introduction
+Probability theory
+Description of the probabilistic localization problem
+Characteristics
+• Continuous
+• Precision bound by sensor data
+• Typically single hypothesis pose
+estimate
+• Lost when diverging (for single
+hypothesis)
+• Compact representation and typically
+reasonable in processing power.
+• Discrete
+• Precision bound by resolution of
+discretisation
+• Typically multiple hypothesis pose
+estimate
+• Never lost (when diverges converges to
+another cell)
+• Important memory and processing
+power needed. (not the case for
+topological maps)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+19 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Rudolf Emil Kalman
+鲁道夫. 卡尔曼
+匈牙利裔美国数学家，1930 年出生于匈牙利首都布达佩斯。1953 年于麻省理工
+学院获得电机工程学士，翌年硕士学位。1957 年于哥伦比亚大学获得博士学位。
+1964 年至1971 年任职斯坦福大学。1971 年至1992 年任佛罗里达大学数学系统理
+论中心（Center for Mathematical System Theory）主任。1972 起任瑞士苏黎世联邦
+理工学院数学系统理论中心主任直至退休。
+• 美国科学院、美国工程学院院士
+• 匈牙利、法国、俄罗斯外籍院士
+• IEEE 荣誉奖章
+• IEEE 百年奖章
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+20 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+What is a Kalman Filter?
+• Just some applied math.
+• A linear system: 𝑓(𝑎+ 𝑏) = 𝑓(𝑎) + 𝑓(𝑏).
+• Noisy data in ⇒hopefully less noisy out.
+• But delay is the price for filtering
+• Pure KF does not even adapt to the data.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+21 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+What is it used for?
+• Tracking missiles
+• Tracking heads/hands/drumsticks
+• Extracting lip motion from video
+• Fitting Bezier patches to point data
+• Lots of computer vision applications
+• Economics
+• Navigation
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+22 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+A really simple example
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+23 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Gary makes a measurement
+𝑧1, 𝜎2
+𝑧1̂
+𝑥1 = 𝑧1̂
+𝜎2
+1 = 𝜎2
+𝑧1
+Conditional Density Function
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+24 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Greg makes a measurement
+𝑧2, 𝜎2
+𝑧2̂
+𝑥2 = ⋯?̂
+𝜎2
+2 = ⋯?
+Conditional Density Function
+注意：
+Not all the difference is error!
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+25 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+• 令𝑞表示测量位置，𝑝1(𝑞)、𝑝2(𝑞) 分别表示两次独立的测量结果的信任度，假设
+这两次测量结果均服从正态分布：
+𝑝1(𝑞) = 𝑁(̂𝑞1, 𝜎2
+1)
+𝑝2(𝑞) = 𝑁(̂𝑞2, 𝜎2
+2)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+26 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+• 令𝑞表示测量位置，𝑝1(𝑞)、𝑝2(𝑞) 分别表示两次独立的测量结果的信任度，假设
+这两次测量结果均服从正态分布：
+𝑝1(𝑞) = 𝑁(̂𝑞1, 𝜎2
+1)
+𝑝2(𝑞) = 𝑁(̂𝑞2, 𝜎2
+2)
+• 由全概率定理可知，两次测量之后，最终分布𝑝(𝑞) 也服从正态分布：
+𝑝(𝑞) = 𝑁(̂𝑞, 𝜎2)
+且
+𝑝(𝑞) = 𝑝1(𝑞) ⋅𝑝2(𝑞) =
+1
+𝜎1
+√
+2𝜋
+exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+) ⋅
+1
+𝜎2
+√
+2𝜋
+exp (−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+26 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+• 令𝑞表示测量位置，𝑝1(𝑞)、𝑝2(𝑞) 分别表示两次独立的测量结果的信任度，假设
+这两次测量结果均服从正态分布：
+𝑝1(𝑞) = 𝑁(̂𝑞1, 𝜎2
+1)
+𝑝2(𝑞) = 𝑁(̂𝑞2, 𝜎2
+2)
+• 由全概率定理可知，两次测量之后，最终分布𝑝(𝑞) 也服从正态分布：
+𝑝(𝑞) = 𝑁(̂𝑞, 𝜎2)
+且
+𝑝(𝑞) = 𝑝1(𝑞) ⋅𝑝2(𝑞) =
+1
+𝜎1
+√
+2𝜋
+exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+) ⋅
+1
+𝜎2
+√
+2𝜋
+exp (−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+=
+1
+2𝜎1𝜎2𝜋exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+26 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+由于：
+exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+27 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+由于：
+exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+= exp (−1
+2 (𝑞2(𝜎2
+1 + 𝜎2
+2) −2𝑞(̂𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1) + (̂𝑞2
+1𝜎2
+2 +̂ 𝑞2
+2𝜎2
+1)
+𝜎2
+1𝜎2
+2
+))
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+27 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+由于：
+exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+= exp (−1
+2 (𝑞2(𝜎2
+1 + 𝜎2
+2) −2𝑞(̂𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1) + (̂𝑞2
+1𝜎2
+2 +̂ 𝑞2
+2𝜎2
+1)
+𝜎2
+1𝜎2
+2
+))
+= exp
+⎛
+⎜
+⎜
+⎜
+⎜
+⎝
+−1
+2
+⎛
+⎜
+⎜
+⎜
+⎜
+⎝
+𝑞2 −2𝑞(̂𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1)
+𝜎2
+1 + 𝜎2
+2
++ (̂𝑞2
+1𝜎2
+2 +̂ 𝑞2
+2𝜎2
+1)
+𝜎2
+1 + 𝜎2
+2
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⎞
+⎟
+⎟
+⎟
+⎟
+⎠
+⎞
+⎟
+⎟
+⎟
+⎟
+⎠
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+27 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+应用贝叶斯定理
+由于：
+exp (−(𝑞−̂ 𝑞1)2
+2𝜎2
+1
+−(𝑞−̂ 𝑞2)2
+2𝜎2
+2
+)
+= exp (−1
+2 (𝑞2(𝜎2
+1 + 𝜎2
+2) −2𝑞(̂𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1) + (̂𝑞2
+1𝜎2
+2 +̂ 𝑞2
+2𝜎2
+1)
+𝜎2
+1𝜎2
+2
+))
+= exp
+⎛
+⎜
+⎜
+⎜
+⎜
+⎝
+−1
+2
+⎛
+⎜
+⎜
+⎜
+⎜
+⎝
+𝑞2 −2𝑞(̂𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1)
+𝜎2
+1 + 𝜎2
+2
++ (̂𝑞2
+1𝜎2
+2 +̂ 𝑞2
+2𝜎2
+1)
+𝜎2
+1 + 𝜎2
+2
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⎞
+⎟
+⎟
+⎟
+⎟
+⎠
+⎞
+⎟
+⎟
+⎟
+⎟
+⎠
+= exp
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎝
+−1
+2
+(𝑞−̂ 𝑞1𝜎2 +̂ 𝑞2𝜎1
+𝜎2
+1 + 𝜎2
+2
+)
+2
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎠
+⋅exp
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎝
+−1
+2
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎝̂
+𝑞2
+1𝜎2
+2 +̂ 𝑞2
+2𝜎2
+1
+𝜎2
+1 + 𝜎2
+2
+−(̂𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1
+𝜎2
+1 + 𝜎2
+2
+)
+2
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎠
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎠
+⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟⏟
+相对于变量𝑞为常数
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+27 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+融合结果
+• 𝑝(𝑞) 的分布可写成如下形式：
+𝑝(𝑞) = 𝑁(̂𝑞, 𝜎2) = Ω exp
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎝
+−1
+2
+(𝑞−̂ 𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1
+𝜎2
+1 + 𝜎2
+2
+)
+2
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎠
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+28 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+融合结果
+• 𝑝(𝑞) 的分布可写成如下形式：
+𝑝(𝑞) = 𝑁(̂𝑞, 𝜎2) = Ω exp
+⎛
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+⎝
+−1
+2
+(𝑞−̂ 𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1
+𝜎2
+1 + 𝜎2
+2
+)
+2
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⎞
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+⎠
+• 可得：̂
+𝑞=̂ 𝑞1𝜎2
+2 +̂ 𝑞2𝜎2
+1
+𝜎2
+1 + 𝜎2
+2
+⇔̂ 𝑞=
+1
+𝜎2
+1̂
+𝑞1 + 1
+𝜎2
+2̂
+𝑞2
+1
+𝜎2
+1
++ 1
+𝜎2
+2
+⇔̂ 𝑞=̂ 𝑞1 +
+𝜎2
+1
+𝜎2
+1 + 𝜎2
+2
+(̂𝑞2 −̂ 𝑞1)
+𝜎2 =
+𝜎2
+1𝜎2
+2
+𝜎2
+1 + 𝜎2
+2
+⇔1
+𝜎2 = 𝜎2
+1 + 𝜎2
+2
+𝜎2
+1𝜎2
+2
+= 1
+𝜎2
+1
++ 1
+𝜎2
+2
+⇔𝜎2 = 𝜎2
+1 −
+𝜎4
+1
+𝜎2
+1 + 𝜎2
+2
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+28 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+ACT | using motion model and its uncertainties
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+29 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+SEE | estimation of position based on perception and map
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+30 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+一般形式下的融合结果
+• 令𝑞∈𝑅𝑛表示系统状态，𝑝1(𝑞)、𝑝2(𝑞) 分别表示两次独立的测量结果的信任度，
+假设这两次测量结果均服从正态分布：
+𝑝1(𝑞) = 𝑁(̂𝑞1, 𝑃)
+𝑝2(𝑞) = 𝑁(̂𝑞2, 𝑄)
+其中，𝑃、𝑄分别表示𝑝1(𝑞) 和𝑝2(𝑞) 所对应的协方差阵。
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+31 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+一般形式下的融合结果
+• 令𝑞∈𝑅𝑛表示系统状态，𝑝1(𝑞)、𝑝2(𝑞) 分别表示两次独立的测量结果的信任度，
+假设这两次测量结果均服从正态分布：
+𝑝1(𝑞) = 𝑁(̂𝑞1, 𝑃)
+𝑝2(𝑞) = 𝑁(̂𝑞2, 𝑄)
+其中，𝑃、𝑄分别表示𝑝1(𝑞) 和𝑝2(𝑞) 所对应的协方差阵。
+• 由全概率定理可知，两次测量之后，最终分布𝑝(𝑞) 也服从正态分布：
+𝑝(𝑞) = 𝑁(̂𝑞, 𝑅)
+由上面标量融合结果可得，̂
+𝑞=̂ 𝑞1 + 𝑃(𝑃+ 𝑄)−1(̂𝑞2 −̂ 𝑞1) ⇔̂ 𝑞=̂ 𝑞1 + 𝐾(̂𝑞2 −̂ 𝑞1)
+𝑅= 𝑃−𝑃(𝑃+ 𝑄)−1𝑃⇔𝑅= 𝑃−𝐾⋅Σ𝐼𝑁⋅𝐾𝑇
+其中，
+𝐾= 𝑃(𝑃+ 𝑄)−1(卡尔曼增益)
+Σ𝐼𝑁= 𝑃+ 𝑄(创新协方差)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+31 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+优化策略角度下的卡尔曼滤波算法
+问题描述：
+一线性离线系统可用如下方程描述：
+𝑥𝑘= 𝐴𝑥𝑘−1 + 𝐵𝑢𝑘−1 + 𝑤𝑘−1
+(1)
+𝑧𝑘= 𝐻𝑥𝑘+ 𝑣𝑘
+(2)
+其中𝑥𝑘∈𝑅𝑛为系统状态，𝑧𝑘∈𝑅𝑚为测量输出，𝑢𝑘∈𝑅𝑙为系统输入。𝑤𝑘∈𝑅𝑛
+为过程噪声(Process Noise)，𝑣𝑘∈𝑅𝑚为测量噪声(Measurement Noise) 为白噪音：
+𝑝(𝑤) = 𝑁(0, 𝑄)
+𝑝(𝑣) = 𝑁(0, 𝑅)
+(3)
+其中，𝑄为过程噪音协方差阵，𝑅为测量噪声协方差阵
+求取通过系统状态转移方程预测的系统状态𝑥𝑘和通过测量方程观测到的系统状态𝑧𝑘
+下最优的状态估计。
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+32 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+相关概念
+先验估计、先验估计误差及先验估计方差̂ 𝑥−
+𝑘、𝑒−
+𝑘，𝑃−
+𝑘：
+• Definê 𝑥−
+𝑘∈𝑅𝑛(note the ”super minus”) to be a priori state estimate at step 𝑘
+given knowledge of the process transform equation by the state prior 𝑥𝑘−1 prior to
+step 𝑘.
+• Define a priori estimate errors as 𝑒−
+𝑘≡𝑥𝑘−̂ 𝑥−
+𝑘.
+• The priori estimate error covariance is then defined as 𝑃−
+𝑘= 𝐸[𝑒−
+𝑘𝑒−𝑇
+𝑘].
+后验估计、后验估计误差及后验估计方差̂ 𝑥𝑘、𝑒𝑘，𝑃𝑘：
+• Definê 𝑥𝑘∈𝑅𝑛to be a posteriori state estimate at step 𝑘combined the
+measurement 𝑧𝑘(𝑘) with the priori state estimatê 𝑥−
+𝑘.
+• Define a posteriori estimate errors as 𝑒𝑘≡𝑥𝑘−̂ 𝑥𝑘.
+• The posteriori estimate error covariance is then defined as 𝑃𝑘= 𝐸[𝑒𝑘𝑒𝑇
+𝑘].
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+33 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+相关概念
+In deriving the equations for the Kalman filter, we begin with the goal of finding an equation
+that computes an a posteriori state estimatê 𝑥as a linear combination of a priori estimatê 𝑥−
+𝑘and a
+weighted difference between an actual measurement 𝑧𝑘and a measurement prediction 𝐻̂𝑥−
+𝑘as
+shown below:̂
+𝑥𝑘=̂ 𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)
+(4)
+where
+• The gain or blending factor: 𝐾∈𝑅𝑛×𝑚
+• The measurement innovation, or the residual: (𝑧𝑘−𝐻̂𝑥−
+𝑘)
+优化策略角度下的卡尔曼滤波算法的目标函数：
+arg min
+𝐾
+𝑃𝑘
+(5)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+34 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘))
+𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘))
+𝑇]
+= 𝐸[(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘))
+𝑇]
+= 𝐸[(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))𝑇]
+= 𝐸[((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘))
+𝑇]
+= 𝐸[(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))𝑇]
+= 𝐸[((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)𝑇]
+= 𝐸[(𝐼−𝐾𝐻)𝑒−
+𝑘𝑒−𝑇
+𝑘(𝐼−𝐾𝐻)𝑇+ 𝐾𝑣𝑘𝑣𝑇
+𝑘𝐾𝑇−𝐾𝑣𝑘𝑒−𝑇
+𝑘(𝐼−𝐾𝐻)𝑇
+−(𝐼−𝐾𝐻)𝑒−
+𝑘𝑣𝑇
+𝑘𝐾𝑇]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘))
+𝑇]
+= 𝐸[(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))𝑇]
+= 𝐸[((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)𝑇]
+= 𝐸[(𝐼−𝐾𝐻)𝑒−
+𝑘𝑒−𝑇
+𝑘(𝐼−𝐾𝐻)𝑇+ 𝐾𝑣𝑘𝑣𝑇
+𝑘𝐾𝑇−𝐾𝑣𝑘𝑒−𝑇
+𝑘(𝐼−𝐾𝐻)𝑇
+−(𝐼−𝐾𝐻)𝑒−
+𝑘𝑣𝑇
+𝑘𝐾𝑇]
+= (𝐼−𝐾𝐻) 𝐸[𝑒−
+𝑘𝑒−𝑇
+𝑘]
+⏟⏟⏟⏟⏟
+𝑃−
+𝑘
+(𝐼−𝐾𝐻)𝑇+ 𝐾𝐸[𝑣𝑘𝑣𝑇
+𝑘]
+⏟
+𝑅
+𝐾𝑇−𝐾𝐸[𝑣𝑘𝑒−𝑇
+𝑘]
+⏟
+0
+(𝐼−𝐾𝐻)𝑇
+−(𝐼−𝐾𝐻) 𝐸[𝑒−
+𝑘𝑣𝑇
+𝑘]
+⏟
+0
+𝐾𝑇
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+推导过程
+𝑃𝑘
+= 𝐸[𝑒𝑘𝑒𝑇
+𝑘] = 𝐸[(𝑥𝑘−̂ 𝑥𝑘)(𝑥𝑘−̂ 𝑥𝑘)𝑇]
+= 𝐸[{𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]} {𝑥𝑘−[̂𝑥−
+𝑘+ 𝐾(𝑧𝑘−𝐻̂𝑥−
+𝑘)]}
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻𝑥𝑘+ 𝑣𝑘−𝐻̂𝑥−
+𝑘))
+𝑇]
+= 𝐸[((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘)) ((𝑥𝑘−̂ 𝑥−
+𝑘) −𝐾(𝐻(𝑥𝑘−̂ 𝑥−
+𝑘) + 𝑣𝑘))
+𝑇]
+= 𝐸[(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))(𝑒−
+𝑘−𝐾(𝐻𝑒−
+𝑘+ 𝑣𝑘))𝑇]
+= 𝐸[((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)((𝐼−𝐾𝐻)𝑒−
+𝑘−𝐾𝑣𝑘)𝑇]
+= 𝐸[(𝐼−𝐾𝐻)𝑒−
+𝑘𝑒−𝑇
+𝑘(𝐼−𝐾𝐻)𝑇+ 𝐾𝑣𝑘𝑣𝑇
+𝑘𝐾𝑇−𝐾𝑣𝑘𝑒−𝑇
+𝑘(𝐼−𝐾𝐻)𝑇
+−(𝐼−𝐾𝐻)𝑒−
+𝑘𝑣𝑇
+𝑘𝐾𝑇]
+= (𝐼−𝐾𝐻) 𝐸[𝑒−
+𝑘𝑒−𝑇
+𝑘]
+⏟⏟⏟⏟⏟
+𝑃−
+𝑘
+(𝐼−𝐾𝐻)𝑇+ 𝐾𝐸[𝑣𝑘𝑣𝑇
+𝑘]
+⏟
+𝑅
+𝐾𝑇−𝐾𝐸[𝑣𝑘𝑒−𝑇
+𝑘]
+⏟
+0
+(𝐼−𝐾𝐻)𝑇
+−(𝐼−𝐾𝐻) 𝐸[𝑒−
+𝑘𝑣𝑇
+𝑘]
+⏟
+0
+𝐾𝑇
+= (𝐼−𝐾𝐻)𝑃−
+𝑘(𝐼−𝐾𝐻)𝑇+ 𝐾𝑅𝐾𝑇
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+35 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+最优值求取
+目标函数：
+arg min
+𝐾
+𝑃𝑘= (𝐼−𝐾𝐻)𝑃−
+𝑘(𝐼−𝐾𝐻)𝑇+ 𝐾𝑅𝐾𝑇
+可得最优的卡尔曼增益如下：
+𝜕𝑃𝑘
+𝜕𝐾= −2𝑃−
+𝑘𝐻𝑇+ 2𝐾𝐻𝑃−
+𝑘𝐻𝑇+ 2𝐾𝑅= 0 ⇒𝐾= 𝑃−
+𝑘𝐻𝑇(𝐻𝑃−
+𝑘𝐻𝑇+ 𝑅)−1
+注意：
+• When the measurement error covariance 𝑅approaches zero,
+lim
+𝑅→0 𝐾= 𝐻−1
+• When the a priori estimate error covariance 𝑃−
+𝑘approaches zero,
+lim
+𝑃−
+𝑘→0 𝐾= 0
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+36 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Strategies of Kalman Filter
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+37 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Measurement Model
+“What you see from where you are”
+not
+“Where you are from what you see”
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+38 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Predict →Correct
+KF operates by
+• Predicting the new state and its uncertainty
+• Correcting with the new measurement
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+39 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Example: 2D Position‑Only
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+40 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Process Model
+[𝑥𝑘
+𝑦𝑘
+]
+= [1 0
+0 1] [𝑥𝑘−1
+𝑦𝑘−1
+] + [̃𝑥𝑘−1̃
+𝑦𝑘−1
+]
+Statē 𝑥𝑘
+State Transition 𝐴
+Statē 𝑥𝑘−1
+Noisē 𝑤𝑘−1̄
+𝑥𝑘= 𝐴̄𝑥𝑘−1 +̄ 𝑤𝑘−1
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+41 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Measurement Model
+[𝑢𝑘
+𝑣𝑘
+]
+= [𝐻𝑥
+0
+0
+𝐻𝑦] [𝑥𝑘
+𝑦𝑘
+] + [̃𝑢𝑘̃
+𝑣𝑘
+]
+Measurement̄ 𝑧𝑘
+Measurement Matrix 𝐻
+Statē 𝑥𝑘
+Noisē 𝑣𝑘̄
+𝑧𝑘= 𝐻̄𝑥𝑘+̄ 𝑣𝑘
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+42 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Preparation
+𝐴= [1 0
+0 1]
+State
+Transition
+𝑄= 𝐸[̄𝑤×̄ 𝑤𝑇] = [𝑞𝑥𝑥
+0
+0
+𝑞𝑦𝑦]
+Process
+Noise
+Covariance
+𝑅= 𝐸[̄𝑣×̄ 𝑣𝑇] = [𝑟𝑥𝑥
+0
+0
+𝑟𝑦𝑦]
+Measurement
+Noise
+Covariance
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+43 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Initialization̄
+𝑥0 = 𝐻̄𝑧0
+𝑃0 = [𝑣𝑥0
+0
+0
+𝑣𝑦0]
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+44 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Predict̄
+𝑥−
+𝑘= 𝐴̄ 𝑥𝑘−1
+𝑃−
+𝑘= 𝐴𝑃𝑘−1 𝐴
+𝑇
++ 𝑄
+Transition
+Uncertainty
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+45 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+CORRECT
+Measurement
+Predict̄
+𝑥𝑘=̄ 𝑥−
+𝑘+ 𝐾(̄ 𝑧𝑘−𝐻̄𝑥−
+𝑘)
+𝑃𝑘= (𝐼−𝐾𝐻)𝑃−
+𝑘−1
+Kalman Gain
+𝐾= 𝑃−
+𝑘𝐻𝑇( 𝐻𝑃−
+𝑘𝐻𝑇+ 𝑅)
+−1
+“denominator”(measurement space)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+46 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Summary
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+47 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Results: XY Track
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+48 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Y Track: Moving then Still
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+49 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Motion‑Dependent Performance
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+50 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Process Model
+• Describes how the state changes over time
+• The state for the first example was scalar
+• The process model was “nothing changes”
+A better model might be
+• State is a 2‑vector [𝑝𝑜𝑠𝑖𝑡𝑖𝑜𝑛, 𝑣𝑒𝑙𝑜𝑐𝑖𝑡𝑦]
+• 𝑝𝑜𝑠𝑖𝑡𝑖𝑜𝑛𝑛+1 = 𝑝𝑜𝑠𝑖𝑡𝑖𝑜𝑛𝑛+ 𝑣𝑒𝑙𝑜𝑐𝑖𝑡𝑦𝑛× 𝑡𝑖𝑚𝑒
+• 𝑣𝑒𝑙𝑜𝑐𝑖𝑡𝑦𝑛+1 = 𝑣𝑒𝑙𝑜𝑐𝑖𝑡𝑦𝑛
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+51 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Example: 2D Position‑Velocity (PV model)
+Process Model (PV):
+State Transition
+State
+⎡
+⎢⎢
+⎣
+1
+0
+𝑑𝑡
+0
+0
+1
+0
+𝑑𝑡
+0
+0
+1
+0
+0
+0
+0
+1
+⎤
+⎥⎥
+⎦
+⎡
+⎢⎢⎢⎢
+⎣
+𝑥
+𝑦
+𝑑𝑥
+𝑑𝑡
+𝑑𝑦
+𝑑𝑡
+⎤
+⎥⎥⎥⎥
+⎦̄
+𝑥𝑘= 𝐴̄𝑥𝑘−1 +̄ 𝑤𝑘−1
+Measurement Model (PV):
+Measurement Matrix
+State
+[𝐻𝑥
+0
+0
+0
+0
+𝐻𝑦
+0
+0]
+⎡
+⎢⎢⎢⎢
+⎣
+𝑥
+𝑦
+𝑑𝑥
+𝑑𝑡
+𝑑𝑦
+𝑑𝑡
+⎤
+⎥⎥⎥⎥
+⎦̄
+𝑧𝑘= 𝐻̄𝑥𝑘+̄ 𝑣𝑘
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+52 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Motion‑Dependent Performance
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+53 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Action and perception updates
+In robot localization, we distinguish two update steps:
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+54 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Action and perception updates
+In robot localization, we distinguish two update steps:
+1 Action update:
+• the robot moves and estimates its position through its proprioceptive sensors. During this
+step, the robot uncertainty grows.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+54 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Action and perception updates
+In robot localization, we distinguish two update steps:
+1 Action update:
+• the robot moves and estimates its position through its proprioceptive sensors. During this
+step, the robot uncertainty grows.
+2 Perception update:
+• the robot makes an observation using its exteroceptive sensors and correct its position by
+opportunely combining its belief before the observation with the probability of making
+exactly that observation. During this step, the robot uncertainty shrinks.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+54 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Kalman Filter Localization | in summery
+1 Prediction (ACT) based on previous estimate and odometry
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+55 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Kalman Filter Localization | in summery
+1 Prediction (ACT) based on previous estimate and odometry
+2 Observation (SEE) with on‑board sensors
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+55 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Kalman Filter Localization | in summery
+1 Prediction (ACT) based on previous estimate and odometry
+2 Observation (SEE) with on‑board sensors
+3 Measurement prediction based on prediction and map
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+55 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Kalman Filter Localization | in summery
+1 Prediction (ACT) based on previous estimate and odometry
+2 Observation (SEE) with on‑board sensors
+3 Measurement prediction based on prediction and map
+4 Matching of observation and map
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+55 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Kalman Filter Localization | in summery
+1 Prediction (ACT) based on previous estimate and odometry
+2 Observation (SEE) with on‑board sensors
+3 Measurement prediction based on prediction and map
+4 Matching of observation and map
+5 Estimation →position update (posteriori position) test
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+55 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Localization: Probabilistic Position Estimation
+(Kalman Filter: continuous, recursive and very compact)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+56 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Robot Position Prediction
+In a first step, the robots position̂ 𝑥𝑡at time step 𝑡is predicted based on its old location (time
+step 𝑡−1) and its movement due to the control input 𝑢𝑡:̂
+𝑥𝑡= 𝑓(𝑥𝑡−1, 𝑢𝑡)̂
+𝑃𝑡= 𝐹𝑥⋅𝑃𝑡−1 ⋅𝐹𝑇
+𝑥+ 𝐹𝑢⋅𝑄𝑡⋅𝐹𝑇
+𝑢
+(里程计模型及其误差传导模型见Lec 4)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+57 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Observation
+• The second step it to obtain the observation 𝑍(measurements) from the robot’s sensors
+at the new location
+• The observation usually consists of a set 𝑛0 of single observations 𝑧𝑗extracted from the
+different sensors signals. It represents features like lines, doors or any kind of landmarks.
+• The parameters of the targets are usually observed in the sensor frame {𝑆}.
+• Therefore the observations have to be transformed to the world frame {𝑊} or
+• the measurement prediction have to be transformed to the robot frame {𝑅}.
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+58 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Measurement Prediction
+• In the next step we use the predicted robot position̂ 𝑥𝑡and the features 𝑚𝑗in the map 𝑀
+to generate multiple predicted observationŝ 𝑧𝑗
+𝑡
+• They have to be transformed into the sensor framê
+𝑧𝑗
+𝑡= ℎ𝑗(̂𝑥𝑡, 𝑚𝑗)
+• We can now define the measurement prediction as the set containing all 𝑛𝑗predicted
+observationŝ
+𝑍= {̂𝑧𝑗|1 ≤𝑗≤𝑛𝑗}
+• The function ℎ𝑗is mainly the coordinate transformation between the world {𝑊} frame
+and the sensor/robot frame {𝑅}
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+59 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Measurement Prediction
+• For prediction, only the walls that are in the field
+of view of the robot are selected.
+• This is done by linking the individual lines to the
+nodes of the path
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+60 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+Estimation
+• Kalman filter estimation of the new robot position 𝑥𝑡:
+• By fusing the prediction of robot position(magenta) with the innovation gained by the
+measurements (green) we get the updated estimate of the robot position (red)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+61 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+基于卡尔曼滤波定位算法流程(1)——先验估计
+1 预测模型（先验估计）：里程计模型（世界坐标系下）
+⎧
+{
+⎨
+{
+⎩
+𝑥𝑘+1 = 𝑥𝑘+ Δ𝑠cos(𝜃𝑘+ Δ𝜃
+2 )
+𝑦𝑘+1 = 𝑦𝑘+ Δ𝑠sin(𝜃𝑘+ Δ𝜃
+2 )
+𝜃𝑘+1 = 𝜃𝑘+ Δ𝜃
+其中，码盘读数为：
+⎧
+{
+⎨
+{
+⎩
+Δ𝑠= 𝑟
+2(Δ𝜙𝑅+ Δ𝜙𝐿)
+Δ𝜃= 𝑟
+2𝑑(Δ𝜙𝑅−Δ𝜙𝐿)
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+62 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+基于卡尔曼滤波定位算法流程(2)——先验估计误差
+2 先验估计误差模型：里程计误差传导（非线性）
+∑
+𝑝′ = ∇𝑝𝑓⋅∑
+𝑝⋅∇𝑝𝑓𝑇+ ∇𝑟𝑙𝑓⋅∑
+Δ ⋅∇𝑟𝑙𝑓𝑇
+其中：
+𝐹𝑝= ∇𝑝𝑓= [𝜕𝑓
+𝜕𝑥
+𝜕𝑓
+𝜕𝑦
+𝜕𝑓
+𝜕𝜃] =
+⎡
+⎢
+⎢
+⎣
+1
+0
+−Δ𝑠sin(𝜃𝑘+ Δ𝜃
+2 )
+0
+1
+Δ𝑠cos(𝜃𝑘+ Δ𝜃
+2 )
+0
+0
+1
+⎤
+⎥
+⎥
+⎦
+𝐹Δ = ∇𝑟𝑙𝑓= [
+𝜕𝑓
+𝜕Δ𝜙𝑅
+𝜕𝑓
+𝜕Δ𝜙𝐿
+]
+=
+⎡
+⎢
+⎢
+⎢
+⎣
+𝑟
+2 cos(𝜃𝑘+ Δ𝜃
+2 ) −𝑟
+4𝑑Δ𝑠sin(𝜃𝑘+ Δ𝜃
+2 )
+𝑟
+2 cos(𝜃𝑘+ Δ𝜃
+2 ) + 𝑟
+4𝑑Δ𝑠sin(𝜃𝑘+ Δ𝜃
+2 )
+𝑟
+2 sin(𝜃𝑘+ Δ𝜃
+2 ) + 𝑟
+4𝑑Δ𝑠cos(𝜃𝑘+ Δ𝜃
+2 )
+𝑟
+2 sin(𝜃𝑘+ Δ𝜃
+2 ) −𝑟
+4𝑑Δ𝑠cos(𝜃𝑘+ Δ𝜃
+2 )
+𝑟
+2𝑑
+−𝑟
+2𝑑
+⎤
+⎥
+⎥
+⎥
+⎦
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+63 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+基于卡尔曼滤波定位算法流程(3)——观测模型
+3 观测模型：激光定位算法（ICP：确定匹配关系，SVD：确定机器人位姿）
+给定两个在2 维空间中对应的点集合𝑃= {𝑝1, 𝑝2, ⋯, 𝑝𝑛} 和𝑄= {𝑞1, 𝑞2, ⋯, 𝑞𝑛}：
+• 加权平均：̂
+𝑝= ∑
+𝑛
+𝑖=1 𝑤𝑖𝑝𝑖
+∑
+𝑛
+𝑖=1 𝑤𝑖̂
+𝑞= ∑
+𝑛
+𝑖=1 𝑤𝑖𝑞𝑖
+∑
+𝑛
+𝑖=1 𝑤𝑖
+其中𝑤𝑖为权重参数，可根据激光测量距离取𝑤𝑖= 1/𝜎𝑖(𝜌𝑖)。
+• 去中心化：
+𝑥𝑖∶= 𝑝𝑖−̂ 𝑝
+𝑦𝑖∶= 𝑞𝑖−̂ 𝑞
+构造矩阵𝑊= diag(𝑤1, ⋯, 𝑤𝑛),𝑋= [𝑥1, 𝑥2, ⋯, 𝑥𝑛],𝑌= [𝑦1, 𝑦2, ⋯, 𝑦𝑛] ∈𝑅2×𝑛.
+• 构造SVD 矩阵：令𝑆= 𝑋𝑊𝑌𝑇= 𝑈Σ𝑉𝑇，由SVD 原理，求取𝑈，𝑉单位正交阵。
+• 求取旋转矩阵𝑅:
+𝑅= 𝑉𝑈𝑇
+• 求取平移矩阵𝑡:
+𝑡=̂ 𝑞−𝑅̂𝑝
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+64 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+基于卡尔曼滤波定位算法流程(4)——观测误差模型
+4 观测误差模型：SVD 定位误差模型
+最小的匹配误差为：
+arg min
+𝑛
+∑
+𝑖=1
+𝑤𝑖‖(𝑅𝑝𝑖+ 𝑡) −𝑞𝑖‖2 =
+𝑛
+∑
+𝑖=1
+𝑤𝑖𝑥𝑇
+𝑖𝑥𝑖+
+𝑛
+∑
+𝑖=1
+𝑤𝑖𝑦𝑇
+𝑖𝑦𝑖−2
+𝑛
+∑
+𝑖=1
+𝜎𝑖
+其中，
+• 𝑤𝑖为权重参数，可根据激光测量距离取𝑤𝑖= 1/𝜎𝑖(𝜌𝑖)，
+• 𝜌𝑖为激光测距方差，可对激光雷达离线标定获得。
+• 𝑥𝑖∶= 𝑝𝑖−̂ 𝑝为地图特征去中心化后的点。
+• 𝑦𝑖∶= 𝑞𝑖−̂ 𝑞为激光雷达坐标系下识别的特征去中心化后的点。
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+65 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+基于卡尔曼滤波定位算法流程(5)——后验估计
+5 基于观测的后验估计（对先验估计的修正）：
+• 卡尔曼增益𝐾：
+𝐾= 𝑃−
+𝑘𝐻𝑇(𝐻𝑃−
+𝑘𝐻𝑇+ 𝑅)
+−1
+• 后验估计̄ 𝑥𝑘:̄
+𝑥𝑘=̄ 𝑥−
+𝑘+ 𝐾(̄𝑧𝑘−𝐻̄𝑥−
+𝑘)
+• 后验估计误差𝑃𝑘:
+𝑃𝑘= (𝐼−𝐾𝐻)𝑃−
+𝑘−1
+• 激光测量频率小于里程计测量频率，如何处理？
+• 激光测量有可能仅能得到机器人部分状态，如何处理？
+• 该方法也可融合诸如IMU 等其他传感器信息，如何融合？
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+66 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+基于卡尔曼滤波定位算法总结
+• 基于卡尔曼滤波定位算法仅能处理位置跟踪问题；
+• 根据里程计推演信息，可得到对机器人当前位姿的估计
+• 根据对机器人当前位姿估计，在地图中进行匹配搜索，避免ICP 陷入局部最优，导
+致定位失败。
+• 激光定位精度一般在2‑3cm，使用基于卡尔曼滤波定位算法融合里程计后，定位精度
+可达5mm左右。
+• 严重依赖于匹配精度，如果出现匹配错误，则机器人定位失败
+• 无法判断定位失败
+• 无法从定位失败中恢复
+• 收敛速度受初始状态误差，以及协方差阵的精度影响较大
+• 无法进行全局定位
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+67 / 68
+Introduction
+Bayes‑based localization
+Kalman Filter based Localization
+Principle of Kalman Filter
+优化策略角度下的卡尔曼滤波算法
+Strategies of Kalman Filter
+Kalman Filter for Mobile Robot
+第五章移动机器人感知技术
+Kalman Filter Based Localization
+孙雷教授
+sunl@nankai.edu.cn
+Tel: 13512967601
+机器人与信息自动化研究所(IRAIS)
+天津市智能机器人技术重点实验室(tjKLIR)
+南开大学
+2026 年4 月27 日
+孙雷(南开大学)
+Kalman Filter Based Localization
+2026 年4 月27 日
+68 / 68
