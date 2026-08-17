@@ -1,0 +1,15 @@
+k=3
+g=9.81
+m1=12
+theta=0.02
+kp=454.8
+ki=309.2
+kd=172.7
+targetType=1
+ld_constant=0
+A=0.02
+B=0.03
+simTime=10
+simStep=0.01
+maxDisplacement=5
+integrator=2

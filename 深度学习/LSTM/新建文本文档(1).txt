@@ -1,0 +1,57 @@
+Test 1/10: "time traveller"
+-------------------------------------------------------
+time traveller's to kings that fear their subjects' treachery? o, yes, ih; a thousand-fold it doth. and to conclude, the shepherd's homely curds cold thin drink out of his leather bottle. his wonted sleep under a freee's shade, all which secure and sweetly he enjoys, is far beyond a prin
+delica
+
+
+📝 Test 2/10: "traveller"
+-------------------------------------------------------
+traveller's, to bid the priest be ready to come against you come with yopendix. lucentio: i may, and will, if she be so contented: she will be pd; then wherefore should i doubt? hap what hap may, i'll roundly go abou: it shall go hard if cambio go without her. petruchio: come on, i' god'e
+
+
+📝 Test 3/10: "the time traveller says that"
+-------------------------------------------------------
+the time traveller says thated the princess from the earth, and so locks
+in embracing, as if she would pin her to her heart that she might no mor
+in danger of losing. first gentleman: the dignity of this act was worth udience of kings and princes; for by such was it acted. third gentleman:
+of the prettiest tou
+
+
+📝 Test 4/10: "when the time traveller returns to the garden"
+-------------------------------------------------------
+when the time traveller returns to the gardeness of his desires, and hisrcement of the city wives; his tyranny for trifles; his own bastardy, asg got, your father then in france, his resemblance, being not like the d
+withal i did infer your lineaments, being the right idea of your father, in your form and nobleness of mind;
+
+
+📝 Test 5/10: "the time traveller begins learning the language"
+-------------------------------------------------------
+the time traveller begins learning the language shall upport unto my hearesented to my knife his throat: i took him; made him joint-servant with
+gave him way in all his own desires; nay, let him choose out of my files projects to accomplish, my best and freshest men; served his designment
+mine own person; holp to reap the fame
+
+
+📝 Test 6/10: "the time traveller determines that"
+-------------------------------------------------------
+the time traveller determines thater them. romeo: art thou so bare and ff wretchedness, and fear'st to die? famine is in thy cheeks, need and opion starveth in thine eyes, contempt and beggary hangs upon thy back; thld is not thy friend nor the world's law; the world affords no law to maee rich; then be not poor,
+
+
+📝 Test 7/10: "the time traveller knows he will have to stop"
+-------------------------------------------------------
+the time traveller knows he will have to stop'd the earth and lineaments
+you unhappied and disfigured clean: you have in manner with your sinful  made a divorce betwixt his queen and him, broke the possession of a royd and stain'd the beauty of a fair queen's cheeks with tears drawn from yes by your foul wrongs. myself, a pr
+
+
+📝 Test 8/10: "when he wakes up"
+-------------------------------------------------------
+when he wakes uping her; now he thanks the old shepherd, which stands by a weather-bitten conduit of many kings' reigns. i never heard of such ar encounter, which lames report to follow it and undoes description to d second gentleman: what, pray you, became of antigonus, that carried hene child?
+
+
+📝 Test 9/10: "the time traveller finds himself"
+-------------------------------------------------------
+the time traveller finds himself and catches for his master. petruchio: d swift simile, but something currish. tranio: 'tis well, sir, that you 
+
+📝 Test 10/10: "the time traveller tells the narrator to wait for him"  
+red honour of himself, his queen's, his hopeful son's, his babe's, betrays to slander, whose sting is sharper than the sword's; and will not-- for, as the case now stands, it is a curse he cannot be compell'd to't--once remove the root of his opinion, which is rotten as ever oak o       
+
+(C:\Users\Administrator\Desktop\study\vision\.conda) PS E:\shendu\LSTM> 
+e:\shendu\LSTM\lstm_sentence_generation.py:212: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.e:\shendu\LSTM\lstm_sentence_generation.py:212: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.e:\shendu\LSTM\lstm_sentence_generation.py:212: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
