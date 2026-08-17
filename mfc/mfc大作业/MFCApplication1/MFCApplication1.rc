@@ -1,0 +1,382 @@
+﻿// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+#include "verrsrc.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "#include ""verrsrc.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE
+BEGIN
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#include ""res\\MFCApplication1.rc2""\r\n"
+    "#include ""l.CHS\\afxres.rc""\r\n"
+    "#include ""l.CHS\\afxprint.rc""\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE 4, 2
+IDR_MAINFRAME           ICON            "res\\MFCApplication1.ico"
+IDR_MFCApplication1TYPE ICON            "res\\MFCApplication1Doc.ico"
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_MAINFRAME           BITMAP          "res\\Toolbar.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "设置(&S)"
+    BEGIN
+        MENUITEM "基本设置(&B)...\tCtrl+Alt+F",     ID_SETTINGS_BASIC
+        MENUITEM "参数设置(&P)...\tCtrl+Alt+P",     ID_SETTINGS_PARAM
+        MENUITEM SEPARATOR
+        MENUITEM "保存定值参数(&1)",                ID_FILE_SAVE_STEP
+        MENUITEM "保存时变参数(&2)",                ID_FILE_SAVE_SIN
+        MENUITEM SEPARATOR
+        MENUITEM "读取定值参数(&3)",                ID_FILE_LOAD_STEP
+        MENUITEM "读取时变参数(&4)",                ID_FILE_LOAD_SIN
+    END
+    POPUP "控制(&C)"
+    BEGIN
+        MENUITEM "开始(&S)\tAlt+S",                 ID_CONTROL_START
+        MENUITEM "暂停(&P)\tAlt+P",                 ID_CONTROL_PAUSE
+        MENUITEM "停止(&T)\tAlt+T",                 ID_CONTROL_STOP
+    END
+    POPUP "帮助(&H)"
+    BEGIN
+        MENUITEM "关于 SolarWingSim(&A)...",        ID_APP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS
+BEGIN
+    "F",            ID_SETTINGS_BASIC,      VIRTKEY, CONTROL, ALT
+    "P",            ID_SETTINGS_PARAM,      VIRTKEY, CONTROL, ALT
+    "S",            ID_CONTROL_START,       VIRTKEY, ALT
+    "P",            ID_CONTROL_PAUSE,       VIRTKEY, ALT
+    "T",            ID_CONTROL_STOP,        VIRTKEY, ALT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog - About Box
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 SolarWingSim"
+FONT 9, "MS Shell Dlg"
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "太阳翼展开时变重力卸载控制仿真 v1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "版权所有 (C) 2026",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "确定",IDOK,113,41,50,14,WS_GROUP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog - 基本设置
+//
+
+IDD_BASIC_SETTINGS DIALOGEX 0, 0, 460, 340
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "基本设置"
+FONT 9, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "曲线图背景颜色", IDC_STATIC, 10, 10, 440, 50
+    PUSHBUTTON      "选择背景颜色...", IDC_BUTTON_BGCOLOR, 20, 25, 140, 20
+
+    GROUPBOX        "文字样式设置", IDC_STATIC, 10, 70, 440, 200
+    LTEXT           "纵轴标签文字:", IDC_STATIC, 20, 90, 80, 12
+    LTEXT           "拉力:", IDC_STATIC, 20, 110, 40, 12
+    PUSHBUTTON      "字体...", IDC_BUTTON_FONT_FORCE, 70, 108, 60, 16
+    LTEXT           "示例: 拉力/N", IDC_STATIC_FONT_FORCE, 140, 110, 140, 12
+
+    LTEXT           "误差:", IDC_STATIC, 20, 135, 40, 12
+    PUSHBUTTON      "字体...", IDC_BUTTON_FONT_ERROR, 70, 133, 60, 16
+    LTEXT           "示例: 误差/m", IDC_STATIC_FONT_ERROR, 140, 135, 140, 12
+
+    LTEXT           "位移:", IDC_STATIC, 20, 160, 40, 12
+    PUSHBUTTON      "字体...", IDC_BUTTON_FONT_DISP, 70, 158, 60, 16
+    LTEXT           "示例: 位移/m", IDC_STATIC_FONT_DISP, 140, 160, 140, 12
+
+    LTEXT           "横轴标签文字: 时间", IDC_STATIC, 20, 185, 120, 12
+    PUSHBUTTON      "字体...", IDC_BUTTON_FONT_TIME, 70, 183, 60, 16
+    LTEXT           "示例: 时间/s", IDC_STATIC_FONT_TIME, 140, 185, 140, 12
+
+    GROUPBOX        "数值仿真算法", IDC_STATIC, 10, 230, 440, 55
+    CONTROL         "欧拉法 (Euler)", IDC_RADIO_EULER, "Button", BS_AUTORADIOBUTTON | WS_GROUP, 20, 250, 110, 12
+    CONTROL         "二阶龙格-库塔法 (RK2)", IDC_RADIO_RK2, "Button", BS_AUTORADIOBUTTON, 140, 250, 140, 12
+    CONTROL         "四阶龙格-库塔法 (RK4)", IDC_RADIO_RK4, "Button", BS_AUTORADIOBUTTON, 290, 250, 150, 12
+
+    DEFPUSHBUTTON   "确定", IDOK, 340, 315, 50, 16
+    PUSHBUTTON      "取消", IDCANCEL, 400, 315, 50, 16
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog - 参数设置
+//
+
+IDD_PARAM_SETTINGS DIALOGEX 0, 0, 600, 540
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "参数设置"
+FONT 9, "MS Shell Dlg"
+BEGIN
+    // 系统动力学参数
+    GROUPBOX        "系统动力学参数", IDC_STATIC, 10, 10, 580, 100
+    LTEXT           "单位长度质量 k (kg/m):", IDC_STATIC, 20, 30, 140, 12
+    EDITTEXT        IDC_EDIT_K, 165, 28, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "范围: 1 ~ 5", IDC_STATIC, 235, 30, 80, 12
+
+    LTEXT           "重力加速度 g (m/s^2):", IDC_STATIC, 20, 50, 140, 12
+    EDITTEXT        IDC_EDIT_G, 165, 48, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "范围: 9.8 ~ 10", IDC_STATIC, 235, 50, 100, 12
+
+    LTEXT           "吊钩质量 m1 (kg):", IDC_STATIC, 20, 70, 140, 12
+    EDITTEXT        IDC_EDIT_M1, 165, 68, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "范围: 10 ~ 15", IDC_STATIC, 235, 70, 100, 12
+
+    LTEXT           "钢丝绳倾角 theta (deg):", IDC_STATIC, 20, 90, 140, 12
+    EDITTEXT        IDC_EDIT_THETA, 165, 88, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "范围: 0 ~ 0.05", IDC_STATIC, 235, 90, 100, 12
+
+    // PID控制器参数
+    GROUPBOX        "PID控制器参数", IDC_STATIC, 10, 115, 580, 105
+    LTEXT           "比例系数 kp:", IDC_STATIC, 20, 135, 80, 12
+    CONTROL         "", IDC_SLIDER_KP, "msctls_trackbar32", TBS_HORZ | TBS_AUTOTICKS | WS_TABSTOP, 120, 133, 300, 20
+    EDITTEXT        IDC_EDIT_KP, 430, 133, 70, 14, ES_AUTOHSCROLL
+
+    LTEXT           "积分系数 ki:", IDC_STATIC, 20, 160, 80, 12
+    CONTROL         "", IDC_SLIDER_KI, "msctls_trackbar32", TBS_HORZ | TBS_AUTOTICKS | WS_TABSTOP, 120, 158, 300, 20
+    EDITTEXT        IDC_EDIT_KI, 430, 158, 70, 14, ES_AUTOHSCROLL
+
+    LTEXT           "微分系数 kd:", IDC_STATIC, 20, 185, 80, 12
+    CONTROL         "", IDC_SLIDER_KD, "msctls_trackbar32", TBS_HORZ | TBS_AUTOTICKS | WS_TABSTOP, 120, 183, 300, 20
+    EDITTEXT        IDC_EDIT_KD, 430, 183, 70, 14, ES_AUTOHSCROLL
+
+    // 目标设置
+    GROUPBOX        "目标位移设置", IDC_STATIC, 10, 225, 580, 85
+    CONTROL         "定值目标 ld", IDC_RADIO_CONSTANT, "Button", BS_RADIOBUTTON | WS_GROUP, 20, 245, 90, 12
+    EDITTEXT        IDC_EDIT_TARGET_VALUE, 115, 243, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "m", IDC_STATIC, 182, 245, 20, 12
+
+    CONTROL         "时变二次曲线 ld = A t^2 + B t", IDC_RADIO_QUADRATIC, "Button", BS_RADIOBUTTON, 20, 272, 170, 12
+    LTEXT           "A (0.015~0.025):", IDC_STATIC, 200, 274, 100, 12
+    EDITTEXT        IDC_EDIT_A, 305, 272, 55, 14, ES_AUTOHSCROLL
+    LTEXT           "B (0.02~0.04):", IDC_STATIC, 370, 274, 75, 12
+    EDITTEXT        IDC_EDIT_B, 450, 272, 55, 14, ES_AUTOHSCROLL
+
+    // 仿真参数
+    GROUPBOX        "仿真参数设置", IDC_STATIC, 10, 320, 580, 55
+    LTEXT           "仿真总时间 (s):", IDC_STATIC, 20, 342, 100, 12
+    EDITTEXT        IDC_EDIT_SIM_TIME, 125, 340, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "仿真步长 (s):", IDC_STATIC, 210, 342, 90, 12
+    EDITTEXT        IDC_EDIT_SIM_STEP, 305, 340, 60, 14, ES_AUTOHSCROLL
+    LTEXT           "最高位移 (m):", IDC_STATIC, 390, 342, 90, 12
+    EDITTEXT        IDC_EDIT_MAX_DISP, 485, 340, 60, 14, ES_AUTOHSCROLL
+
+    // 仿真控制
+    GROUPBOX        "仿真控制", IDC_STATIC, 10, 385, 580, 65
+    PUSHBUTTON      "开始", IDC_BUTTON_START, 20, 405, 70, 28
+    PUSHBUTTON      "暂停", IDC_BUTTON_PAUSE, 100, 405, 70, 28
+    PUSHBUTTON      "停止", IDC_BUTTON_STOP, 180, 405, 70, 28
+    LTEXT           "状态指示灯:", IDC_STATIC, 280, 412, 70, 12
+    LTEXT           "     ", IDC_STATIC_LED, 360, 405, 40, 20, SS_CENTER | WS_BORDER
+
+    DEFPUSHBUTTON   "确定", IDOK, 470, 505, 55, 18
+    PUSHBUTTON      "取消", IDCANCEL, 535, 505, 55, 18
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO     VERSIONINFO
+  FILEVERSION       1,0,0,1
+  PRODUCTVERSION    1,0,0,1
+  FILEFLAGSMASK     VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS         VS_FF_DEBUG
+#else
+  FILEFLAGS         0x0L
+#endif
+  FILEOS            VOS_NT_WINDOWS32
+  FILETYPE          VFT_APP
+  FILESUBTYPE       VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404B0"
+        BEGIN
+            VALUE "CompanyName", "MFC Course Project"
+            VALUE "FileDescription", "SolarWingSim"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "MFCApplication1.exe"
+            VALUE "LegalCopyright", "(C) 2026"
+            VALUE "OriginalFilename", "MFCApplication1.exe"
+            VALUE "ProductName", "SolarWingSim"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0804, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_BASIC_SETTINGS, DIALOG
+    BEGIN
+        RIGHTMARGIN, 453
+        BOTTOMMARGIN, 333
+    END
+
+    IDD_PARAM_SETTINGS, DIALOG
+    BEGIN
+        RIGHTMARGIN, 593
+        BOTTOMMARGIN, 533
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDP_OLE_INIT_FAILED         "OLE 初始化失败。请确保 OLE 库是正确的版本。"
+END
+
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME               "SolarWingSim\n\n太阳翼展开仿真\n\n\nSolarWing.Document\nSolarWing.Document"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_APP_TITLE           "太阳翼展开仿真"
+    AFX_IDS_IDLEMESSAGE         "就绪"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INDICATOR_EXT            "EXT"
+    ID_INDICATOR_CAPS           "CAP"
+    ID_INDICATOR_NUM            "NUM"
+    ID_INDICATOR_SCRL           "SCRL"
+    ID_INDICATOR_OVR            "OVR"
+    ID_INDICATOR_REC            "REC"
+END
+
+STRINGTABLE
+BEGIN
+    ID_CONTROL_START            "开始仿真\n开始"
+    ID_CONTROL_PAUSE            "暂停仿真\n暂停"
+    ID_CONTROL_STOP             "停止仿真\n停止"
+    ID_SETTINGS_BASIC           "打开基本设置\n基本设置"
+    ID_SETTINGS_PARAM           "打开参数设置\n参数设置"
+END
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE 4, 2
+#include "res\\MFCApplication1.rc2"
+#include "l.CHS\\afxres.rc"
+#include "l.CHS\\afxprint.rc"
+#endif
+#endif    // not APSTUDIO_INVOKED

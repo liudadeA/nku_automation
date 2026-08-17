@@ -1,0 +1,350 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{caption}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\setlength{\parindent}{2em}
+\linespread{1.25}
+
+\titleformat{\section}{\centering\heiti\fontsize{16pt}{\baselineskip}\bfseries}{第一章}{1em}{}
+\titleformat{\subsection}{\centering\heiti\fontsize{14pt}{\baselineskip}\bfseries}{第\thesection 节}{1em}{}
+\titleformat{\subsubsection}{\heiti\fontsize{13pt}{\baselineskip}}{\thesubsubsection}{1em}{}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    frame=single,
+    breaklines=true,
+    showstringspaces=false
+}
+
+\begin{document}
+
+\begin{center}
+{\heiti\fontsize{22pt}{\baselineskip}\bfseries 强化学习第六次作业}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+{\heiti\fontsize{18pt}{\baselineskip}\bfseries 摘\quad 要}
+\end{center}
+
+\vspace{0.5cm}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\setlength{\baselineskip}{20pt}
+
+本文研究了基于深度Q网络（Deep Q-Network, DQN）的Atari游戏智能体训练方法。以经典的Pong游戏为实验环境，通过构建卷积神经网络（CNN）作为策略网络，结合经验回放机制和目标网络技术，实现了对游戏策略的有效学习。实验中采用了多种Atari环境预处理技术，包括帧堆叠、奖励裁剪、帧跳跃等，并针对原始DQN算法进行了多项超参数优化。实验结果表明，经过200万步训练后，智能体在Pong游戏中达到了平均奖励19.60$\pm$1.36的优秀成绩，接近游戏的理论最优值21分，验证了DQN算法在Atari游戏任务中的有效性。
+
+\vspace{0.5cm}
+
+\noindent\textbf{关键词：}深度强化学习；DQN；Atari游戏；Pong；卷积神经网络
+
+\vspace{1cm}
+
+\begin{center}
+{\fontsize{18pt}{\baselineskip}\bfseries\selectfont Abstract}
+\end{center}
+
+\vspace{0.5cm}
+
+This paper investigates the training method of Atari game agents based on Deep Q-Network (DQN). Taking the classic Pong game as the experimental environment, effective learning of game strategies is achieved by constructing a Convolutional Neural Network (CNN) as the policy network, combined with experience replay mechanism and target network technology. Various Atari environment preprocessing techniques are adopted in the experiment, including frame stacking, reward clipping, and frame skipping. Several hyperparameter optimizations are also performed for the original DQN algorithm. Experimental results show that after 2 million steps of training, the agent achieves an excellent average reward of 19.60$\pm$1.36 in the Pong game, approaching the theoretical optimal value of 21, which validates the effectiveness of the DQN algorithm in Atari game tasks.
+
+\vspace{0.5cm}
+
+\noindent\textbf{Key Words:} Deep Reinforcement Learning; DQN; Atari Games; Pong; Convolutional Neural Network
+
+\newpage
+
+\section{引言}
+
+强化学习是机器学习的一个重要分支，其核心思想是智能体通过与环境的交互，学习能够最大化累积奖励的策略。近年来，深度强化学习将深度神经网络与强化学习相结合，在游戏、机器人控制、自动驾驶等领域取得了突破性进展。
+
+2013年，Mnih等人提出的DQN算法是深度强化学习领域的里程碑式工作。该算法成功地将深度学习应用于Atari 2600游戏，仅使用原始像素作为输入，就在多个游戏中达到了人类专家水平。DQN的核心创新包括：使用卷积神经网络处理高维视觉输入、经验回放机制打破数据相关性、目标网络稳定训练过程。
+
+本文以Atari Pong游戏为实验平台，深入研究DQN算法的实现与优化。Pong是一款经典的乒乓球模拟游戏，玩家控制球拍上下移动击球，得分范围从-21到+21，是验证强化学习算法效果的理想环境。
+
+\section{DQN算法原理}
+
+\subsection{Q学习基础}
+
+Q学习是一种基于值函数的强化学习方法，其目标是学习最优动作价值函数$Q^*(s,a)$，表示在状态$s$采取动作$a$后，遵循最优策略所能获得的期望累积奖励。Q学习的更新公式为：
+
+\begin{equation}
+Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma \max_a Q(s_{t+1}, a) - Q(s_t, a_t) \right]
+\end{equation}
+
+其中，$\alpha$为学习率，$\gamma$为折扣因子，$r_t$为即时奖励。
+
+\subsection{深度Q网络}
+
+传统的Q学习使用表格存储Q值，难以处理高维状态空间。DQN使用神经网络$Q(s,a;\theta)$来近似Q值函数，其中$\theta$为网络参数。DQN的损失函数定义为：
+
+\begin{equation}
+L(\theta) = \mathbb{E}_{(s,a,r,s') \sim U(D)} \left[ \left( r + \gamma \max_{a'} Q(s',a';\theta^-) - Q(s,a;\theta) \right)^2 \right]
+\end{equation}
+
+其中，$D$为经验回放缓冲区，$\theta^-$为目标网络参数，定期从主网络参数$\theta$复制而来。
+
+\subsection{关键技术}
+
+DQN算法包含以下关键技术：
+
+\textbf{（1）经验回放}：将智能体的转移经验$(s_t, a_t, r_t, s_{t+1})$存储在回放缓冲区中，训练时随机采样，打破数据间的相关性，提高样本利用效率。
+
+\textbf{（2）目标网络}：使用独立的目标网络计算TD目标，目标网络参数定期更新，避免"追逐移动目标"的问题，提高训练稳定性。
+
+\textbf{（3）$\epsilon$-贪婪探索}：以概率$\epsilon$随机选择动作，以概率$1-\epsilon$选择贪婪动作，平衡探索与利用。
+
+\section{实验设计与实现}
+
+\subsection{实验环境}
+
+实验采用Arcade Learning Environment (ALE)提供的Pong游戏环境。Pong是一款双人乒乓球游戏，智能体控制右侧球拍，目标是将球击回并使对手漏接得分。
+
+游戏状态为$210 \times 160$的RGB图像，经过预处理后转换为$84 \times 84$的灰度图像。动作空间包含6个离散动作，但实际有效的只有2个：向上移动和向下移动。
+
+\subsection{环境预处理}
+
+为了提高训练效率和稳定性，对原始环境进行了以下预处理：
+
+\begin{table}[H]
+\centering
+\caption{环境预处理参数设置}
+\begin{tabular}{lll}
+\toprule
+参数名称 & 参数值 & 说明 \\
+\midrule
+screen\_size & 84 & 图像缩放尺寸 \\
+frame\_skip & 4 & 帧跳跃数，每个动作重复执行4帧 \\
+noop\_max & 30 & 游戏开始前随机执行空操作的最大次数 \\
+terminal\_on\_life\_loss & True & 失去生命时终止回合 \\
+clip\_reward & True & 将奖励裁剪到$[-1, 1]$范围 \\
+frame\_stack & 4 & 堆叠4帧作为观测输入 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+帧堆叠技术通过将连续4帧图像堆叠在一起，使网络能够感知运动信息，解决部分可观测问题。
+
+\subsection{网络结构}
+
+采用CNN策略网络，输入为$4 \times 84 \times 84$的帧堆叠图像，输出为各动作的Q值。网络结构基于Nature DQN：
+
+\begin{table}[H]
+\centering
+\caption{CNN网络结构}
+\begin{tabular}{lccc}
+\toprule
+层类型 & 输入尺寸 & 输出尺寸 & 参数 \\
+\midrule
+卷积层1 & $4 \times 84 \times 84$ & $32 \times 20 \times 20$ & $8 \times 8$, stride 4 \\
+卷积层2 & $32 \times 20 \times 20$ & $64 \times 9 \times 9$ & $4 \times 4$, stride 2 \\
+卷积层3 & $64 \times 9 \times 9$ & $64 \times 7 \times 7$ & $3 \times 3$, stride 1 \\
+展平层 & $64 \times 7 \times 7$ & 3136 & - \\
+全连接层1 & 3136 & 512 & - \\
+全连接层2 & 512 & 动作数 & - \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{超参数设置}
+
+经过多次实验调优，最终采用以下超参数配置：
+
+\begin{table}[H]
+\centering
+\caption{DQN超参数设置}
+\begin{tabular}{lll}
+\toprule
+参数名称 & 参数值 & 说明 \\
+\midrule
+total\_timesteps & 2,000,000 & 总训练步数 \\
+learning\_rate & $1 \times 10^{-4}$ & Adam优化器学习率 \\
+buffer\_size & 500,000 & 经验回放缓冲区大小 \\
+learning\_starts & 50,000 & 开始学习前的随机探索步数 \\
+batch\_size & 32 & 批量大小 \\
+gamma & 0.99 & 折扣因子 \\
+train\_freq & 4 & 每4步更新一次网络 \\
+target\_update\_interval & 10,000 & 目标网络更新频率 \\
+exploration\_fraction & 0.20 & 探索阶段占比 \\
+exploration\_initial\_eps & 1.0 & 初始探索率 \\
+exploration\_final\_eps & 0.01 & 最终探索率 \\
+max\_grad\_norm & 10.0 & 梯度裁剪阈值 \\
+n\_envs & 4 & 并行环境数量 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{训练策略}
+
+训练过程中采用以下优化策略：
+
+\textbf{（1）并行环境采样}：使用4个并行环境同时采样，提高数据多样性和采样效率。
+
+\textbf{（2）梯度裁剪}：将梯度范数限制在10以内，防止梯度爆炸，提高训练稳定性。
+
+\textbf{（3）奖励裁剪}：将奖励限制在$[-1, 1]$范围内，避免奖励尺度对训练的影响。
+
+\textbf{（4）定期评估}：每50,000步进行一次评估，使用10个回合计算平均性能。
+
+\section{实验结果与分析}
+
+\subsection{训练过程可视化}
+
+图1展示了训练过程中的评估奖励变化曲线。可以看到，随着训练的进行，智能体的平均奖励从初期的-20左右逐步提升，最终稳定在19左右。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{runs/pong_dqn/training_visualization.png}
+\caption{DQN训练过程可视化}
+\end{figure}
+
+从图中可以观察到以下特点：
+
+\textbf{（1）评估奖励曲线}：左上角显示了评估阶段的平均奖励变化。训练初期奖励较低且波动大，随着探索率下降和网络优化，奖励稳步上升并趋于稳定。
+
+\textbf{（2）回合长度曲线}：右上角显示了评估回合长度。随着智能体水平提高，回合长度增加，表明智能体能够更长时间地与对手对抗。
+
+\textbf{（3）训练奖励曲线}：左下角显示了训练过程中每个回合的奖励及其移动平均。可以看到明显的上升趋势和最终的稳定状态。
+
+\textbf{（4）训练回合长度}：右下角显示了训练回合长度的变化趋势，与评估结果一致。
+
+\subsection{最终性能评估}
+
+训练完成后，使用最优模型进行5回合评估，结果如下：
+
+\begin{table}[H]
+\centering
+\caption{最终评估结果}
+\begin{tabular}{ll}
+\toprule
+评估指标 & 数值 \\
+\midrule
+平均奖励 & $19.60 \pm 1.36$ \\
+平均回合长度 & 7143 \\
+总训练步数 & 2,000,000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{result.png}
+\caption{智能体战胜电脑的游戏截图}
+\end{figure}
+
+Pong游戏的奖励范围为$[-21, +21]$，智能体达到19.60的平均奖励，意味着在大多数回合中几乎完胜对手，接近理论最优值21分。这表明DQN算法成功学习到了有效的游戏策略。
+
+\subsection{训练效果分析}
+
+通过分析训练日志，可以得出以下结论：
+
+\textbf{（1）探索与利用平衡}：探索率从1.0线性衰减到0.01，探索阶段占训练总时长的20\%。这一设置使智能体有足够时间探索状态空间，同时保证后期有足够的利用能力。
+
+\textbf{（2）学习稳定性}：损失值从初期的较高水平逐渐下降并稳定在0.003左右，表明网络收敛良好。
+
+\textbf{（3）样本效率}：使用500,000容量的经验回放缓冲区，配合50,000步的预填充，确保了训练初期的样本多样性。
+
+\textbf{（4）并行加速}：4个并行环境使采样速度提升约4倍，总训练时间约1小时12分钟。
+
+\section{结论与展望}
+
+本文基于DQN算法实现了Atari Pong游戏的智能体训练，通过合理的网络结构设计、环境预处理和超参数调优，取得了平均奖励19.60的优秀成绩。实验验证了DQN算法在视觉输入决策任务中的有效性。
+
+主要贡献包括：
+
+（1）实现了完整的DQN训练流程，包括环境预处理、网络构建、训练循环和模型评估。
+
+（2）针对Pong游戏特点进行了超参数优化，包括增大经验回放缓冲区、延长探索阶段、使用并行环境等。
+
+（3）提供了训练过程的可视化分析，直观展示了智能体性能的提升过程。
+
+未来工作可以从以下方面改进：
+
+（1）尝试更先进的算法，如Double DQN、Dueling DQN、Rainbow等，进一步提升性能。
+
+（2）探索迁移学习方法，将Pong游戏学习到的策略迁移到其他Atari游戏。
+
+（3）研究更高效的网络结构，如残差网络、注意力机制等。
+
+\newpage
+
+\section*{附录}
+
+\subsection*{附录A：核心训练代码}
+
+\begin{lstlisting}[language=Python]
+def main() -> None:
+    args = parse_args()
+    
+    # 创建训练环境和评估环境
+    train_env = make_atari_env(args.env_id, args.seed, 
+                                n_envs=args.n_envs)
+    train_env = VecFrameStack(train_env, n_stack=args.frame_stack)
+    train_env = VecTransposeImage(train_env)
+    
+    # 创建DQN模型
+    model = DQN(
+        policy="CnnPolicy",
+        env=train_env,
+        learning_rate=args.learning_rate,
+        buffer_size=args.buffer_size,
+        learning_starts=args.learning_starts,
+        batch_size=args.batch_size,
+        gamma=args.gamma,
+        train_freq=(args.train_freq, "step"),
+        target_update_interval=args.target_update_interval,
+        exploration_fraction=args.exploration_fraction,
+        exploration_final_eps=args.exploration_final_eps,
+    )
+    
+    # 开始训练
+    model.learn(total_timesteps=args.total_timesteps, 
+                callback=callbacks)
+    model.save(str(args.save_dir / "final_model"))
+\end{lstlisting}
+
+\subsection*{附录B：环境预处理代码}
+
+\begin{lstlisting}[language=Python]
+def make_atari_env(env_id, seed, n_envs=1, monitor_dir=None):
+    env = make_vec_env(
+        env_id=env_id,
+        n_envs=n_envs,
+        seed=seed,
+        env_kwargs={
+            "frameskip": 1,
+            "repeat_action_probability": 0.0,
+        },
+        wrapper_class=AtariWrapper,
+        wrapper_kwargs={
+            "noop_max": 30,
+            "frame_skip": 4,
+            "screen_size": 84,
+            "terminal_on_life_loss": True,
+            "clip_reward": True,
+        },
+    )
+    return env
+\end{lstlisting}
+\end{document}

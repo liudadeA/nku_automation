@@ -1,0 +1,548 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[UTF8,heading=true]{ctex}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\setlength{\parindent}{2em}
+
+\ctexset{
+    section = {
+        format = \centering\heiti\fontsize{16pt}{\baselineskip}\bfseries,
+        nameformat = {},
+        titleformat = {},
+        name = {第,章},
+        number = \chinese{section},
+        aftername = \hspace{1em},
+        beforeskip = 24pt,
+        afterskip = 18pt
+    },
+    subsection = {
+        format = \centering\heiti\fontsize{14pt}{\baselineskip}\bfseries,
+        name = {第,节},
+        number = \chinese{subsection},
+        aftername = \hspace{1em},
+        beforeskip = 24pt,
+        afterskip = 6pt
+    },
+    subsubsection = {
+        format = \heiti\fontsize{13pt}{\baselineskip},
+        aftername = \hspace{1em},
+        beforeskip = 12pt,
+        afterskip = 6pt
+    }
+}
+
+\titleformat{\paragraph}{\heiti\fontsize{12pt}{\baselineskip}}{（\theparagraph）}{1em}{}
+\titlespacing{\paragraph}{0pt}{12pt}{6pt}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    frame=single,
+    breaklines=true,
+    captionpos=b
+}
+
+\begin{document}
+
+\newpage
+
+\begin{center}
+        \centering
+    \vspace*{2cm}
+    {\heiti\fontsize{22pt}{\baselineskip}\bfseries 2D点云直线提取仿真实验报告\par}
+    \vspace{1cm}
+    {\fontsize{14pt}{\baselineskip} 2312167-智能科学与技术-刘振毫-\par}
+    \vspace{3cm}
+
+    \vfill
+{\heiti\fontsize{18pt}{\baselineskip}\bfseries 摘\quad 要}
+\end{center}
+\vspace{-12pt}
+\setlength{\parskip}{0pt}
+
+\begin{singlespace}
+{\songti\fontsize{12pt}{20pt}\selectfont
+本项目实现了四种基于2D点云的直线提取算法，包括Split-and-Merge、Line-Regression、RANSAC和Hough-Transform，并通过随机仿真实验验证模型正确性。实验设置包含三种不同噪声场景（低噪声、中噪声、高噪声），每种场景进行20次独立试验。评价指标包括Precision、Recall、F1分数、平均角度误差、平均距离误差和运行时间。实验结果表明，RANSAC和Hough-Transform在三种噪声场景下均达到很高的稳定性，平均F1接近1；Line-Regression在中低噪声场景表现接近理想；Split-and-Merge速度最快，但在高噪声场景下容易出现过分裂现象。四种算法都能够在仿真场景中恢复主要直线结构，说明实验系统能够有效验证所建模型的正确性。
+}
+\end{singlespace}
+
+\vspace{12pt}
+{\songti\fontsize{12pt}{20pt}\selectfont \textbf{关键词：}点云处理；直线提取；RANSAC；Hough变换；仿真实验}
+
+\vspace{36pt}
+
+\begin{center}
+{\fontsize{18pt}{\baselineskip}\bfseries\selectfont Abstract}
+\end{center}
+\vspace{-12pt}
+
+\begin{singlespace}
+{\fontsize{12pt}{20pt}\selectfont
+This project implements four line extraction algorithms based on 2D point clouds, including Split-and-Merge, Line-Regression, RANSAC, and Hough-Transform, and verifies the correctness of the models through random simulation experiments. The experimental setup includes three different noise scenarios, with 20 independent trials for each scenario. Evaluation metrics include Precision, Recall, F1 score, mean angle error, mean distance error, and runtime. Experimental results show that RANSAC and Hough-Transform achieve high stability in all three noise scenarios, with average F1 scores close to 1; Line-Regression performs nearly ideally in low and medium noise scenarios; Split-and-Merge is the fastest but prone to over-segmentation in high noise scenarios. All four algorithms can recover the main line structures in simulation scenarios, demonstrating that the experimental system can effectively verify the correctness of the constructed models.
+}
+\end{singlespace}
+
+\vspace{12pt}
+{\fontsize{12pt}{20pt}\selectfont \textbf{Key Words:} Point cloud processing; Line extraction; RANSAC; Hough transform; Simulation experiment}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{引言}
+
+\subsection{研究背景}
+
+点云数据是由三维扫描设备或深度相机获取的空间点集合，广泛应用于自动驾驶、机器人导航、三维重建等领域。直线作为点云中最基本的几何基元之一，其准确提取对于场景理解和物体识别具有重要意义。
+
+在2D点云处理中，直线提取算法需要解决以下关键问题：如何从含噪声的点云数据中准确识别直线段、如何处理离群点的干扰、以及如何在保证精度的同时提高计算效率。
+
+\subsection{研究目的}
+
+本项目旨在实现并比较四种经典的2D点云直线提取算法，通过仿真实验验证各算法在不同噪声条件下的性能表现，为实际应用中的算法选择提供参考依据。
+
+\subsection{研究内容}
+
+本研究主要实现Split-and-Merge、Line-Regression、RANSAC和Hough-Transform四种直线提取算法，设计仿真实验场景生成含噪声和离群点的测试数据，建立统一的评价指标体系，并进行多组对比实验分析各算法的优缺点。
+
+\section{算法原理}
+
+\subsection{Split-and-Merge算法}
+
+\subsubsection{算法思想}
+
+Split-and-Merge算法是一种基于递归分割和合并的直线提取方法。该算法假设输入点云具有一定的扫描顺序，通过迭代地将点集分割为更小的子集，然后合并共线的相邻子集来实现直线提取。
+
+\subsubsection{算法流程}
+
+算法主要包含以下步骤：
+
+\textbf{（一）分割阶段}
+
+对于给定点集$P = \{p_1, p_2, \ldots, p_n\}$，首先计算首尾两点连线的直线方程：
+\begin{equation}
+    ax + by + c = 0
+\end{equation}
+
+然后计算每个点到该直线的距离：
+\begin{equation}
+    d_i = \frac{|ax_i + by_i + c|}{\sqrt{a^2 + b^2}}
+\end{equation}
+
+若最大距离$d_{max}$超过阈值$T_{split}$，则在最大距离点处将点集分割为两部分，递归处理每个子集。
+
+\textbf{（二）合并阶段}
+
+对于相邻的分割段，计算其拟合直线的角度差$\Delta\theta$和距离差$\Delta d$。若两者均小于相应阈值，则合并这两个分割段。
+
+\subsection{Line-Regression算法}
+
+\subsubsection{算法思想}
+
+Line-Regression算法基于最小二乘原理，通过逐步增长的方式构建直线段。该算法从起点开始，逐步扩展直线段，直到拟合残差超过阈值。
+
+\subsubsection{算法流程}
+
+\textbf{（一）直线拟合}
+
+对于点集$P$，其最小二乘拟合直线通过奇异值分解（SVD）求解。设点集的质心为：
+\begin{equation}
+    \bar{p} = \frac{1}{n}\sum_{i=1}^{n}p_i
+\end{equation}
+
+构建中心化矩阵$C = P - \bar{p}$，对其进行SVD分解：
+\begin{equation}
+    C = U\Sigma V^T
+\end{equation}
+
+直线的方向向量即为$V$的第一列。
+
+\textbf{（二）残差检验}
+
+计算点集到拟合直线的平均残差：
+\begin{equation}
+    r = \frac{1}{n}\sum_{i=1}^{n}d_i
+\end{equation}
+
+若$r > T_{residual}$，则停止当前线段的增长。
+
+\subsection{RANSAC算法}
+
+\subsubsection{算法思想}
+
+RANSAC（Random Sample Consensus）是一种鲁棒的参数估计方法，通过随机采样和一致性检验来处理含离群点的数据。
+
+\subsubsection{算法流程}
+
+\textbf{（一）随机采样}
+
+从点集$P$中随机选取2个点，确定一条候选直线。
+
+\textbf{（二）内点统计}
+
+计算所有点到候选直线的距离，统计距离小于阈值$T_{dist}$的内点数量。
+
+\textbf{（三）模型优化}
+
+选择内点数量最多的候选直线，使用所有内点重新拟合直线模型。
+
+\textbf{（四）迭代提取}
+
+移除已提取直线对应的内点，重复上述过程直到满足终止条件。
+
+\subsection{Hough-Transform算法}
+
+\subsubsection{算法思想}
+
+Hough变换是一种基于投票机制的直线检测方法，将图像空间中的直线映射到参数空间中的点。
+
+\subsubsection{算法流程}
+
+\textbf{（一）参数空间离散化}
+
+使用极坐标表示直线：
+\begin{equation}
+    \rho = x\cos\theta + y\sin\theta
+\end{equation}
+
+其中$\rho$为直线到原点的距离，$\theta$为法线方向角。将参数空间离散化为累加器数组$A(\theta, \rho)$。
+
+\textbf{（二）投票过程}
+
+对于每个点$(x_i, y_i)$，遍历所有$\theta$值，计算对应的$\rho$值，在累加器中投票：
+\begin{equation}
+    A(\theta, \rho) \leftarrow A(\theta, \rho) + 1
+\end{equation}
+
+\textbf{（三）峰值检测}
+
+在累加器中寻找局部极大值，每个峰值对应一条检测到的直线。
+
+\section{实验设计}
+
+\subsection{仿真场景设置}
+
+\subsubsection{真实直线定义}
+
+实验场景由3条真实直线段组成，具体参数如下：
+\begin{itemize}[itemsep=0pt]
+    \item 直线1：起点$(0.6, 0.8)$，终点$(4.8, 2.4)$
+    \item 直线2：起点$(0.9, 4.8)$，终点$(5.6, 4.1)$
+    \item 直线3：起点$(5.7, 0.7)$，终点$(2.7, 5.3)$
+\end{itemize}
+
+\subsubsection{点云生成}
+
+每条直线采样70个点，采样方式如下：
+\begin{equation}
+    p(t) = p_{start} + t \cdot (p_{end} - p_{start}), \quad t \in [0, 1]
+\end{equation}
+
+在采样点上叠加两类噪声：
+\begin{itemize}[itemsep=0pt]
+    \item 沿线方向抖动：高斯噪声$\mathcal{N}(0, \sigma_{jitter}^2)$
+    \item 法向方向噪声：高斯噪声$\mathcal{N}(0, \sigma_{noise}^2)$
+\end{itemize}
+
+\subsubsection{离群点添加}
+
+额外添加均匀分布的离群点，数量为有效点数的指定比例，用于测试算法的鲁棒性。
+
+\subsection{噪声场景设计}
+
+实验设计三种噪声场景，参数设置如表\ref{tab:noise_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{噪声场景参数设置}
+\label{tab:noise_params}
+\begin{tabular}{lccc}
+\toprule
+场景名称 & 法向噪声$\sigma$ & 离群点比例 & 沿线抖动$\sigma$ \\
+\midrule
+低噪声 & 0.02 & 5\% & 0.01 \\
+中噪声 & 0.05 & 10\% & 0.02 \\
+高噪声 & 0.08 & 20\% & 0.03 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{评价指标}
+
+\subsubsection{检测质量指标}
+
+\textbf{（一）精确率}
+
+精确率定义为正确检测的直线数与检测出的总直线数之比：
+\begin{equation}
+    Precision = \frac{TP}{TP + FP}
+\end{equation}
+
+\textbf{（二）召回率}
+
+召回率定义为正确检测的直线数与真实直线总数之比：
+\begin{equation}
+    Recall = \frac{TP}{TP + FN}
+\end{equation}
+
+\textbf{（三）F1分数}
+
+F1分数是精确率和召回率的调和平均值：
+\begin{equation}
+    F1 = \frac{2 \cdot Precision \cdot Recall}{Precision + Recall}
+\end{equation}
+
+\subsubsection{参数误差指标}
+
+\textbf{（一）角度误差}
+
+检测直线与真实直线之间的角度差：
+\begin{equation}
+    \Delta\theta = \min(|\theta_d - \theta_t|, 180° - |\theta_d - \theta_t|)
+\end{equation}
+
+\textbf{（二）距离误差}
+
+检测直线与真实直线之间的法向距离偏差。
+
+\subsubsection{效率指标}
+
+运行时间：算法执行所需的毫秒数。
+
+\section{实验结果}
+
+\subsection{样例场景检测结果}
+
+本节展示中噪声场景下的仿真点云数据及四种算法的检测结果。实验场景包含3条真实直线段，每条直线采样70个点，叠加法向噪声$\sigma=0.05$、沿线抖动$\sigma=0.02$，并添加10\%的均匀分布离群点。
+
+\subsubsection{仿真点云数据}
+
+图\ref{fig:scatter_points}展示了仿真生成的点云数据。图中不同颜色表示点所属的真实直线标签，黑色虚线表示真实直线的位置。三条直线分别位于不同方向，形成交叉结构。点云在直线附近呈现带状分布，体现了法向噪声的影响。离群点均匀散布在整个场景中，增加了直线检测的难度。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{outputs/scatter_points.png}
+\caption{仿真点云数据可视化}
+\label{fig:scatter_points}
+\end{figure}
+
+\subsubsection{Split-and-Merge算法检测结果}
+
+图\ref{fig:detection_split_and_merge}展示了Split-and-Merge算法的检测结果。该算法通过递归分割和合并策略提取直线段。算法成功检测出三条主要直线，检测到的点数与真实采样点数基本一致，检测结果与真实直线吻合良好。在中噪声场景下，算法表现稳定，未出现明显的过分裂现象。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{outputs/detection_split_and_merge.png}
+\caption{Split-and-Merge算法检测结果}
+\label{fig:detection_split_and_merge}
+\end{figure}
+
+\subsubsection{Line-Regression算法检测结果}
+
+图\ref{fig:detection_line_regression}展示了Line-Regression算法的检测结果。该算法基于最小二乘拟合，通过残差阈值控制线段增长。算法准确检测出三条直线，角度估计精确，检测到的线段平滑连续，体现了最小二乘拟合的优势。在中噪声场景下，算法能够有效区分直线段与离群点。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{outputs/detection_line_regression.png}
+\caption{Line-Regression算法检测结果}
+\label{fig:detection_line_regression}
+\end{figure}
+
+\subsubsection{RANSAC算法检测结果}
+
+图\ref{fig:detection_ransac}展示了RANSAC算法的检测结果。该算法通过随机采样和一致性检验实现鲁棒的直线估计。算法成功检测出三条直线，对离群点具有很好的鲁棒性。检测到的点数与真实采样点数略有差异，这是因为RANSAC基于距离阈值判断内点。角度估计准确，检测结果与真实直线高度吻合。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{outputs/detection_ransac.png}
+\caption{RANSAC算法检测结果}
+\label{fig:detection_ransac}
+\end{figure}
+
+\subsubsection{Hough-Transform算法检测结果}
+
+图\ref{fig:detection_hough_transform}展示了Hough-Transform算法的检测结果。该算法通过参数空间投票机制检测直线。算法准确检测出三条主要直线，全局搜索能力强，对交叉线结构处理良好，能够正确分离不同方向的直线。由于参数空间离散化，检测结果的角度和距离存在轻微偏差。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{outputs/detection_hough_transform.png}
+\caption{Hough-Transform算法检测结果}
+\label{fig:detection_hough_transform}
+\end{figure}
+
+\subsubsection{检测结果对比总结}
+
+综合对比四种算法的检测结果，四种算法均能正确检测出3条主要直线，验证了算法实现的正确性。Split-and-Merge和Line-Regression检测到的点数与真实采样点数一致，适合有序点云处理。RANSAC和Hough-Transform对离群点具有更强的鲁棒性，适合复杂噪声场景。所有算法的角度估计均较为准确，能够有效恢复直线的方向信息。
+
+\subsection{汇总实验结果}
+
+表\ref{tab:summary}展示了各算法在三种噪声场景下的平均性能指标。
+
+\begin{longtable}{llccccccc}
+\caption{实验结果汇总表} \label{tab:summary} \\
+\toprule
+场景 & 算法 & F1 & Precision & Recall & 运行时间(ms) & 角度误差($^\circ$) & 距离误差 & 检测条数 \\
+\midrule
+\endfirsthead
+\multicolumn{9}{c}{\tablename\ \thetable{} -- 续表} \\
+\toprule
+场景 & 算法 & F1 & Precision & Recall & 运行时间(ms) & 角度误差($^\circ$) & 距离误差 & 检测条数 \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+低噪声 & Split-and-Merge & 0.993 & 0.988 & 1.000 & 0.512 & 0.088 & 0.002 & 3.05 \\
+低噪声 & Line-Regression & 0.993 & 0.988 & 1.000 & 12.432 & 0.088 & 0.002 & 3.05 \\
+低噪声 & RANSAC & 1.000 & 1.000 & 1.000 & 81.856 & 0.115 & 0.003 & 3.00 \\
+低噪声 & Hough-Transform & 1.000 & 1.000 & 1.000 & 4.603 & 0.121 & 0.003 & 3.00 \\
+\midrule
+中噪声 & Split-and-Merge & 0.898 & 0.839 & 1.000 & 1.389 & 0.235 & 0.006 & 3.85 \\
+中噪声 & Line-Regression & 1.000 & 1.000 & 1.000 & 12.395 & 0.216 & 0.006 & 3.00 \\
+中噪声 & RANSAC & 1.000 & 1.000 & 1.000 & 74.827 & 0.242 & 0.007 & 3.00 \\
+中噪声 & Hough-Transform & 1.000 & 1.000 & 1.000 & 4.751 & 0.251 & 0.012 & 3.00 \\
+\midrule
+高噪声 & Split-and-Merge & 0.770 & 0.643 & 1.000 & 1.408 & 0.566 & 0.011 & 5.05 \\
+高噪声 & Line-Regression & 0.904 & 0.843 & 1.000 & 11.659 & 0.396 & 0.011 & 3.75 \\
+高噪声 & RANSAC & 1.000 & 1.000 & 1.000 & 76.071 & 0.480 & 0.013 & 3.00 \\
+高噪声 & Hough-Transform & 1.000 & 1.000 & 1.000 & 5.148 & 0.637 & 0.029 & 3.00 \\
+\bottomrule
+\end{longtable}
+
+\subsection{性能对比分析}
+
+图\ref{fig:metric_comparison}展示了四种算法在各项指标上的对比情况。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{outputs/metric_comparison.png}
+\caption{算法性能对比图}
+\label{fig:metric_comparison}
+\end{figure}
+
+\section{结果分析}
+
+\subsection{各算法性能分析}
+
+\subsubsection{Split-and-Merge算法}
+
+Split-and-Merge算法在三种噪声场景下均表现出最快的运行速度，平均运行时间仅为0.5-1.4毫秒。该算法对分段明显、点序连续的数据表现稳定，但在高噪声场景下容易出现过分裂现象，导致Precision下降至0.643。算法的主要优点包括计算效率最高、适合实时应用，在低噪声场景下精度接近理想，且算法原理简单、易于实现。算法的主要缺点是对噪声敏感、高噪声下容易过分裂，依赖点序假设、不适合无序点云，且参数调节对结果影响较大。
+
+\subsubsection{Line-Regression算法}
+
+Line-Regression算法在中低噪声场景下表现接近理想，F1分数达到1.000。该算法直接使用最小二乘残差控制增长，通常能得到更平滑的线段。算法的主要优点包括拟合精度高、线段平滑，对中等噪声具有较好的鲁棒性，且参数物理意义明确。算法的主要缺点是运行时间较长，对阈值参数较敏感，高噪声下可能出现过分段现象。
+
+\subsubsection{RANSAC算法}
+
+RANSAC算法在三种噪声场景下均达到F1分数1.000，表现出最强的鲁棒性。该算法通过随机采样和一致性检验有效处理离群点。算法的主要优点包括鲁棒性最强、对离群点不敏感，在所有噪声场景下表现稳定，且不依赖点序假设。算法的主要缺点是运行时间最长，结果具有一定的随机性，且需要调节多个参数。
+
+\subsubsection{Hough-Transform算法}
+
+Hough-Transform算法在三种噪声场景下均达到F1分数1.000，同时运行时间较短。该算法适合全局搜索主方向。算法的主要优点包括全局搜索能力强，对交叉线和离群点具有较好的处理能力，且运行效率适中。算法的主要缺点是量化分辨率会带来参数偏差，角度误差和距离误差相对较大，且参数空间离散化需要经验设定。
+
+\section{结论与展望}
+
+\subsection{主要结论}
+
+通过本次仿真实验，得出以下主要结论：
+
+\textbf{（一）算法性能比较}
+
+RANSAC和Hough-Transform在三种噪声场景下均达到很高的稳定性，平均F1接近1，是鲁棒性最强的两种方法。Split-and-Merge速度最快，适合对实时性要求高的应用场景。Line-Regression在中低噪声场景下表现接近理想。
+
+\textbf{（二）场景适应性}
+
+低噪声场景下四种算法均可胜任；中噪声场景下推荐使用Line-Regression、RANSAC或Hough-Transform；高噪声场景下RANSAC和Hough-Transform是最佳选择。
+
+\textbf{（三）模型验证}
+
+四种算法都能够在仿真场景中恢复主要直线结构，说明实验系统能够有效验证所建模型的正确性。
+
+\section*{符号说明}
+\addcontentsline{toc}{section}{符号说明}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cl}
+\toprule
+符号 & 说明 \\
+\midrule
+$P$ & 点云数据集 \\
+$p_i$ & 第$i$个点 \\
+$a, b, c$ & 直线方程系数 \\
+$d_i$ & 点到直线的距离 \\
+$\theta$ & 直线方向角 \\
+$\rho$ & 直线到原点的距离 \\
+$\sigma$ & 高斯噪声标准差 \\
+$TP$ & 真阳性 \\
+$FP$ & 假阳性   \\
+$FN$ & 假阴性 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{附录}
+\addcontentsline{toc}{section}{附录}
+
+\subsection{算法参数配置}
+
+表\ref{tab:params}列出了四种算法的默认参数配置。
+
+\begin{table}[H]
+\centering
+\caption{算法参数配置表}
+\label{tab:params}
+\begin{tabular}{llc}
+\toprule
+算法 & 参数名称 & 默认值 \\
+\midrule
+\multirow{4}{*}{Split-and-Merge} & 分割阈值 & 0.10 \\
+ & 合并角度阈值 & 6.0$^\circ$ \\
+ & 合并距离阈值 & 0.08 \\
+ & 最小段点数 & 12 \\
+\midrule
+\multirow{3}{*}{Line-Regression} & 残差阈值 & 0.08 \\
+ & 最小段点数 & 12 \\
+ & 合并角度阈值 & 5.0$^\circ$ \\
+\midrule
+\multirow{4}{*}{RANSAC} & 距离阈值 & 0.10 \\
+ & 最小内点数 & 28 \\
+ & 最大迭代次数 & 300 \\
+ & 最大直线数 & 6 \\
+\midrule
+\multirow{4}{*}{Hough-Transform} & 距离阈值 & 0.12 \\
+ & $\theta$量化数 & 180 \\
+ & $\rho$量化数 & 180 \\
+ & 最小投票数 & 26 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

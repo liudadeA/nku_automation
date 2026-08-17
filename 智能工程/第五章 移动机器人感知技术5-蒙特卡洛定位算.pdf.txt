@@ -1,0 +1,359 @@
+第五章移动机器人感知技术5
+孙雷  教授
+Tel:13512967601
+Email: sunl@nankai.edu.cn
+2026年5月11日
+蒙特卡洛定位算法(MCL)
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+2
+本章内容
+4. 总结
+3. 自适应蒙特卡洛定位算法
+1. 蒙特卡洛方法基本思想
+2. 蒙特卡洛定位算法(MCL)
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+3
+机器人定位问题分类
+◼全局定位
+◼局部定位（位置跟随、里程计）
+✓ICP算法：
+•
+局部收敛，易陷于局部最优，匹配错误
+✓收敛性受卡尔曼滤波：
+•
+初始状态精度制约
+◼机器人绑架问题
+◼定位错误判断与恢复
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+4
+1.1 何为蒙特卡洛方法(Monte Carlo Method)
+◼冯-诺伊曼（博弈论之父，原子弹设计者之一）、乌拉姆等人提出
+◼ 一类基于概率的方法的统称
+◼工作原理：
+◼不断抽样
+◼逐渐逼近
+◼优点：
+◼非常通用，可以解决十分复杂的问题
+◼缺点：
+◼收敛速度慢
+◼不精确
+◼蒙特卡洛搜索树——AlphaGo
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+5
+1.2 分布函数拟合
+◼任意概率分布都可以通过样本 (粒子：Particle) 分布来描述
+◼某一区间样本越多，则对应的发生概率越高
+◼可有效处理非高斯分布以及各种复杂分布
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+6
+1.3 已知概率分布求取粒子分布——采样排除法
+◼Let us assume that 𝑓(𝑥) < 1 for all 𝑥
+◼Sample 𝑥from a uniform distribution
+◼Sample 𝑐from [0,1]
+◼if 𝑓(𝑥) > 𝑐keep the sample
+otherwise reject the sample
+𝒇(𝒙)
+𝒇(𝒙)
+𝒄
+𝒄
+𝒙
+𝒙
+OK
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+7
+1.4 未知概率分布求取粒子分布——重要性评估
+◼We can even use a different distribution 𝑔(proposal 
+distribution) to generate samples from 𝑓(target distribution)
+◼By introducing an importance weight 𝑤, we can account for 
+the“differences between 𝑔and 𝑓”
+◼𝑤= 𝑓/𝑔
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+8
+1.4 未知概率分布求取粒子分布——基于重要性的重采样原理
+◼重要性指标：𝜔= 𝑓/𝑔更新概率分布
+◼重采样：利用更新后的概率分布进行重采样
+均匀分布采样g
+ҧ𝜒=
+ഥ𝒙𝒈, ഥ𝜔𝑔, ഥ𝜔𝑔= 1
+𝑁
+重要性评估更新ഥ𝜔𝑓𝑔
+ഥ𝜔𝑖
+𝑓𝑔= 𝑓𝑖
+𝑔𝑖
+根据重要度指标重采样
+ҧ𝜒=
+ഥ𝒙𝑓, ഥ𝜔𝑓
+, ഥ𝜔𝑓= 1
+𝑁
+权重归一化ഥ𝜔𝑚
+ഥ𝜔𝑖
+𝑚=
+ഥ𝜔𝑖
+𝑓𝑔
+σ𝑖=1
+𝑁
+ഥ𝜔𝑖
+𝑓𝑔
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+9
+02
+蒙特卡洛定位算法
+MCL: Monte Carlo Localization
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+10
+2.1 蒙特卡洛定位算法（粒子滤波算法）
+◼Given a map of the environment, the goal of the algorithm is for the 
+robot to determine its pose within the environment. 
+◼At every time 𝒕, the algorithm takes as input the previous belief 𝑿𝒕−𝟏=
+{𝒙𝒕−𝟏
+𝟏, 𝒙𝒕−𝟏
+𝟐, … , 𝒙𝒕−𝟏
+𝑴}, an actuation command 𝒖𝒕, and data received from 
+sensors 𝒛𝒕and the algorithm outputs the new belief 𝑿𝒕:
+◼机器人移动路径的假设：
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+11
+2.2 Example1：2D localization
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+12
+2.2.1 Distributions
+Wanted: 
+samples distributed according 
+to Target distribution
+Proposal distribution
+Target distribution
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+13
+2.2.2 Proposal Distributions
+𝑷𝒙, 𝒚
+𝑷𝒙, 𝒚
+𝑷𝒙, 𝒚
+𝒙𝟏, 𝒚𝟏
+𝒙𝟐, 𝒚𝟐
+𝒙𝟑, 𝒚𝟑
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+14
+2.2.3 重要性评估及重采样
+◼Target distribution：
+◼贝叶斯定理：
+◼Proposal distribution：
+◼Importance weights 𝑤𝑖: 
+◼令
+𝑘≠𝑖：在当前样本（粒子）下观测除𝑧𝑖外其他特征的可能性
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+15
+2.3 蒙特卡洛定位算法（粒子滤波算法）流程
+◼Begin with the distribution of 𝑿𝒕−𝟏
+◼Update and Simple based on the 
+motion model (Proposal 
+distribution)——prediction step
+◼Calculate the weight by sensor 
+model——correction step
+◼Resimple based on normalized weight
+◼Obtain the the distribution of 𝑿𝒕
+重要性评估公式就是观测模型在样本处得到观测的可能性
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+16
+2.4 重采样
+幸运转盘：
+◼根据权重大小分配面积大小
+◼每次抽奖Systematic resampling
+◼面积越大，被抽到的次数(概率)越高
+◼重采样后，点集的分布发生了变化，更加集中于权
+重高的部分
+◼重采样后的点集，权重相同，分布密度不同
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+17
+2.5 1D localization——First Step：𝒕= 𝟎
+The algorithm initializes 
+with a uniform distribution 
+of particles. 
+Sensor update: the robot 
+detects a door. It assigns 
+a weight to each of the 
+particles. 
+Resampling: the robot 
+generates a set of new 
+particles, with most of 
+them generated around 
+the previous particles with 
+more weight.
+𝒑(𝒛|𝒙)
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+18
+2.5 1D localization——Second Step：𝒕= 𝟏
+Motion update: the robot 
+moves some distance to 
+the right. All particles also 
+move right, and some 
+noise is applied. 
+Sensor update: the robot 
+detects no door. It assigns 
+a weight to each of the 
+particles. 
+Resampling: the robot 
+generates a set of new 
+particles, with most of 
+them generated around 
+the previous particles with 
+more weight. 
+𝒑(𝒛|𝒙)
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+19
+2.5 1D localization——Second Step：𝒕= 𝟐
+Motion update: the robot 
+moves some distance to 
+the left. All particles also 
+move left, and some noise 
+is applied. 
+Sensor update: the robot 
+detects a door. It assigns 
+a weight to each of the 
+particles. 
+Resampling: the robot 
+generates a set of new 
+particles, with most of 
+them generated around 
+the previous particles with 
+more weight. 
+𝒑(𝒛|𝒙)
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+20
+2.6 Motion Model of Mobile Robot
+二阶Runge-Kutta法：
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+21
+2.8 激光雷达观测误差模型——物理模型 
+◼激光雷达传感器测量误差 
+✓包含随机噪声，一般服从高斯分布
+◼没有检测到障碍物 
+✓返回激光雷达最大测距距离
+◼随机错误 
+✓返回错误的距离值
+◼激光雷达观测误差模型                :
+(其中  为激光束的索引)
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+22
+2.8 激光雷达观测误差模型——物理模型
+◼激光雷达传感器测量误差
+以真实距离为均值的高斯模型
+◼没有检测到障碍物
+◼随机错误
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+23
+2.8 激光雷达观测误差模型——物理模型 
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+24
+2.9 激光雷达观测误差模型——likelihood field 
+◼激光雷达传感器测量误差
+✓将激光束末端投影到地图中
+✓计算投影距离这个坐标距离最近的物体上的点，计算两
+者间的距离
+✓物体上距离最近的点作为均值，激光测距偏差作为方差
+✓可离线用可能域地图（likelihood field）表示
+◼没有检测到障碍物
+◼随机错误
+◼激光雷达观测误差模型
+障
+碍
+物
+地
+图
+可
+能
+域
+地
+图
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+25
+2.9 激光雷达观测模型——likelihood field 
+◼激光雷达传感器测量误差
+✓物体上距离最近的点作为均值，激光测距偏差作为方差
+✓可离线用可能域地图（likelihood field）表示
+◼没有检测到障碍物
+◼随机错误
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+26
+2.9 激光雷达观测模型——likelihood field 
+◼优点：
+✓在线计算量小
+✓平滑性好，可确保算法收敛
+✓更加符合实际情况
+◼缺点：
+✓没有明确的物理意义
+✓仅适用于相对静态的环境
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+27
+2.10 激光定位算法仿真实验
+初始均匀分布
+在当前状态下进行观
+测，进行重要性评估
+机器人运动通过里程
+计模型更新粒子分布
+依据重要性进行重采
+样更新粒子分布
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+28
+2.10 激光定位算法仿真实验
+◼SVD匹配误差
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+29
+2.11 蒙特卡洛（粒子滤波）算法总结
+◼优点：
+✓可解决大范围全局定位问题
+✓可以适用于多种分布模型
+✓计算简单
+◼缺点：
+✓当粒子数量过大的情况下，占用大量内存，计算效率会非常的低
+⚫特别是一旦机器人确定了自己的位置之后只需要一小部分粒子就
+足以跟踪机器人的位置了
+✓如果在非常大的地图环境下，少量的sample数又会导致定位的发散。
+✓无法判断机器人绑架问题（定位错误问题）
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+30
+03
+自适应蒙特卡洛定位算法
+AMCL: Augmented Monte Carlo Localization
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+31
+3.1 自适应蒙特卡洛定位算法（AMCL）
+◼自适应体现在： 
+✓解决了机器人绑架问题，它会在发现粒子们的平均分数突然降低了（意味着正确的粒子
+在某次迭代中被抛弃了）的时候，在全局再重新的撒一些粒子。                                  
+✓解决了粒子数固定的问题，因为有时候当机器人定位差不多得到了的时候，比如这些粒
+子都集中在一块了，还要维持这么多的粒子没必要，这个时候粒子数可以少一点了。
+◼解决方法：
+✓采用KLD(Kullback-Leibler Divergence)采样：库尔贝克-莱布勒散度，它是一种计算两
+个概率分布之间差异的方法
+✓KLD采样核心思想就是根据基于采样近似质量的统计界限来确定粒子数量。 在粒子滤波
+器的每次迭代过程中，KLD采样以概率1 −𝜎来确定样本数量，真实的后验概率与基于采
+样的近似分布之间的差异小于𝜀。对应于实际问题，就是在栅格地图中，看粒子占了多少
+栅格。占得多，说明粒子很分散，在每次迭代重采样的时候，允许粒子数量的上限高一
+些。占得少，说明粒子都已经集中了，那就将上限设低，采样到这个数就行了。
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+32
+3.2 自适应蒙特卡洛定位算法流程
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+33
+3.3 AMCL算法与MCL算法区别
+◼长期指数滤波器衰减率
+◼长期重要性指数似然评价估计𝑤𝑠𝑙𝑜𝑤：
+◼短期指数滤波器衰减率
+◼短期重要性指数似然评价估计
+◼
+: ROS中默认取0.001和0.1
+◼当系统出现机器人绑架等问题时，粒子的平均
+权重𝑤𝑎𝑣𝑔会开始下降，导致𝑤𝑠𝑙𝑜𝑤> 𝑤𝑓𝑎𝑠𝑡，算
+法将会按照
+的概率往粒子
+集里面注入随机粒子
+◼当粒子聚集(机器人获得到了位姿信息后)，
+𝑤𝑠𝑙𝑜𝑤< 𝑤𝑓𝑎𝑠𝑡，此时随机粒子不再添加，而是
+从原先的粒子集中筛选权重较大的。
+孙雷  教授
+Tel:13512967601
+Email: sunl@nankai.edu.cn
+2026年5月11日
+声明：本文件部分视频文件下载自优酷视频，部分图片下载自百度图片，仅用作本课程教学使用，任何人不得外传。
+第五章 移动机器人感知技术5
+蒙特卡洛定位算法(MCL)
