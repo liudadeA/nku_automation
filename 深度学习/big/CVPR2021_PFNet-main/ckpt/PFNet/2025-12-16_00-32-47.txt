@@ -1,2 +1,0 @@
-{'epoch_num': 45, 'train_batch_size': 16, 'last_epoch': 0, 'lr': 0.001, 'lr_decay': 0.9, 'weight_decay': 0.0005, 'momentum': 0.9, 'snapshot': '', 'scale': 416, 'save_point': [], 'poly_train': True, 'optimizer': 'SGD'}
-
