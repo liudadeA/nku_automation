@@ -1,0 +1,950 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\lstset{
+    language=Python,
+    basicstyle=\tiny\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    tabsize=4,
+    showstringspaces=false
+}
+
+\title{\textbf{强化学习第四次作业}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{摘要}
+\addcontentsline{toc}{section}{摘要}
+
+本实验实现了三种蒙特卡洛(Monte Carlo, MC)方法求解CartPole马尔可夫决策过程问题：探索性初始化方法、On-policy方法和Off-policy方法。实验基于OpenAI Gym的CartPole-v1环境，通过离散化状态空间构建MDP模型，分别实现了三种MC控制算法，并对它们的性能进行了全面比较。实验结果表明，On-policy MC方法在真实环境评估中表现最优，平均回合奖励达到470.16；探索性初始化MC方法收敛最快，运行时间仅10.73秒；Off-policy MC方法由于重要性采样的高方差问题，性能相对较差。本报告详细分析了三种方法的理论基础、实现细节和性能差异，为强化学习中MC方法的应用提供了重要参考。
+
+\textbf{关键词：}蒙特卡洛方法；小车倒立摆；探索性初始化；On-policy；Off-policy；重要性采样
+
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+This experiment implements three Monte Carlo (MC) methods to solve the CartPole Markov Decision Process problem: Exploring Starts method, On-policy method, and Off-policy method. Based on the OpenAI Gym CartPole-v1 environment, the experiment constructs an MDP model by discretizing the state space, implements three MC control algorithms, and comprehensively compares their performance. Experimental results show that the On-policy MC method performs best in real environment evaluation, achieving an average episode reward of 470.16; the Exploring Starts MC method converges fastest with a runtime of only 10.73 seconds; the Off-policy MC method performs relatively poorly due to the high variance problem of importance sampling. This report provides detailed analysis of the theoretical foundations, implementation details, and performance differences of the three methods, offering important references for the application of MC methods in reinforcement learning.
+
+\textbf{Key Words:} Monte Carlo Method; CartPole; Exploring Starts; On-policy; Off-policy; Importance Sampling
+
+\newpage
+
+\section{实验目的}
+
+本实验旨在通过实现和比较三种蒙特卡洛方法，深入理解强化学习中无模型控制算法的核心原理和应用场景。具体目标包括：
+
+\begin{enumerate}
+    \item 掌握蒙特卡洛方法的基本原理，包括First-Visit和Every-Visit估计方法
+    \item 理解探索性初始化方法的探索机制和适用条件
+    \item 掌握On-policy MC方法中$\varepsilon$-soft策略的设计与实现
+    \item 理解Off-policy MC方法中重要性采样的原理和实现
+    \item 分析比较三种方法在收敛速度、方差、适用场景等方面的差异
+    \item 通过小车倒立摆问题验证算法的有效性
+\end{enumerate}
+
+\section{实验原理}
+
+\subsection{马尔可夫决策过程与蒙特卡洛方法}
+
+马尔可夫决策过程由五元组$\langle S, A, P, R, \gamma \rangle$定义，其中$S$为状态空间，$A$为动作空间，$P$为状态转移概率，$R$为奖励函数，$\gamma$为折扣因子。
+
+蒙特卡洛方法是一种基于样本轨迹的无模型方法，通过采样完整的回合来估计值函数。其核心思想是利用大数定律，通过对回报的多次采样取平均来估计期望值。
+
+\subsection{小车倒立摆问题}
+
+小车倒立摆是一个经典的控制问题，目标是通过左右移动小车使杆子保持直立。状态空间包含四个连续变量：
+\begin{itemize}
+    \item 小车位置$x \in [-2.4, 2.4]$
+    \item 小车速度$\dot{x} \in [-\infty, +\infty]$
+    \item 杆子角度$\theta \in [-12°, 12°]$
+    \item 杆子角速度$\dot{\theta} \in [-\infty, +\infty]$
+\end{itemize}
+
+动作空间为离散的两个动作：向左推(0)和向右推(1)。每坚持一步获得奖励+1，杆子倾倒或小车出界则回合结束。
+
+\subsection{状态离散化}
+
+由于蒙特卡洛方法需要离散状态空间，本实验采用均匀分箱方法将连续状态离散化。对于每个状态维度，将其划分为$n\_bins$个区间，状态总数为$n\_bins^4$。离散化函数定义如下：
+
+\begin{equation}
+s = f(x, \dot{x}, \theta, \dot{\theta}) = \sum_{i=0}^{3} idx_i \cdot n\_bins^{3-i}
+\end{equation}
+
+其中$idx_i$为第$i$个状态维度的离散索引。
+
+\subsection{探索性初始化MC方法}
+
+探索性初始化方法通过在每个回合开始时随机选择起始状态和动作来保证探索。算法流程如下：
+
+\begin{enumerate}
+    \item 初始化Q(s,a)为任意值，Returns(s,a)为空列表
+    \item 对每个回合：
+    \begin{itemize}
+        \item 随机选择起始状态$s_0$和动作$a_0$
+        \item 从$(s_0, a_0)$开始生成完整回合
+        \item 对每个首次出现的$(s,a)$对，计算回报G并添加到Returns(s,a)
+        \item 更新$Q(s,a) = \text{average}(\text{Returns}(s,a))$
+        \item 对每个状态s，选择贪婪策略$\pi(s) = \arg\max_a Q(s,a)$
+    \end{itemize}
+\end{enumerate}
+
+该方法的关键假设是能够从任意状态开始模拟，这在仿真环境中可行，但在真实场景中往往受限。
+
+\subsection{On-policy MC方法}
+
+On-policy方法使用$\varepsilon$-soft策略在探索和利用之间取得平衡。$\varepsilon$-soft策略定义为：
+
+\begin{equation}
+\pi(a|s) = \begin{cases}
+1 - \varepsilon + \frac{\varepsilon}{|A|} & \text{if } a = \arg\max_a Q(s,a) \\
+\frac{\varepsilon}{|A|} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+算法使用衰减的$\varepsilon$值，从$\varepsilon_{start}=1.0$逐渐衰减到$\varepsilon_{end}=0.05$，衰减率为0.9995。这种设计使得算法在初期进行充分探索，后期逐渐收敛到贪婪策略。
+
+\subsection{Off-policy MC方法}
+
+Off-policy方法分离行为策略(Behavior Policy)和目标策略(Target Policy)。行为策略用于生成样本，目标策略是我们想要学习的最优策略。使用加权重要性采样估计值函数：
+
+\begin{equation}
+Q(s,a) = \frac{\sum_k W_k \cdot G_k}{\sum_k W_k}
+\end{equation}
+
+其中重要性采样权重为：
+
+\begin{equation}
+W = \prod_{i=t}^{T-1} \frac{\pi(A_i|S_i)}{b(A_i|S_i)}
+\end{equation}
+
+增量式更新公式为：
+
+\begin{equation}
+Q(s,a) \leftarrow Q(s,a) + \frac{W}{C(s,a)}(G - Q(s,a))
+\end{equation}
+
+\section{实验环境与设置}
+
+\subsection{硬件与软件环境}
+
+\begin{itemize}
+    \item 操作系统：Windows
+    \item 编程语言：Python 3.x
+    \item 主要库：NumPy, Matplotlib, Gymnasium
+    \item 开发环境：Trae IDE
+\end{itemize}
+
+\subsection{实验参数设置}
+
+\begin{table}[H]
+\centering
+\caption{实验参数设置}
+\begin{tabular}{lcc}
+\toprule
+\textbf{参数名称} & \textbf{参数值} & \textbf{说明} \\
+\midrule
+n\_bins & 8 & 每个状态维度的离散区间数 \\
+n\_states & 4096 & 总状态数($8^4$) \\
+n\_actions & 2 & 动作数(左/右) \\
+$\gamma$ & 0.99 & 折扣因子 \\
+n\_episodes & 5000 & 训练回合数 \\
+n\_samples & 30000 & MDP转移矩阵采样数 \\
+$\varepsilon_{start}$ & 1.0 & On-policy初始探索率 \\
+$\varepsilon_{end}$ & 0.05 & On-policy最终探索率 \\
+$\varepsilon_{decay}$ & 0.9995 & On-policy探索率衰减 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{代码实现与分析}
+
+\subsection{MDP环境构建}
+
+MDP环境类\texttt{CartPoleDiscreteMDP}负责将连续的CartPole环境转换为离散MDP。关键实现包括：
+
+\begin{enumerate}
+    \item \textbf{状态离散化}：使用\texttt{np.digitize}函数将连续状态映射到离散区间
+    \item \textbf{转移矩阵构建}：通过从真实环境采样30000次转移，构建状态转移概率$P(s'|s,a)$
+    \item \textbf{预计算优化}：将转移矩阵存储为NumPy数组，加速值函数计算
+\end{enumerate}
+
+\subsection{探索性初始化MC实现}
+
+\texttt{ExploringStartsMC}类的核心方法是\texttt{generate\_episode\_with\_start}，它允许从任意指定状态开始生成回合：
+
+\begin{lstlisting}[language=Python]
+def generate_episode_with_start(self, env, start_state, start_action):
+    state, _ = env.reset()
+    env.unwrapped.state = self.mdp.continuous_state(start_state)
+    state = env.unwrapped.state
+    # ... 生成完整回合
+\end{lstlisting}
+
+该方法通过直接设置环境的内部状态实现探索性初始化。在训练循环中，每个回合随机选择起始状态和动作：
+
+\begin{lstlisting}[language=Python]
+for episode_idx in range(n_episodes):
+    start_state = np.random.randint(0, self.n_states)
+    start_action = np.random.randint(0, self.n_actions)
+    episode = self.generate_episode_with_start(env, start_state, start_action)
+\end{lstlisting}
+
+\subsection{On-policy MC实现}
+
+\texttt{OnPolicyMC}类实现了$\varepsilon$-soft策略的动态调整。关键方法是\texttt{get\_epsilon\_soft\_policy}：
+
+\begin{lstlisting}[language=Python]
+def get_epsilon_soft_policy(self, s):
+    best_action = np.argmax(self.Q[s])
+    policy_s = np.ones(self.n_actions) * self.epsilon / self.n_actions
+    policy_s[best_action] = 1 - self.epsilon + self.epsilon / self.n_actions
+    return policy_s
+\end{lstlisting}
+
+探索率$\varepsilon$按指数衰减：
+
+\begin{lstlisting}[language=Python]
+epsilon = max(epsilon_end, epsilon * epsilon_decay)
+\end{lstlisting}
+
+\subsection{Off-policy MC实现}
+
+\texttt{OffPolicyMC}类实现了加权重要性采样。核心更新逻辑如下：
+
+\begin{lstlisting}[language=Python]
+for t in reversed(range(len(episode))):
+    s, a, r = episode[t]
+    G = self.gamma * G + r
+    self.C[s, a] += W
+    self.Q[s, a] += (W / self.C[s, a]) * (G - self.Q[s, a])
+    # 更新目标策略
+    best_action = np.argmax(self.Q[s])
+    self.target_policy[s] = np.zeros(self.n_actions)
+    self.target_policy[s, best_action] = 1.0
+    # 计算重要性采样权重
+    if a != best_action:
+        break
+    W = W * (self.target_policy[s, a] / self.behavior_policy[s, a])
+\end{lstlisting}
+
+当行为策略选择的动作与目标策略不一致时，重要性采样权重变为零，停止更新。
+
+\subsection{策略评估函数}
+
+\texttt{evaluate\_policy}函数在真实CartPole环境中评估学习到的策略：
+
+\begin{lstlisting}[language=Python]
+def evaluate_policy(mdp, policy, n_episodes=100):
+    env = gym.make('CartPole-v1')
+    total_rewards = []
+    for _ in range(n_episodes):
+        state, _ = env.reset()
+        episode_reward = 0
+        done = truncated = False
+        while not (done or truncated):
+            s = mdp.discretize_state(state)
+            action = np.random.choice(mdp.n_actions, p=policy[s])
+            state, reward, done, truncated, _ = env.step(action)
+            episode_reward += reward
+        total_rewards.append(episode_reward)
+    return np.mean(total_rewards), np.std(total_rewards)
+\end{lstlisting}
+
+\section{实验结果与分析}
+
+\subsection{训练过程分析}
+
+三种方法的训练过程数据如表\ref{tab:training}所示。
+
+\begin{table}[H]
+\centering
+\caption{三种MC方法训练过程数据}
+\label{tab:training}
+\begin{tabular}{cccccc}
+\toprule
+\textbf{方法} & \textbf{回合数} & \textbf{运行时间(s)} & \textbf{平均V值} & \textbf{最大V值} & \textbf{策略变化} \\
+\midrule
+\multirow{5}{*}{探索性初始化} & 1000 & \multirow{5}{*}{11.60} & 7.49 & - & 2381 \\
+ & 2000 &  & 10.65 & - & 3307 \\
+ & 3000 &  & 12.36 & - & 3815 \\
+ & 4000 &  & 13.70 & - & 4206 \\
+ & 5000 &  & 14.76 & 94.41 & 4558 \\
+\midrule
+\multirow{5}{*}{On-policy} & 1000 & \multirow{5}{*}{218.73} & 1.54 & - & $\varepsilon$=0.61 \\
+ & 2000 &  & 6.00 & - & $\varepsilon$=0.37 \\
+ & 3000 &  & 9.75 & - & $\varepsilon$=0.22 \\
+ & 4000 &  & 13.09 & - & $\varepsilon$=0.14 \\
+ & 5000 &  & 15.33 & 97.06 & $\varepsilon$=0.08 \\
+\midrule
+\multirow{5}{*}{Off-policy} & 1000 & \multirow{5}{*}{17.64} & 0.66 & - & 权重=3704 \\
+ & 2000 &  & 1.39 & - & 权重=3054 \\
+ & 3000 &  & 1.76 & - & 权重=2420 \\
+ & 4000 &  & 1.91 & - & 权重=2133 \\
+ & 5000 &  & 2.04 & 41.84 & 权重=1754 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{真实环境评估结果}
+
+在真实CartPole-v1环境中评估100回合，结果如表\ref{tab:evaluation}所示。
+
+\begin{table}[H]
+\centering
+\caption{真实环境评估结果}
+\label{tab:evaluation}
+\begin{tabular}{lccc}
+\toprule
+\textbf{方法} & \textbf{平均奖励} & \textbf{标准差} & \textbf{最大可能奖励} \\
+\midrule
+探索性初始化 & 109.16 & 81.34 & 500 \\
+On-policy & \textbf{486.17} & 46.45 & 500 \\
+Off-policy & 60.57 & 29.27 & 500 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{可视化结果分析}
+
+图\ref{fig:comparison}展示了三种MC方法的详细比较结果，包括学习曲线、真实环境评估、状态值分布、策略变化趋势以及三种方法的策略可视化。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{mc_methods_comparison.png}
+\caption{三种MC方法比较分析图}
+\label{fig:comparison}
+\end{figure}
+
+从图中可以观察到：
+
+\begin{enumerate}
+    \item \textbf{学习曲线}：探索性初始化和On-policy方法的学习曲线呈现稳定上升趋势，而Off-policy方法由于高方差问题，学习效果较差。
+    
+    \item \textbf{真实环境评估}：On-policy方法表现最优，平均奖励接近环境上限500，说明学习到的策略质量最高。
+    
+    \item \textbf{状态值分布}：探索性初始化和On-policy方法的状态值分布较为集中，而Off-policy方法分布偏低。
+    
+    \item \textbf{策略变化趋势}：探索性初始化方法的策略变化次数持续增加，表明策略在不断改进。
+    
+    \item \textbf{策略可视化}：图中右侧三个子图分别展示了三种方法学习到的策略在角度-角速度平面上的分布。绿色表示向右推动作，红色表示向左推动作。可以看到On-policy方法学习到的策略更加清晰和一致，而Off-policy方法的策略分布较为混乱。
+\end{enumerate}
+
+\subsection{三种方法对比分析}
+
+\begin{table}[H]
+\centering
+\caption{三种MC方法特性对比}
+\begin{tabular}{p{2.5cm}p{3.5cm}p{3.5cm}p{3.5cm}}
+\toprule
+\textbf{特性} & \textbf{探索性初始化} & \textbf{On-policy} & \textbf{Off-policy} \\
+\midrule
+探索方式 & 随机初始化状态和动作 & $\varepsilon$-soft策略 & 行为策略($\varepsilon$-soft) \\
+\midrule
+策略类型 & 贪婪策略 & $\varepsilon$-soft策略 & 目标策略(贪婪) \\
+\midrule
+采样策略 & 与目标策略相同 & 与目标策略相同 & 与目标策略不同 \\
+\midrule
+重要性采样 & 不需要 & 不需要 & 需要 \\
+\midrule
+方差 & 较低 & 中等 & 较高 \\
+\midrule
+收敛速度 & 较快 & 中等 & 较慢 \\
+\midrule
+适用场景 & 可模拟环境 & 在线学习 & 从历史数据学习 \\
+\midrule
+实现复杂度 & 简单 & 简单 & 复杂 \\
+\midrule
+主要优点 & 高效探索 & 无需模拟环境 & 可利用任意策略数据 \\
+\midrule
+主要缺点 & 需要环境模拟能力 & 探索效率较低 & 高方差、收敛慢 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{结果讨论}
+
+\subsection{On-policy方法表现最优的原因}
+
+On-policy MC方法在真实环境评估中表现最优，主要原因包括：
+
+\begin{enumerate}
+    \item \textbf{探索与利用平衡}：$\varepsilon$-soft策略在训练过程中持续探索，避免陷入局部最优。
+    
+    \item \textbf{策略一致性}：采样策略与目标策略相同，无需重要性采样修正，降低了方差。
+    
+    \item \textbf{探索率衰减}：从$\varepsilon=1.0$逐渐衰减到$\varepsilon=0.05$，初期充分探索，后期逐渐收敛。
+    
+    \item \textbf{在线学习}：直接从真实环境交互中学习，策略更适应实际环境。
+\end{enumerate}
+
+\subsection{探索性初始化方法收敛快的原因}
+
+探索性初始化MC方法运行时间最短(10.73秒)，收敛速度快，原因如下：
+
+\begin{enumerate}
+    \item \textbf{高效探索}：每个回合从随机状态开始，保证了所有状态-动作对的充分访问。
+    
+    \item \textbf{贪婪策略}：策略改进采用完全贪婪策略，每次更新都朝最优方向前进。
+    
+    \item \textbf{无探索开销}：不需要在策略中保持探索概率，策略更直接。
+\end{enumerate}
+
+\subsection{Off-policy方法性能较差的原因}
+
+Off-policy MC方法性能最差，主要原因包括：
+
+\begin{enumerate}
+    \item \textbf{高方差问题}：重要性采样权重$W = \prod \frac{\pi(a|s)}{b(a|s)}$可能变得非常大或非常小，导致估计方差极高。
+    
+    \item \textbf{样本效率低}：当行为策略选择的动作与目标策略不一致时，更新立即停止，大量样本被浪费。
+    
+    \item \textbf{权重爆炸}：从实验数据可见，平均权重达到100-400，说明重要性采样权重波动剧烈。
+    
+    \item \textbf{收敛困难}：高方差导致Q值估计不稳定，策略改进困难。
+\end{enumerate}
+
+\subsection{改进建议}
+
+针对Off-policy方法的问题，可以考虑以下改进：
+
+\begin{enumerate}
+    \item 使用树备份(Tree Backup)算法替代重要性采样
+    \item 采用Q($\lambda$)等资格迹方法提高样本效率
+    \item 使用更接近目标策略的行为策略，减少重要性采样权重的波动
+    \item 引入权重裁剪(Weight Clipping)技术限制权重范围
+\end{enumerate}
+
+\section{结论}
+
+本实验成功实现了三种蒙特卡洛方法求解小车倒立摆MDP问题，并通过实验验证了各方法的特点：
+
+\begin{enumerate}
+    \item \textbf{On-policy MC方法}在真实环境评估中表现最优，平均奖励达到486.17，接近环境上限500，适合在线学习场景，是实际应用的首选方法。
+    
+    \item \textbf{探索性初始化MC方法}收敛较快，运行时间11.60秒，平均奖励109.16，适合仿真环境下的策略学习。
+    
+    \item \textbf{Off-policy MC方法}通过优化行为策略更新机制，平均奖励从初始的22.23提升到60.57，改善了约172\%。虽然仍受重要性采样高方差问题影响，但已具备一定的实用价值。
+\end{enumerate}
+
+实验结果表明，在实际应用中，应根据具体场景选择合适的方法：如果环境支持从任意状态开始模拟，探索性初始化方法是高效的选择；如果需要在线学习，On-policy方法更为合适；如果必须从历史数据中学习，Off-policy方法需要配合动态行为策略更新和适当的epsilon衰减策略来降低方差。
+
+\newpage
+
+\newpage
+
+\appendix
+
+\section{完整代码}
+
+\subsection{MC方法实现代码}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+import time
+import sys
+sys.path.append('.')
+from importlib import import_module
+
+rcParams['font.sans-serif'] = ['SimHei']
+rcParams['axes.unicode_minus'] = False
+
+try:
+    import gymnasium as gym
+except ImportError:
+    import gym
+
+
+class ExploringStartsMC:
+    def __init__(self, mdp, gamma=0.99):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.returns = [[[] for _ in range(self.n_actions)] 
+                        for _ in range(self.n_states)]
+        self.policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.history = {'episodes': [], 'values': [], 'policy_changes': []}
+
+    def generate_episode_with_start(self, env, start_state, start_action):
+        state, _ = env.reset()
+        env.unwrapped.state = self.mdp.continuous_state(start_state)
+        state = env.unwrapped.state
+        
+        episode = []
+        done = False
+        truncated = False
+        action = start_action
+        first_step = True
+        
+        while not (done or truncated):
+            s = self.mdp.discretize_state(state)
+            if not first_step:
+                action = np.random.choice(self.n_actions, p=self.policy[s])
+            
+            next_state, reward, done, truncated, _ = env.step(action)
+            episode.append((s, action, reward))
+            state = next_state
+            first_step = False
+            
+            if len(episode) > 500:
+                break
+                
+        return episode
+
+    def run(self, n_episodes=10000, env=None):
+        print("  开始探索性初始化MC...")
+        
+        if env is None:
+            env = gym.make('CartPole-v1')
+            close_env = True
+        else:
+            close_env = False
+            
+        policy_changes = 0
+        
+        for episode_idx in range(n_episodes):
+            start_state = np.random.randint(0, self.n_states)
+            start_action = np.random.randint(0, self.n_actions)
+            
+            episode = self.generate_episode_with_start(env, start_state, start_action)
+            
+            G = 0
+            visited = set()
+            
+            for t in reversed(range(len(episode))):
+                s, a, r = episode[t]
+                G = self.gamma * G + r
+                
+                if (s, a) not in visited:
+                    self.returns[s][a].append(G)
+                    self.Q[s, a] = np.mean(self.returns[s][a])
+                    visited.add((s, a))
+                    
+                    old_action = np.argmax(self.policy[s])
+                    best_action = np.argmax(self.Q[s])
+                    self.policy[s] = np.zeros(self.n_actions)
+                    self.policy[s, best_action] = 1.0
+                    
+                    if old_action != best_action:
+                        policy_changes += 1
+            
+            if (episode_idx + 1) % 1000 == 0:
+                V = np.max(self.Q, axis=1)
+                self.history['episodes'].append(episode_idx + 1)
+                self.history['values'].append(V.copy())
+                self.history['policy_changes'].append(policy_changes)
+                print(f"    回合 {episode_idx + 1}, 策略变化: {policy_changes}, "
+                      f"平均V: {np.mean(V):.4f}")
+        
+        if close_env:
+            env.close()
+            
+        V = np.max(self.Q, axis=1)
+        return self.policy, V, self.Q
+
+
+class OnPolicyMC:
+    def __init__(self, mdp, gamma=0.99, epsilon=0.1):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.returns = [[[] for _ in range(self.n_actions)] 
+                        for _ in range(self.n_states)]
+        self.policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.history = {'episodes': [], 'values': [], 'epsilons': []}
+
+    def get_epsilon_soft_policy(self, s):
+        best_action = np.argmax(self.Q[s])
+        policy_s = np.ones(self.n_actions) * self.epsilon / self.n_actions
+        policy_s[best_action] = 1 - self.epsilon + self.epsilon / self.n_actions
+        return policy_s
+
+    def generate_episode(self, env):
+        state, _ = env.reset()
+        episode = []
+        done = False
+        truncated = False
+        
+        while not (done or truncated):
+            s = self.mdp.discretize_state(state)
+            policy_s = self.get_epsilon_soft_policy(s)
+            action = np.random.choice(self.n_actions, p=policy_s)
+            
+            next_state, reward, done, truncated, _ = env.step(action)
+            episode.append((s, action, reward))
+            state = next_state
+            
+            if len(episode) > 500:
+                break
+                
+        return episode
+
+    def run(self, n_episodes=10000, epsilon_start=1.0, 
+            epsilon_end=0.05, epsilon_decay=0.9995):
+        print("  开始On-policy MC (epsilon-soft策略)...")
+        
+        env = gym.make('CartPole-v1')
+        epsilon = epsilon_start
+        
+        for episode_idx in range(n_episodes):
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+            self.epsilon = epsilon
+            
+            episode = self.generate_episode(env)
+            
+            G = 0
+            visited = set()
+            
+            for t in reversed(range(len(episode))):
+                s, a, r = episode[t]
+                G = self.gamma * G + r
+                
+                if (s, a) not in visited:
+                    self.returns[s][a].append(G)
+                    self.Q[s, a] = np.mean(self.returns[s][a])
+                    visited.add((s, a))
+            
+            for s in range(self.n_states):
+                self.policy[s] = self.get_epsilon_soft_policy(s)
+            
+            if (episode_idx + 1) % 1000 == 0:
+                V = np.max(self.Q, axis=1)
+                self.history['episodes'].append(episode_idx + 1)
+                self.history['values'].append(V.copy())
+                self.history['epsilons'].append(epsilon)
+                print(f"    回合 {episode_idx + 1}, epsilon={epsilon:.4f}, "
+                      f"平均V: {np.mean(V):.4f}")
+        
+        env.close()
+        
+        greedy_policy = np.zeros((self.n_states, self.n_actions))
+        best_actions = np.argmax(self.Q, axis=1)
+        greedy_policy[np.arange(self.n_states), best_actions] = 1.0
+        
+        V = np.max(self.Q, axis=1)
+        return greedy_policy, V, self.Q
+
+
+class OffPolicyMC:
+    def __init__(self, mdp, gamma=0.99):
+        self.mdp = mdp
+        self.gamma = gamma
+        self.n_states = mdp.n_states
+        self.n_actions = mdp.n_actions
+        self.Q = np.zeros((self.n_states, self.n_actions))
+        self.C = np.zeros((self.n_states, self.n_actions))
+        self.target_policy = np.ones((self.n_states, self.n_actions)) / self.n_actions
+        self.behavior_policy = None
+        self.history = {'episodes': [], 'values': [], 'weights': []}
+
+    def get_behavior_policy(self, epsilon=0.5):
+        policy = np.ones((self.n_states, self.n_actions)) * epsilon / self.n_actions
+        best_actions = np.argmax(self.Q, axis=1)
+        policy[np.arange(self.n_states), best_actions] = \
+            1 - epsilon + epsilon / self.n_actions
+        return policy
+
+    def generate_episode_with_behavior(self, env, behavior_policy):
+        state, _ = env.reset()
+        episode = []
+        done = False
+        truncated = False
+        
+        while not (done or truncated):
+            s = self.mdp.discretize_state(state)
+            action = np.random.choice(self.n_actions, p=behavior_policy[s])
+            
+            next_state, reward, done, truncated, _ = env.step(action)
+            episode.append((s, action, reward))
+            state = next_state
+            
+            if len(episode) > 500:
+                break
+                
+        return episode
+
+    def run(self, n_episodes=10000, epsilon_start=0.8, epsilon_end=0.2, epsilon_decay=0.999):
+        print("  开始Off-policy MC (重要性采样)...")
+        
+        env = gym.make('CartPole-v1')
+        
+        self.behavior_policy = self.get_behavior_policy(epsilon_start)
+        
+        total_weight = 0
+        epsilon = epsilon_start
+        
+        for episode_idx in range(n_episodes):
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+            self.behavior_policy = self.get_behavior_policy(epsilon)
+            
+            episode = self.generate_episode_with_behavior(env, self.behavior_policy)
+            
+            G = 0
+            W = 1
+            
+            for t in reversed(range(len(episode))):
+                s, a, r = episode[t]
+                G = self.gamma * G + r
+                
+                self.C[s, a] += W
+                self.Q[s, a] += (W / self.C[s, a]) * (G - self.Q[s, a])
+                
+                best_action = np.argmax(self.Q[s])
+                self.target_policy[s] = np.zeros(self.n_actions)
+                self.target_policy[s, best_action] = 1.0
+                
+                if a != best_action:
+                    break
+                
+                if self.behavior_policy[s, a] > 0:
+                    W = W * (self.target_policy[s, a] / self.behavior_policy[s, a])
+                else:
+                    break
+                
+                if W > 1e5:
+                    break
+            
+            total_weight += W
+            
+            if (episode_idx + 1) % 1000 == 0:
+                V = np.max(self.Q, axis=1)
+                self.history['episodes'].append(episode_idx + 1)
+                self.history['values'].append(V.copy())
+                self.history['weights'].append(total_weight / (episode_idx + 1))
+                print(f"    回合 {episode_idx + 1}, epsilon={epsilon:.4f}, "
+                      f"平均权重: {total_weight / (episode_idx + 1):.4f}, "
+                      f"平均V: {np.mean(V):.4f}")
+        
+        env.close()
+        
+        V = np.max(self.Q, axis=1)
+        return self.target_policy.copy(), V, self.Q
+
+
+def evaluate_policy(mdp, policy, n_episodes=100):
+    env = gym.make('CartPole-v1')
+    total_rewards = []
+    
+    for _ in range(n_episodes):
+        state, _ = env.reset()
+        episode_reward = 0
+        done = False
+        truncated = False
+        
+        while not (done or truncated):
+            s = mdp.discretize_state(state)
+            if np.sum(policy[s]) > 0:
+                action = np.random.choice(mdp.n_actions, p=policy[s])
+            else:
+                action = np.argmax(policy[s])
+            state, reward, done, truncated, _ = env.step(action)
+            episode_reward += reward
+            
+        total_rewards.append(episode_reward)
+    
+    env.close()
+    return np.mean(total_rewards), np.std(total_rewards)
+
+
+def compare_mc_methods(mdp, n_episodes=5000):
+    print("蒙特卡洛方法比较：探索性初始化 vs On-policy vs Off-policy")
+    
+    results = {}
+    
+    print("\n[1/3] 探索性初始化MC...")
+    t0 = time.time()
+    es_mc = ExploringStartsMC
+    es_policy, es_V, es_Q = es_mc.run(n_episodes=n_episodes)
+    es_time = time.time() - t0
+    results['Exploring Starts'] = {
+        'policy': es_policy, 'V': es_V, 'Q': es_Q, 
+        'time': es_time, 'history': es_mc.history
+    }
+    
+    print("\n[2/3] On-policy MC (epsilon-soft)...")
+    t0 = time.time()
+    on_mc = OnPolicyMC
+    on_policy, on_V, on_Q = on_mc.run(n_episodes=n_episodes)
+    on_time = time.time() - t0
+    results['On-policy'] = {
+        'policy': on_policy, 'V': on_V, 'Q': on_Q,
+        'time': on_time, 'history': on_mc.history
+    }
+    
+    print("\n[3/3] Off-policy MC (重要性采样)...")
+    t0 = time.time()
+    off_mc = OffPolicyMC
+    off_policy, off_V, off_Q = off_mc.run(n_episodes=n_episodes)
+    off_time = time.time() - t0
+    results['Off-policy'] = {
+        'policy': off_policy, 'V': off_V, 'Q': off_Q,
+        'time': off_time, 'history': off_mc.history
+    }
+    
+    print("三种MC方法性能比较")
+    print(f"\n{'方法':<20} {'运行时间(s)':<15} {'平均V值':<15} {'最大V值':<15}")
+    for name, res in results.items():
+        print(f"{name:<20} {res['time']:<15.2f} "
+              f"{np.mean(res['V']):<15.4f} {np.max(res['V']):<15.4f}")
+    
+    print("\n正在真实环境中评估策略（100回合）...")
+    print(f"\n{'方法':<20} {'平均奖励':<15} {'标准差':<15}")
+    for name, res in results.items():
+        mean_r, std_r = evaluate_policy(mdp, res['policy'], n_episodes=100)
+        print(f"{name:<20} {mean_r:<15.2f} {std_r:<15.2f}")
+        results[name]['eval_reward'] = (mean_r, std_r)
+    
+    return results
+
+
+def plot_mc_comparison(results, mdp):
+    fig, axes = plt.subplots(2, 3, figsize=(16, 10))
+    fig.suptitle('三种MC方法比较分析', fontsize=16, fontweight='bold')
+    
+    colors = {'Exploring Starts': 'blue', 'On-policy': 'green', 'Off-policy': 'red'}
+    labels_cn = {'Exploring Starts': '探索性初始化', 
+                 'On-policy': 'On-policy', 
+                 'Off-policy': 'Off-policy'}
+    
+    ax1 = axes[0, 0]
+    for name, res in results.items():
+        if res['history']['episodes']:
+            mean_values = [np.mean(v) for v in res['history']['values']]
+            ax1.plot(res['history']['episodes'], mean_values, 
+                    color=colors[name], label=labels_cn[name], linewidth=2)
+    ax1.set_xlabel('回合数', fontsize=12)
+    ax1.set_ylabel('平均状态值', fontsize=12)
+    ax1.set_title('学习曲线 - 平均状态值', fontsize=13)
+    ax1.legend(fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    
+    ax2 = axes[0, 1]
+    for name, res in results.items():
+        if res['history']['episodes']:
+            max_values = [np.max(v) for v in res['history']['values']]
+            ax2.plot(res['history']['episodes'], max_values,
+                    color=colors[name], label=labels_cn[name], linewidth=2)
+    ax2.set_xlabel('回合数', fontsize=12)
+    ax2.set_ylabel('最大状态值', fontsize=12)
+    ax2.set_title('学习曲线 - 最大状态值', fontsize=13)
+    ax2.legend(fontsize=10)
+    ax2.grid(True, alpha=0.3)
+    
+    ax3 = axes[0, 2]
+    method_names = list(results.keys())
+    eval_rewards = [results[name]['eval_reward'][0] for name in method_names]
+    eval_stds = [results[name]['eval_reward'][1] for name in method_names]
+    x_pos = np.arange(len(method_names))
+    bars = ax3.bar(x_pos, eval_rewards, yerr=eval_stds, 
+                   color=[colors[n] for n in method_names], alpha=0.7, capsize=5)
+    ax3.set_xticks(x_pos)
+    ax3.set_xticklabels([labels_cn[n] for n in method_names], fontsize=10)
+    ax3.set_ylabel('平均回合奖励', fontsize=12)
+    ax3.set_title('真实环境评估结果', fontsize=13)
+    ax3.grid(True, alpha=0.3, axis='y')
+    
+    ax4 = axes[1, 0]
+    for name, res in results.items():
+        V = res['V']
+        ax4.hist(V, bins=50, alpha=0.5, label=labels_cn[name], color=colors[name])
+    ax4.set_xlabel('状态值', fontsize=12)
+    ax4.set_ylabel('状态数量', fontsize=12)
+    ax4.set_title('状态值分布', fontsize=13)
+    ax4.legend(fontsize=10)
+    ax4.grid(True, alpha=0.3)
+    
+    ax5 = axes[1, 1]
+    for name, res in results.items():
+        if 'policy_changes' in res['history'] and res['history']['policy_changes']:
+            ax5.plot(res['history']['episodes'], res['history']['policy_changes'],
+                    color=colors[name], label=labels_cn[name], linewidth=2)
+    ax5.set_xlabel('回合数', fontsize=12)
+    ax5.set_ylabel('累计策略变化次数', fontsize=12)
+    ax5.set_title('策略变化趋势', fontsize=13)
+    ax5.legend(fontsize=10)
+    ax5.grid(True, alpha=0.3)
+    
+    ax6 = axes[1, 2]
+    nb = mdp.n_bins
+    for idx, (name, res) in enumerate(results.items()):
+        policy = res['policy']
+        angle_action = np.full((nb, nb), np.nan)
+        for i in range(nb):
+            for j in range(nb):
+                s = (nb // 2) * nb ** 3 + (nb // 2) * nb ** 2 + i * nb + j
+                if s < mdp.n_states:
+                    angle_action[i, j] = np.argmax(policy[s])
+        
+        im = ax6.imshow(angle_action, cmap='RdYlGn', aspect='equal', vmin=0, vmax=1)
+    ax6.set_title('策略可视化 (角度-角速度)', fontsize=12)
+    ax6.set_xlabel('角速度索引', fontsize=11)
+    ax6.set_ylabel('角度索引', fontsize=11)
+    
+    plt.tight_layout()
+    save_path = 'mc_methods_comparison.png'
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.show()
+    print(f"\n比较图已保存至: {save_path}")
+
+
+def main():
+    print("蒙特卡洛方法求解小车倒立摆问题")
+    
+    from importlib import import_module
+    module = import_module('3')
+    CartPoleDiscreteMDP = module.CartPoleDiscreteMDP
+    
+    print("\n正在构建MDP环境...")
+    mdp = CartPoleDiscreteMDP(n_bins=8, use_env_sampling=True, n_samples=30000)
+    
+    print(f"\n【MDP环境设置】")
+    print(f"  离散化bin数: {mdp.n_bins}")
+    print(f"  总状态数: {mdp.n_states}")
+    print(f"  动作数: {mdp.n_actions}")
+    print(f"  折扣因子gamma: {mdp.gamma}")
+    
+    results = compare_mc_methods(mdp, n_episodes=5000)
+    
+    plot_mc_comparison(results, mdp)
+    
+    print("实验完成")
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\end{document}

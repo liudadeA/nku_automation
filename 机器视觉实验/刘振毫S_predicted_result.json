@@ -1,0 +1,181 @@
+{
+  "image_name": "S_TOTAL.jpg",
+  "objects": [
+    {
+      "label": "person",
+      "bbox": [
+        1587,
+        701,
+        1790,
+        1260
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2410,
+        734,
+        2559,
+        1209
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        3394,
+        821,
+        3515,
+        1122
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        3054,
+        829,
+        3171,
+        1131
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1175,
+        746,
+        1277,
+        1009
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2551,
+        770,
+        2644,
+        1009
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        854,
+        674,
+        965,
+        1066
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2282,
+        764,
+        2354,
+        1013
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1882,
+        777,
+        1946,
+        928
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1335,
+        746,
+        1429,
+        986
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        230,
+        717,
+        287,
+        869
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        115,
+        702,
+        190,
+        898
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        392,
+        725,
+        432,
+        862
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        347,
+        733,
+        403,
+        895
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        673,
+        718,
+        716,
+        881
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1025,
+        735,
+        1088,
+        884
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1510,
+        751,
+        1550,
+        874
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        953,
+        732,
+        1033,
+        915
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        3476,
+        540,
+        3531,
+        650
+      ]
+    }
+  ],
+  "detection_info": {
+    "total_detections": 19,
+    "high_conf_detections": 0,
+    "small_target_detections": 0
+  }
+}

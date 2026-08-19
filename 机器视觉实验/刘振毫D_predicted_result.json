@@ -1,0 +1,163 @@
+{
+  "image_name": "D_TOTAL.jpg",
+  "objects": [
+    {
+      "label": "bike",
+      "bbox": [
+        4421,
+        1046,
+        4785,
+        1467
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        4829,
+        1094,
+        5381,
+        1587
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2496,
+        826,
+        2599,
+        1158
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        6399,
+        1059,
+        6633,
+        1563
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        4693,
+        1018,
+        4965,
+        1363
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2418,
+        838,
+        2505,
+        1141
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2600,
+        844,
+        2698,
+        1175
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        396,
+        891,
+        481,
+        1129
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        332,
+        888,
+        415,
+        1127
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        6771,
+        1044,
+        6910,
+        1366
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        5942,
+        1065,
+        6095,
+        1325
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        5315,
+        1054,
+        5569,
+        1327
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1315,
+        877,
+        1341,
+        969
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        5233,
+        1100,
+        5444,
+        1351
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        1987,
+        895,
+        2012,
+        958
+      ]
+    },
+    {
+      "label": "person",
+      "bbox": [
+        2038,
+        913,
+        2076,
+        964
+      ]
+    },
+    {
+      "label": "bike",
+      "bbox": [
+        5352,
+        1137,
+        5534,
+        1332
+      ]
+    }
+  ],
+  "detection_info": {
+    "total_detections": 17,
+    "high_conf_detections": 0,
+    "small_target_detections": 0
+  }
+}

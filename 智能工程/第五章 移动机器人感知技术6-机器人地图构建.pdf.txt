@@ -1,0 +1,3311 @@
+第五章 移动机器人感知技术6
+孙雷  教授
+Tel:13512967601
+Email: sunl@nankai.edu.cn
+2026年5月25日 Monday
+机器人地图构建算法
+第五章 移动机器人感知技术6-机器人地图构建算法
+2
+本章内容
+4. 基于优化方法的SLAM算法
+3. 基于滤波方法的SLAM算法
+1. 移动机器人地图的基本概念
+2. SLAM算法基本思想
+5. 总结
+第五章 移动机器人感知技术6-机器人地图构建算法
+3
+1. 机器人地图
+n 地图：环境信息的一种表达方法，
+是移动机器人定位导航的基础。
+p 定位：
+ü 通过环境感知信息和地图信
+息的匹配，确定移动机器人
+在环境中的位置
+p 导航规划：
+ü 根据地图中所记录的连通域
+信息和障碍物位置，规划机
+器人从当前点到目标点的可
+行路径
+第五章 移动机器人感知技术6-机器人地图构建算法
+4
+1.1 机器人地图的表示方法
+n 地图表示法需要具备如下功能：
+p 可以支撑机器人完成特定任务——定位、导航、规划
+p 能够容易加入新的信息更新地图
+p 便于计算机进行存储和处理
+n 常用地图表示法：
+p 点云地图
+p 栅格地图
+p 特征地图
+p 拓扑地图
+第五章 移动机器人感知技术6-机器人地图构建算法
+5
+1.2 点云地图概念
+n 点云地图：直接由占用空间的点集合表示的地图
+n 其数学描述：
+其中                     或
+P = {p1, p2, · · · , pn}
+bN7/WVSkn7hCwH3zO6M=">ADwXicfVJNbxMxEHWzfJTwldIjF0OEVFBVZR
+EqvSBVlAMXRJFIW6kOK693dmPVX7KdkMjK3+DKFX4S/wZvmtCQsoy0q6c3b9
+54RpMbwZ3v9X5tJIbN2/d3rzTvnv/oOHna1HJ06PLIM+0Lbs5w6EFxB3
+3Mv4MxYoDIXcJpfHNX50zFYx7X67KcGBpJWipecUR+prLNtMv5mZ5LxXTzN+
+PMvxGuTdbq9vd48HWQLkAXLeI42p9I4VmIwnKM0GdO097xg8CtZ4zAbM2
+GTkwlF3QCs4jVFSCG4T562f4WQKXGobP+XxnF2tCFQ6N5V5VErqh249V5P/
+zNWM1q4tQf48mAQuDIjD4pd9i9HAnuN6w3hgltgXkwjoMzyOAJmQ2op83GP
+bVJASQpehkCsxMUser+DOLSFD7HdRwOWem1fBEJtJelkFpdQkd0a/U/I1VI
+YUbtNFHxlWkqikDyXM7iHyquQh5nsnxSd12VwFwCETYIcnPlYRo8zNKjQZC
+PrzGDR7jpUeDIF8d5m3TMH+mWVHEtWPinOymgQgoPRGl0PFmuikmldDT+
+ycyAJ5QjyPBxar4iWn63d7HZy83Ev39/Y/veoeHixuehM9Rk/RDkrRa3SI3q
+Nj1EcMTdF39AP9TI4SnpjEXkpbG4uabfRXJOE3UQNHcw=</latexit>
+pi = (xi, yi)→
+fVLbtNAEN3WXEq4pfCxMtChFRQFcUIlb4gVcBDXxBFIm2lbrDW67Gz6t60u04TrC+gi/gFf6Hv2GdJjSkmJG8Opo5c8ZnNKkR3Ple79faenTl6rXrGzd
+aN2/dvnO3vXnv0OnSMugzLbQ9TqkDwRX0PfcCjo0FKlMBR+npm7p+NALruFYf/cTAQNJC8Zwz6kMqaT8wCX+1NU74Np7Uz+eEP/1EvDZJu9Pr9maBL4N4Djp
+oHgfJ5vo3kmlWSlCeCercSdwzflBR6zkTMG2R0oGh7JQWcBKgohLcoJpZmOInIZPhXNvwKY9n2eWOikrnJjINTEn90K3W6uQ/a3XGay3cyg/4fHdQcWVKD4
+qdz89Lgb3G9Zpwxi0wLyYBUGZ5sIDZkFrKfFhmi2SQk4znVUWsxNk0aL+FYNrCuzDuvQFLvbPKkJtIel4GpZQkO0a/Y/I1YIYUKtFJwxLSVWUXSVE7DC
+wVXVRo8WT6upy5TYEaBABsIqbnQMA0aZqHRQEhHFxqjBo3RQqOBkC6bed1k5o+bJUZYOybOyU5cEQG5JyIXOtxMJ8bE8mLoiZ0lko8Ip6HAwtd4ZLj1bu9
+DA6fd+Od7s6HF5293flNb6CH6DHaQjF6ifbQPjpAfcTQF/Qd/UA/o/1IRWV0dk5dX5v3Ed/RfT1N1FUSTM=</latexit>
+pi = (xi, yi, zi)→
+第五章 移动机器人感知技术6-机器人地图构建算法
+6
+1.2 点云地图的构建方法
+{L}
+𝑷𝟏𝒙𝟏, 𝒚𝟏
+𝑷𝟐𝒙𝟐, 𝒚𝟐
+𝑹𝟏𝒙𝟏, 𝒚𝟏, 𝜽𝟏
+{W}
+{L}
+𝑹𝟐𝒙𝟐, 𝒚𝟐, 𝜽𝟐
+𝑷𝟏
+# 𝒙𝟏
+# , 𝒚𝟏
+#
+𝑷𝟐
+# 𝒙𝟐
+# , 𝒚𝟐
+#
+𝑷𝟑𝒙𝟑, 𝒚𝟑
+{L}
+𝑹𝟑𝒙𝟑, 𝒚𝟑, 𝜽𝟑
+𝑷𝟑
+# 𝒙𝟑
+# , 𝒚𝟑
+#
+𝑷𝟒𝒙𝟒, 𝒚𝟒
+第五章 移动机器人感知技术6-机器人地图构建算法
+7
+1.2 点云地图
+n 优点：
+p 可以完全表示环境三维信息
+p 所构建地图不需要预先定义尺寸
+n 缺点：
+p 存储要求高：16线3D激光雷达点云数据有30万点/秒
+p 存在检测盲区和空洞
+p 不能单凭点的占用来判断空间的占用、联通状态，需要处理后才能得
+到导航所需地图——地面
+p 不具有通用性，不同机器人或激光雷达按照高度、角度不同，需要重
+新构建地图
+n 面向工业应用的路标地图
+第五章 移动机器人感知技术6-机器人地图构建算法
+8
+1.3 栅格地图
+n 平面栅格地图：将连续空间分解为一系列离散栅格，每个栅格有一个表征该栅
+格占用属性的值。
+n 平面栅格属性的值：
+p 定位：0-1的值，用以描述该栅格被占用的概率
+p 导航：0或1，描述是否可以通过
+第五章 移动机器人感知技术6-机器人地图构建算法
+9
+1.3 栅格地图的构建
+n 空间栅格化：栅格的大小可以用允许误差的大小确定
+n 空间栅格的占用情况：
+p 概率架构下的表示为以激光测量数据为条件的栅格占用概率：
+其中：
+为激光数据，𝑚!为第𝑖个栅格
+n 静态量的二元估计问题：
+p 采用几率对数形式的二元贝叶斯滤波法求解
+p 几率(栅格被占的概率除以空闲概率)：
+l = p(mi|s1, s2, · · · , sn)
+p( ¯mi|s1, s2, · · · , sn) =
+p(mi|s1, s2, · · · , sn)
+1 →p(mi|s1, s2, · · · , sn)
+q/CTtsyEUkLNGpFnAPc=">ADynicfVJNb9NAEN3GfJTwlcIRDgsRUkFRF
+eocOBQAQcOIpE2krdyFqvx86q+2HtbkKjJRfEb+A3cIV/w79h7SY0pJiRbD
+3PvHnjN5q0FNy6weDXRiu6dPnK1c1r7es3bt63dm6c2D1xDAYMi20OUqpB
+cEVDB13Ao5KA1SmAg7Tk1dV/XAKxnKtPrpZCSNJC8VzqgLqaRzv9yWCf9sk
+7iHbLTw4Rl2tnqQz1Ot1Bf1AHvgjiBeiRewnW61vJNsIkE5Jqi1x/Gg
+dCNPjeNMwLxNJhZKyk5oAcBKirBjnxtY4fhUyGc23Coxyus6sdnkprZzIN
+TEnd2K7XquQ/a1XGaS3s2g+4/PnIc1VOHCh2Nj+fCOw0rlaFM26AOTELgDLD
+gwXMxtRQ5sJC2ySDnGQ8954YibN50H4NwbSBd2Hc+xIMdo8YSaQtLTeVh
+CQXoV+h+RqyUxoHabKPjEtJRUZ6kqZyHNxRc+TR4Mvy0mrpKgZoCATYQ0vJ
+co2zQKJcaDYR0eq4xbdCYLjUaCOmqmZdNZv64WGEtWNirezGngjIHRG50O
+FmujEmhdjR0ydSDx5QBwPBxa6wiXH63d7ERzs9OPd/u6Hp929F4ub3kT30E
+O0jWL0DO2hN2gfDRFDX9B39AP9jN5GJpF/oza2lj03EV/RfT1NwoXSkc=</
+latexit>p(mi|s1, s2, · · · , sn)
+s1, s2, · · · , sn
+第五章 移动机器人感知技术6-机器人地图构建算法
+10
+1.3 栅格地图的构建
+n 几率对数求解
+n 贝叶斯公式：
+n 激光的每一次测量是独立的：
+n 几率对数:
+若栅格𝑖被占用情况未知，𝑝𝑚! = 0.5 ⇒𝑙" = 0
+li = log p(mi|s1, s2, · · · , sn)
+p( ¯mi|s1, s2, · · · , sn)
+p(a|b) = p(a)p(b|a)/p(b)
+p(mi|s1, s2, · · · , sn) = p(sn|mi, s1, s2, · · · , sn→1)p(mi|s1, s2, · · · , sn→1)
+p(sn|s1, s2, · · · , sn→1)
+p(sn|mi, s1, s2, · · · , sn→1)p(mi|s1, s2, · · · , sn→1)
+p(sn|s1, s2, · · · , sn→1)
+= p(sn|mi)p(mi|s1, s2, · · · , sn→1)
+p(sn)
+Bayes’ theorem
+=========== p(mi|sn)p(sn)p(mi|s1, s2, · · · , sn→1)
+p(mi)p(sn)
+= p(mi|sn)p(mi|s1, s2, · · · , sn→1)
+p(mi)
+li,n = log p(mi|s1, s2, · · · , sn)
+p( ¯mi|s1, s2, · · · , sn) = log p(mi|sn)p( ¯mi)p(mi|s1, s2, · · · , sn→1)
+p( ¯mi|sn)p(mi)p( ¯mi|s1, s2, · · · , sn→1)
+= log p(mi|sn)
+p( ¯mi|sn) + log p( ¯mi)
+p(mi) + log p(mi|s1, s2, · · · , sn→1)
+p( ¯mi|s1, s2, · · · , sn→1)
+= log p(mi|sn)
+p( ¯mi|sn) + l0 + li,n→1
+第五章 移动机器人感知技术6-机器人地图构建算法
+11
+1.3 激光的逆传感器模型𝒑(𝒎𝒊|𝒔𝒏)
+根据障碍物距离测量数据𝜌!, 𝜃! ，估计栅格
+单元的被占用概率可根据测距仪检测障碍物
+的射线模型进行推导：
+其中，
+𝑟&
+Δ𝑟
+𝛼
+Δ𝛼
+Er = 1 →kr
+!2(ωi →ri)
+!r
+"2
+Eω = 1 →kω
+!2(εi →ϑ)
+!ϑ
+"2
+_base64="0+PklB3dE8/2wuQ
+vZ/CueALXF2c=">ADxnicfV
+JdaxNBFJ12/ajxK9UXwZfVIF
+SxISul+iIUtdAXsYJpC52wzM7
+e3QydL2Zm04Yx4q/wF/iq/8d
+/42ya2Ji6XtjlcO+58653Exz
+Zl2v92tlNbpy9dr1tRutm7du3
+7nbXr93YFVlKPSp4socZcQCZ
+xL6jkOR9oAERmHw+zkbV0/HI
+GxTMlPbqxhIEgpWcEocSGVth
+/oDZGyzaVT18nm7up2U0x4Xp
+I0nan1+1NI74MkhnoFnsp+u
+r3CuaCVAOsqJtcdJT7uBJ8Yx
+ymHSwpUFTegJKeE4QEkE2IGf
+WpjET0ImjwtlwidPM0udngir
+B2LDAFcUO7XKuT/6zVGacUt
+0sPcMWrgWdSVw4kPZ9fVDx2Kq
+7XFOfMAHV8HAChgULMR0SQ6
+gLy2zhHAqcs8J7bEScT4L2Owi
+mDbwP4z5oMQp8xjYkpBziZ
+hCSV+XqP/EZmcEwNqtbCEU6qE
+IDL3OMvEJPyhZNJnwZNhZ/XUR
+QpMKRBgAyHTFxq6QUPNRoI2
+ehCY9SgMZprNBCyRTNvmsz8cb
+PACGuPsbWik3jMoXCYF1yFm+
+kMTasHDpsponU40fYsXBgoSt
+crJ8t5fBwYtust3d/rjV2dm
+a3fQaeogeow2UoJdoB+2hfdRH
+FH1B39EP9DPai2RURafn1NWV
+Wc9FdEX38DFdJag=</lat
+exit>p(mi|sn) = 1 →ErEω
+第五章 移动机器人感知技术6-机器人地图构建算法
+12
+1.3 栅格地图
+n 优点：
+p 可以详细地描述环境信息
+p 易于机器人进行定位和路径规划
+n 缺点：
+p 存储要求高：随着栅格数量的增加和环境的扩大，地图所需内存和维
+护时间也迅速增长
+n 如何描述三维空间
+第五章 移动机器人感知技术6-机器人地图构建算法
+13
+1.3 2.5维占用栅格地图
+n 三维空间如何描述：
+p 2.5维占用栅格地图：NASA火星车
+ü 高度图，在每个栅格上增加一个属性，
+即该栅格上障碍物高度估计信息（注
+意是该栅格上障碍物最高部分的高度）
+ü 会存在虚拟障碍物问题
+p 扩展高度图表示法：
+ü 对栅格进行识别，确定栅格是立体结
+构还是包含空隙
+ü 检查单元所对应的所有数据点的高度
+方差
+ü 每个单元仅能表示1层信息
+第五章 移动机器人感知技术6-机器人地图构建算法
+14
+1.3 3维占用栅格地图(体素地图，Voxel Map)
+n 体素地图：
+p 将空间分解为大小相同的正方体（Voxel）
+p 每一个正方体描述所在位置是否被占用
+p 原理简单，扩展性强
+p 占用大量存储空间
+第五章 移动机器人感知技术6-机器人地图构建算法
+15
+1.3 栅格地图
+n 优点：
+p 可以完全表示环境三维信息
+p 所构建地图不需要预先定义尺寸
+n 缺点：
+p 存储要求高：16线3D激光雷达点云数据有30万点/秒
+p 存在检测盲区和空洞
+p 不能单凭点的占用来判断空间的占用、联通状态，需要处理后才能得
+到导航所需地图——地面
+p 不具有通用性，不同机器人或激光雷达按照高度、角度不同，需要重
+新构建地图
+第五章 移动机器人感知技术6-机器人地图构建算法
+16
+1.3 多分辨率地图
+n 栅格地图：
+p 空间占用率高
+p 计算复杂度高
+p 存储存在稀疏特性
+n 多分辨率地图：八叉树表示，存储效率高
+第五章 移动机器人感知技术6-机器人地图构建算法
+17
+1.4 特征地图（语义地图）
+n 特征地图：
+p 连续线性地图
+p 连续多边形地图
+p 空间占用效率高
+p 定位精度高
+第五章 移动机器人感知技术6-机器人地图构建算法
+18
+1.5 拓扑地图
+n 把环境表示为带节点和相关连接线的拓扑结构图，其
+中结点表示环境中的重要位置点，边表示节点间的连
+接关系
+n 常见的地铁公交线路图均为拓扑地图
+n 非常方便进行导航和路径规划
+n 可有点云地图、栅格地图、特征地图抽象而来
+n 由于信息抽象，难于用于机器人精确可靠的定位
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+19
+同步定位建图算法
+SLAM(Simultaneous Localization and Mapping)
+第五章 移动机器人感知技术6-机器人地图构建算法
+20
+n 定位(Localization)：
+p 根据环境地图和机器人的运动序列、观测序列，来确定机器人在地图中的位置和姿态
+p 误差来源：
+ü 全局定位的初始误差
+ü 局部定位中的观测噪声
+p 前提：地图是已知的
+𝑷𝟏𝒙𝟏, 𝒚𝟏
+𝑷𝟐𝒙𝟐, 𝒚𝟐
+𝑿𝒊(𝟏
+{W}
+𝑷𝟒𝒙𝟒, 𝒚𝟒
+𝒁𝒊(𝟏
+𝑼𝒊(𝟏
+𝒁𝒊
+𝑷𝟑𝒙𝟑, 𝒚𝟑
+𝑿𝒊
+𝑼𝒊
+𝒁𝒊)𝟏
+𝑿𝒊)𝟏
+SLAM (Simultaneous Localization and Mapping)
+E
+!
+Xt|Zt, U t→1, m
+"
+第五章 移动机器人感知技术6-机器人地图构建算法
+21
+n 建图(Mapping)：
+p 根据观测序列和机器人
+的位置和姿态，来确定
+环境信息
+p 误差来源：
+ü 观测噪声
+p 前提：机器人的位置和
+姿态是已知的
+SLAM (Simultaneous Localization and Mapping)
+{L}
+𝑷𝟏𝒙𝟏, 𝒚𝟏
+𝑷𝟐𝒙𝟐, 𝒚𝟐
+𝑹𝟏𝒙𝟏, 𝒚𝟏, 𝜽𝟏
+{W}
+{L}
+𝑹𝟐𝒙𝟐, 𝒚𝟐, 𝜽𝟐
+𝑷𝟏
+# 𝒙𝟏
+# , 𝒚𝟏
+#
+𝑷𝟐
+# 𝒙𝟐
+# , 𝒚𝟐
+#
+𝑷𝟑𝒙𝟑, 𝒚𝟑
+{L}
+𝑹𝟑𝒙𝟑, 𝒚𝟑, 𝜽𝟑
+𝑷𝟑
+# 𝒙𝟑
+# , 𝒚𝟑
+#
+𝑷𝟒𝒙𝟒, 𝒚𝟒
+E
+!
+m|Zt, Xt"
+第五章 移动机器人感知技术6-机器人地图构建算法
+22
+SLAM (Simultaneous Localization and Mapping)
+n SLAM：
+p 根据机器人的运动序列、观测序列，同时估计机器人的位置和姿态以及环境地图
+p SLAM问题是“先有鸡还是先有蛋”(chicken-or-egg)的问题
+ü 建图需要机器人位姿信息
+ü 机器人定位需要地图信息
+p 问题提出
+*+年证明可求解
+*+年较好的解决
+p 位姿估计误差与观测误差、地图构建误差相互叠加容易发散
+p SLAM是真正实现机器人自主导航的基础
+E
+!
+Xt, m|Zt, U t→1"
+第五章 移动机器人感知技术6-机器人地图构建算法
+23
+SLAM (Simultaneous Localization and Mapping)
+𝒁𝟎
+𝑿𝟎
+𝑼𝟎
+𝑿𝟏
+𝒁𝟏
+𝑼𝟏
+𝒁-
+？误差？新路标?
+p 1986年ICRA会议提出——概率方法求解(认为地图的构建和机器人状态误差不可收敛)
+p 1996年证明可以收敛，并给出收敛的条件（2001年TRO的论文，SLAM的奠基性论文）
+p 路标测量误差具有一致性：
+p 每一次测量时两路标间的相对关系较为准确，随着观测增加，路标间的关联强度越高，地
+图估计越准确
+第五章 移动机器人感知技术6-机器人地图构建算法
+24
+SLAM (Simultaneous Localization and Mapping)
+n 数据关联是SLAM实现收敛的关键，错误
+匹配会使得SLAM算法发散
+n 闭环检测：当机器人在SLAM过程中回到
+以前到过的地方，也要和之前的观测建立
+正确的数据关联，这个数据关联称之为闭
+环检测，可以有效降低估计的不确定性
+第五章 移动机器人感知技术6-机器人地图构建算法
+25
+SLAM算法分类
+n 基于滤波的SLAM算法：
+p EKF-SLAM (卡尔曼滤波)
+p FastSLAM (粒子滤波)——GMAPPING
+n 基于优化的SLAM算法：
+p 基于图优化的SLAM——g2o
+p 目前主流的SLAM算法
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+26
+基于滤波方法的SLAM算法
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+27
+3.1 EKF-SLAM
+第五章 移动机器人感知技术6-机器人地图构建算法
+28
+3.1 EKF-SLAM
+n 第一个SLAM算法：1986
+n 面向特征地图，特别是路标特征地图
+n 采用maximum likelihood进行数据关联
+n 假设特征彼此清晰可分
+n 机器人运动和观测噪声满足高斯分布
+n 以机器人初始位姿为地图坐标系原点
+n 与EKF机器人定位问题类似，但维度大大增加
+SLAM:待估计状态𝑥# ∈𝑅$%&'
+EKF-SLAM:初始状态
+xt =
+
+
+XR
+M1
+M2
+...
+Mn
+
+
+, !t =
+
+
+!XR
+!XRm1
+!XRm2
+· · ·
+!XRmn
+!m1XR
+!m1
+!m1m2
+· · ·
+!m1mn
+!m2XR
+!m1m2
+!m2
+· · ·
+!m2mn
+...
+...
+...
+...
+...
+!mnXR
+!mnm1
+!mnm2
+· · ·
+!mnmn
+
+
+x0 = 0(3+2n)→1, !XR = 03→3,
+!XRmi = 03→2, !miXR = 02→3,
+!mi =
+!
+→
+0
+0
+→
+"
+第五章 移动机器人感知技术6-机器人地图构建算法
+29
+3.1.1 EKF-SLAM算法流程
+1.
+State Prediction：基于运动模
+型进行状态估计
+2.
+Measurement Prediction：基
+于观测模型进行观测
+3.
+Observation：获得本次观测
+4.
+Data Association：建立预估观
+测与本次观测的数据关联
+5.
+Update：利用Kalman增益进行
+状态更新
+6.
+Integration of new landmark：
+在地图中加入新的路标
+第五章 移动机器人感知技术6-机器人地图构建算法
+30
+64="rvCI3XFGksbKaAzqRGSxYszbn90=">
+AFvnichVNb9MwFM4ChVEu2+CRF0MFQmi
+amgoNXpAm4IGXiXHZRZqryHac1lpsR7YbW
+kX5GzxCv+Jf8NJml5om2Ep6ZfvfP7Oe4x
+TRNhXbf7Z8u/cbN16/b2nfbde/cf7OzuPT
+yzemQYP2U60eaCEsTofipEy7hF6nhRNKEn
+9Or92X8POPGCq2+uUnK+5IMlIgFIw6ocM/f
+wZQYNA7dW0ypRNXRfgF4yk8DoMF7JUwi7
+SzC05hTuX+9At/FQNJaqtlJgfHAj1Hq5wMg
+810r6JZmWpjXBVoVsKMB69NWeoUa+S1Oap
+4nWNO9Rrsa6dV/lr73tw+mwpWfxGOZmDKrL
+erNtejGjpW/ymprAf+ynC30z3oVgutg6AG
+Ha9eJzBCP3Ck2Uhy5VhCrL0Muqnr58Q4wRJ
+etPHI8pSwKzLglwAVkdz282p0C/QMmAjF2
+sCjHKrY5R05kdZOJAWlJG5oV2MluTFWMk7r
+xK4U4OI3/VyodOS4YtP8ShBTqPyeqBIGM
+5cMgFAmBHQAmJDYghzcInaOIxjkSc59hIF
+BXg/YFD04YfQ7pPKTfEafMyx8TAqY4LOIQB
+3i/RdUKhZkJA7TZW/DvTUhIV5eVFKuDNB0
+LlFHoyYlxmXZbwSsIBNghouvBIGzSmUeDg
+GYLj6zBI5t5NAjocjPvmpqZd7OkgGNH2Fr
+ZCXKc8NjhJE40zEwnQNiIwdBhUxFhjp9gJ2
+DAYBdMcrA6t+vgrHcQHB4cfn7VOTqsZ3rb
+e+w9V54gfaO/I+eifeqcf8zP/p/J/t45
+acUu29FTqb9V7Hn/rNb4Lwri9Dk=</lat
+exit>
+¯xt =
+
+
+¯XR
+¯
+M1
+¯
+M2
+...
+¯
+Mn
+
+
+, ¯!t =
+
+
+¯!XR
+¯!XRm1
+¯!XRm2
+· · ·
+¯!XRmn
+¯!m1XR
+¯!m1
+¯!m1m2
+· · ·
+¯!m1mn
+!m2XR
+¯!m1m2
+¯!m2
+· · ·
+¯!m2mn
+...
+...
+...
+...
+...
+¯!mnXR
+¯!mnm1
+¯!mnm2
+· · ·
+¯!mn
+
+
+3.1.2 EKF-SLAM算法流程
+n SLAM:待估计状态 𝑥. ∈𝑅-)/0
+n 运动估计：
+𝑼𝒕(𝟏
+xt =
+
+
+XR
+M1
+M2
+...
+Mn
+
+
+, !t =
+
+
+!XR
+!XRm1
+!XRm2
+· · ·
+!XRmn
+!m1XR
+!m1
+!m1m2
+· · ·
+!m1mn
+!m2XR
+!m1m2
+!m2
+· · ·
+!m2mn
+...
+...
+...
+...
+...
+!mnXR
+!mnm1
+!mnm2
+· · ·
+!mnmn
+
+
+!
+XRt→1, !XRt→1
+"
+! ¯XRt, ¯!XRt
+"
+¯XRt = f
+!
+XRt→1, ut→1
+"
+¯!XR = →f · !Rt→1→f ↑+ Rt
+¯!XR→1mi = →f · !XR→1mi
+¯xt = f →(xt↑1, ut↑1)
+¯!t = →f →· !Rt→1→f →↓+ FxRtF ↓
+x
+第五章 移动机器人感知技术6-机器人地图构建算法
+31
+3.1.2 EKF-SLAM算法流程
+n 里程计模型：
+n EKF-SLAM运动估计：
+ase64="sHy/NKso28XFwh0p2rwz38
+D+Oo=">AEqHicfVJNb9NAEHVKgBK
++WjhyWYhQSwtVjKrCBamCHrgikQ/U
+DcKu+uxs+p+WLub0MjKlSuc+G/8FU6
+M46SEtO5Ktp7e/PGsx6eK+lDp/O7
+sXStef3GzeVbrdt37t67v7L64NDbgR
+NwIKy7pgzD0oaOAgyKDjOHTDNFRzx
+03elfjQE56U1n8Moh65mZGpFCwg1V
+v5Q3muydkapWRUvmjoQ2BrhALSb0il
+luK5VkmblfSCpo6JYtgL4JaDRlDR
+L0lXezTl6f6VOS7oHC6PCsbHNZjbC
++Krm8I8pXRi5wkxl6K+3OVmdyEUQT
+0E7mp793urSL5pYMdBglDM+5O4k4d
+uwVyQsG4RQceciZOWQYnCA3T4LvF5
+CeNyVNkEpJah48JZMLOVxRMez/SHJ
+2ahb5f1EryUq1kgrXKL3xASF93C2ny
+QAjqv7pQJFgSbkIJEORFAjBEw4iS
+MQ0Wd4twHXpUTSGki06KgTpNkjNl7
+gEM7+IDtPubgWLBuo6DMZqdjfESMv
+q8RFcZpZkZEbVa1MA3YbVmJiko5xr
+/KIdMmoLjTE6elV3nLTCxAMIaA67ke
+UZek5HPMmoMfPgvY1iTMZxl1Bj4/DB
+v64Y5n2bOgdOqPe6HRdUQRqoSpXFn
+WnHhDqZ9QN1E6JX0Mc0SFwrMJNjhf
+39iI4fLkV72ztfNpu725Pd3o5ehQ9i
+dajOHoV7Ubvo/3oIBKNr43vjR+Nn8
+2N5n7zqPmlsi41pjUPo/9Ok/8F/YSe
+KQ=</latexit>
+
+x→
+y→
+ω→
+
+=
+
+
+x
+y
+ω
+
++
+
+
+→vt
+ωt sin ω + vt
+ωt sin(ω + εt!t)
+vt
+ωt cos ω →vt
+ωt cos(ω + εt!t)
+εt!t
+
+
+
+
+
+
+
+x→
+y→
+ω→
+...
+
+
+
+
+=
+
+
+
+
+
+x
+y
+ω
+...
+
+
+
+
++
+
+
+
+
+1
+0
+0
+0
+· · ·
+0
+0
+1
+0
+0
+· · ·
+0
+0
+0
+1
+'
+()
+*
+2Ncols
+0
+· · ·
+0
+
+
+
+
+↑
+'
+()
+*
+Fx
+
+
+→vt
+ωt sin ω + vt
+ωt sin(ω + εt!t)
+vt
+ωt cos ω + vt
+ωt cos(ω + εt!t)
+εt!t
+
+
+'
+()
+*
+f →(xt↑1,ut↑1)
+Fx =
+
+
+1
+0
+0
+0
+· · ·
+0
+0
+1
+0
+0
+· · ·
+0
+0
+0
+1
+0
+· · ·
+0
+
+
+→
+¯XRt = f(XRt→1, ut→1)
+WBHs25W/jWwxirmrp9UG1ZY=">ADzXicfVLdbtMwGPUafkb56+
+CSCwVYqBRJVlpxwXSBFxwgzYkuk2aq8p2nNSaHUe2U1qFcId4A
+16CW3gY3ganP6xMhE9KdHS+42OfTx/JBDfW939tNLxLl69c3bzW
+vH7j5q3bra07R0blmrIBVULpE4INEzxlA8utYCeZlgSwY7J2euq
+fzxh2nCVfrCzjA0lTlIec4qto0at+4hgDaejwpYv48fbFXgWlDs
+wX4Ano1b7zY64XPQ+h3fL8f7vYqEPa74S4MHFNVGyzrcLTV+IY
+iRXPJUksFNuY08DM7LC2nApWNlFuWIbpGU7YqYMplswMi3mSEj
+5yTARjpd2XWjhn108UWBozk8QpJbZjc7FXkf/sVYxVSpgLD7Dx3
+rDgaZbltLF/XEuoFWwmhaMuGbUipkDmGruIkA6xhpT62baRBGLU
+cTjokBawqh03m+YC63ZO3fdQcY0tko/LRDWicT0g0hQTsV+p+Q
+pyuhQ80mStlHqTEaVQgQmTp/izhaUFcJs2n1a3rEjaXMAdrBCQ7
+98hqPLKVR42ATM49JjUek5VHjYCsh3lVF+ZPmjWFGztExsh2UCD
+BYotELJTbmXYAkebJ2CI9J0YFeoAsdwvmTrlNXq0rAdHYSfodX
+rvu+397nKnN8E98BsgwD0wT54Cw7BAFDwBXwHP8BP78DLvU/e54
+W0sbE8cxf8Vd7X3uTCU=</latexit>
+¯xt = f →(xt↑1, ut↑1)
+第五章 移动机器人感知技术6-机器人地图构建算法
+32
+3.1.2 EKF-SLAM算法流程
+n 里程计误差传导模型
+n EKF-SLAM运动估计误差传导模型：
+∇𝑓. = ∇𝑓
+0
+0
+𝐼
+第五章 移动机器人感知技术6-机器人地图构建算法
+33
+3.1.2 EKF-SLAM算法流程
+n 观测估计
+n 数据关联：将    与观测     关联
+n 状态更新
+𝑼𝒕(𝟏
+𝑿𝑹𝒕"𝟏, 𝚺𝑿𝑹𝒕"𝟏
+0𝑿𝑹𝒕, 0𝚺𝑿𝑹𝒕
+2𝒁𝒕= 𝒉(0𝑿𝑹𝒕)
+（每个路标观测独立）
+（每个路标观测独立）
+第五章 移动机器人感知技术6-机器人地图构建算法
+34
+3.1.2 EKF-SLAM算法流程
+n 对于激光测量数据
+（机器人坐标系）
+n 观测数据投影到世界坐标系：
+n 对于观测方程ℎ(̅𝑥.)可转换为：
+机器人定位估计
+测量数据
+观测位置
+n 观测雅可比𝑯𝒕为：
+zi
+t = [ri
+t, ωi
+t]→
+第五章 移动机器人感知技术6-机器人地图构建算法
+35
+3.1.2 EKF-SLAM算法流程
+n 加入新特征𝒎𝒏3𝟏
+n 从机器人坐标转换到世界坐标
+→fR = ωf(XR, zn+1)
+ωXR
+→fZ = ωf(XR, zn+1)
+ωzn+1
+ase64="np7BLoLnjrZx3HWismbohg3
+zlRc=">AEXHicfVPLbhMxFHVpgDK
+l0IKEkNgYJpUKVFWmqgobpApYsEUR
+B9SHEUez53Eqh8j2wkJ1vA1bOF/2PA
+teCYJTVuCJY+Or89zHXaSG4da3W
+r6Vry43rN26u3IpWb6/dubu+ce/Y6o
+FhcMS0OY0pRYEV3DkuBNwWhigMhVw
+kp69qe5PhmAs1+qzGxfQkbSneM4Zdc
+HUX8ou149T8pXON867X7axl8n56fd
+9bi106oXvgqSKYjRdB12N5a3SabZQ
+IJyTFBr20mrcB1PjeNMQBmRgYWCsjP
+ag3aAikqwHV+XUOLNYMlwrk3YyuHaO
+u/hqbR2LNPAlNT17eW7yvjvO2Po+EJ
+wX5Gc1sJeysnlLzueq2LgQLFJSvlAY
+Kdx1TmcQPMiXEAlBkeqsKsTw1lLv
+Q3IhnkJO598RInJVB+y2EPh4H8J9
+KMBQp80zT6jpSToqQ2I9sl2h/xG5mh
+EDiKi4AvTUlKVeZKmsgxf6Hl01CT
+4aMq6jwFagoEuICQFucaxQKNYqaxgJ
+AOzWGCzSGM40FhHS+mNeLivlbzRw
+jtB0Ta2WceCIgd0TkQocxihNMDO/1H
+TG1oevJY+J4mLmLumSgMjBr73b8Zs
+RxkTSM0j1qF1Nb1t0fJOE6bJ9P2Gm4
+YeDJ0WfKqdl7RF8JolPs4p36yRnOZY
+htIOR804aYZjMxDKLyv5PJrugqOd
+3eS/Z39j3vxwd70pa2gR+gJ2kIJeo
+EO0Dt0iI4Q9/Qd/QD/Vz+3Wg0Vhtr
+E+q1panPfXRhNR78ARznf14=</late
+xit>mn+1 = f(XR, zn+1)
+!mn+1 = →fR · !XR · →f →
+R + →fZ · !Zn+1 · →f →
+Z
+!mn+1mi = →fR · !XRmi
+!mn+1XR = →fR · !XR
+!
+XRt→1, !XRt→1
+"
+!
+XRt, !XRt
+"
+ˆZt = h( ¯XRt)
+Ut→1
+第五章 移动机器人感知技术6-机器人地图构建算法
+36
+3.1.2 EKF-SLAM算法流程
+地图
+协方差阵
+地图
+协方差阵
+地图
+协方差阵
+第五章 移动机器人感知技术6-机器人地图构建算法
+37
+3.1.3 EKF-SLAM算法仿真实验效果
+第五章 移动机器人感知技术6-机器人地图构建算法
+38
+3.1.3 EKF-SLAM算法实验效果
+其中：
+蓝色：真实轨迹
+红色：EKFSLAM估计轨迹
+绿色：里程计估计轨迹
+第五章 移动机器人感知技术6-机器人地图构建算法
+39
+3.1.4 EKF-SLAM算法问题
+n 所有路标之间为全连接
+n 计算复杂度高，无法在大场景地图下使用
+n 要求高斯分布，因此只能处理单峰假设
+n 一旦数据关联错误，将导致发散
+n 仅适用于人工路标情况
+n 从机器人坐标转换到世界坐标
+n 只能用点云地图或特征地图，无法使用栅格地图
+第五章 移动机器人感知技术6-机器人地图构建算法
+40
+3.1.5 EKF-SLAM回环算法
+n Recognizing an already mapped 
+area
+n Data association with
+phigh ambiguity
+ppossible environment symmetries
+n Uncertainties collapse after a loop 
+closure (whether the closure was 
+correct or not)
+第五章 移动机器人感知技术6-机器人地图构建算法
+41
+3.1.6 EKF-SLAM算法总结
+n 多变量高斯函数来表达机器人的位姿和路标估计
+n 高斯协方差矩阵--高度互相关性
+n EKF致命缺点：
+p 计算复杂度（quadratic complexity）
+协方差矩阵2𝑁+ 3 ×(2𝑁+ 3)包含着位姿和路标的互相关信息。只要
+观测到一个路标，整个协方差矩阵被更新。如果面对包含大量路标的复杂
+自然环境，难以满足实时性要求。
+p 数据关联（single-hypothesis data association）
+将观测值与最可能产生它的路标相关联。即使一小部分的错误关联导
+致算法发散。 
+改善方法：同时考虑多个观测值，以计算损耗为代价，并不能解决潜
+在的数据关联问题。需要足够多的信息对其进行修正，否则，最终会导致
+发散。
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+42
+3.2 FastSLAM
+第五章 移动机器人感知技术6-机器人地图构建算法
+43
+3.2 FastSLAM算法
+n FastSLAM是由Montemerlo等人首先提出来的（2003）。
+n FastSLAM是粒子滤波器（Particle Filter）与EKF集成。
+n 思想：
+用改进的粒子滤波器估计机器人路径的后验分布，机器人的位姿是用粒子
+分布来表示。粒子滤波器的每个粒子代表的一条可能运动路径，利用观测信息
+计算每个粒子的权重，以评价每条路机器人径的好坏。
+p 路标用EKF来估计，即每个粒子拥有N个EFKs（2维），用于路径估计条
+件下的N个路标位置估计。
+p 条件独立性：在机器人路径已知的情况下，路标位置的估计相对独立。
+第五章 移动机器人感知技术6-机器人地图构建算法
+44
+3.2.1 Rao-Blackwellization Particle Filter (RBPF) 
+n 粒子维度问题：
+p AMCL算法中，粒子的维度为3维：即
+p FastSLAM粒子的维度为3𝑡+ 2𝑁维：
+p Particle filters are effective in low dimensional spaces as the 
+likely volumes of the state space need to be covered with 
+samples.
+p 如何降维？
+x = (x1:t, l1,x, l1,y, l2,x, l2,y, · · · , lN,x, lN,y)→
+!
+x
+y
+ω
+"→
+第五章 移动机器人感知技术6-机器人地图构建算法
+45
+3.2.1 Rao-Blackwellization Particle Filter (RBPF) 
+n 粒子降维的核心思想
+已知
+如果我们利用粒子
+对机器人路径进行
+建模，对于每个粒
+子而言，就是对机
+器人路径的一个假
+设。因此，对于每
+一个粒子，我们能
+独立地计算一套路
+标的地图
+x1:t, l1,x, l1,y, l2,x, l2,y, · · · , lN,x, lN,y
+第五章 移动机器人感知技术6-机器人地图构建算法
+46
+3.2.1 Rao-Blackwellization Particle Filter (RBPF) 
+n Rao-Blackwell Theorem(饶布莱克威尔定理)：以一个任意的原始估计为起
+点，寻找最小方差无偏估计量（MVUE）
+p 利用变量间依赖关系进行的因式分解
+p 如果可以得到𝑝𝑏𝑎封闭解，可以用𝑝𝑎表征每个样本，并为每个样本
+计算𝑝𝑏𝑎
+机器人位姿序
+列（路径）
+地图(路标)
+运动估计
+基于观测的
+路径估计
+基于观测的
+地图构建
+观测
+p
+!
+x0:t, l1:M|z1:t, u1:t
+"
+= p
+!
+x0:t|z1:t, u1:t
+"
+p
+!
+l1:M|x0:t, z1:t, u1:t
+"
+p(a, b) = p(b|a)p(a)
+第五章 移动机器人感知技术6-机器人地图构建算法
+47
+= p
+!
+x0:t|z1:t, u1:t
+" M
+#
+i=1
+p
+!
+li|x0:t, z1:t, u1:t
+"
+3.2.1 Rao-Blackwellization Particle Filter (RBPF) 
+已知
+Landmark variables are all disconnected (i.e. independent) given the robot’s path
+2维EKF
+粒子滤波(类似于MCL)
+p
+!
+x0:t, l1:M|z1:t, u1:t
+" = p
+!
+x0:t|z1:t, u1:t
+"
+p
+!
+l1:M|x0:t, z1:t, u1:t
+"
+第五章 移动机器人感知技术6-机器人地图构建算法
+48
+3.2.2 机器人路径（位姿）估计
+n 基于采样（粒子）的机器人位姿表示：
+n 每个粒子作为一条完整的机器人路径的假设：
+𝑥7
+𝑥8
+𝑥9
+𝑥:
+⋯
+初始位姿
+通常取(0, 0, 0)
+𝑡= 1时机器
+人位姿假设
+𝑡=2时机器
+人位姿假设
+n 粒子滤波重采样机制：
+n 过去的位姿信息不进行修正，因此，仅需维护当前位姿。
+ha1_base64="ZltkyMJ
+CHZrdsQRj9euxtAHNd
+80=">AEGHicfVLbh
+MxFHUSHiU8msKSjSFC
+qiKZhAqFKlCliwiSg
+SaSvVYeTxeCam9tiynZ
+Dgzm+w4GvYIXaIHT/CF
+jx5tCEhWJrx0bnjv
+3zo0VZ8YGwc9KtXbp8p
+WrG9fq12/cvLXZ2Lp9a
+ORAE9olkt9HGNDOct
+p1zL6bHSFIuY06P49E
+UZPxpSbZjM39qxoj2Bs
+5yljGDrqajxXrVGkQt2
+bENeTC3U5x9rG8PT
+GY3g/3zjUrIaS0TCLH9
+sLiXQeqFo/Y2dxvWRs1
+mkE7mBy4CsIZaILZOY
+i2qp9QIslA0NwSjo05C
+QNlew5rywinR0NDFWY
+nOKMniY0FNz02GUs
+AHnklgKrV/cgsn7GKGw
+8KYsYi9UmDbN8uxkvxn
+rGSslNwsfYBNn/Ucy9
+XA0pxM6cDq2E5eBhw
+jQlo89wEQz3wIkfawx
+sf731FCU5Sw1DmkBUw
+K7/2S+qY17fhyrxXV2
+Er9yCGsM4FHhR9ChrZL
+9D8hy+dCj+p1lNMPRAq
+B8ShOBaFf9OM5S72P
+Wk2KqsuSuhEQj1cI4jV
+hYda46HmHmsE8fDCY7j
+GYzj3WCOIF5t5vq6Z8
+24WFH7sEBkjmqFDnKYW
+8ZRLvzPNECLNsr5FekJ
+EDt1DlvkF81l+k8Plv
+V0Fh4/b4U57582T5n4w
+2+kNcBfcBy0QgqdgH7w
+CB6ALCPgOfoHfFVD7XP
+tS+1r7NpVWK7OcO+Cv
+U/vxB0RsaPM=</latex
+it>
+p(x0:t, l1:M|z1:t, u1:t) = p(x0:t|z1:t, u1:t)
+M
+!
+i=1
+p(li|x0:t, z1:t, u1:t)
+p(x0:t|z1:t, u1:t)
+第五章 移动机器人感知技术6-机器人地图构建算法
+49
+3.2.3 粒子数据结构
+n 采用粒子分布表示机器人路径的后验概率
+n 采用高斯分布表示特征的后验概率
+n 每个特征（路标）用一个2x2 EKF表征（方差，均值）
+n 每个粒子仅需维护M各独立的EKF
+第五章 移动机器人感知技术6-机器人地图构建算法
+50
+3.2.4 粒子滤波流程(1)——运动更新
+第五章 移动机器人感知技术6-机器人地图构建算法
+51
+3.2.4 粒子滤波流程(2)——数据关联与观测更新
+第五章 移动机器人感知技术6-机器人地图构建算法
+52
+3.2.4 粒子滤波流程(3)——基于EKF的地图更新
+第五章 移动机器人感知技术6-机器人地图构建算法
+53
+3.2.4 粒子滤波流程(4)——基于观测的权重计算
+n 根据卡尔曼滤波的
+估计方差对粒子重
+要性进行评估
+n 基于权重对粒子进
+行重采样
+第五章 移动机器人感知技术6-机器人地图构建算法
+54
+3.2.4 粒子滤波流程(1)
+运动更新
+计算新特征EKF
+第五章 移动机器人感知技术6-机器人地图构建算法
+55
+3.2.4 粒子滤波流程(2)
+地图更新
+基于观测计算权重
+插入新特征
+基于权重的重采样
+第五章 移动机器人感知技术6-机器人地图构建算法
+56
+3.2.5 权重计算
+n 目标分布:
+n 建议分布:
+n 重要性指标:
+贝叶斯公式
+重要度指标仅与当前观测相关
+p
+!
+x[k]
+1:t
+""" z1:t→1, u1:t
+#
+=
+from xt→1 to xt
+$
+%&
+'
+p(xt|xt→1, ut)
+xt→1
+$
+%&
+'
+p(x1:t→1|z1:t→1, u1:t→1)
+p
+!
+x[k]
+1:t
+""" z1:t, u1:t
+#
+">AD+HicfVJNixNBEO3N+LHGr6wevbRmhVUkzIisXoRFPYgrmB2F7Zj6OmpmTpnh6OzGxmb/h2Zt4E3+M4El/ij35cLNZ
+x4KBR9WrV/1qKi4ENzYMf240gnPnL1zcvNS8fOXqteutrRsHRo0gy5TQumjmBoQPIeu5VbAUaGByljAYTx8XtUPx6ANV/k7Oy
+2gJ2mW85Qzan2q3pFlISMvnfHw175lKSaMkcsTKyzVGdg8fbOZF68t12Wi1KhVaEMFaeL/VY7ISzwGdBtABtIj9/lbjE0kU
+G0nILRPUmOMoLGzPUW05E1A2ychAQdmQZnDsYU4lmJ6bmS7xXZ9JcKq0/3KLZ9nVDkelMVMZe6akdmDWa1Xyn7UqY5USZu0BNn
+3SczwvRhZyNp+fjgS2CleLxQnXwKyYekCZ5t4CZgPq92n9+pskgZQkPHWOaImT0mu/AG9aw2s/7k0Bmlql7zvity7pPRLyMiD
+Cv2PyPMl0aNmk+TwgSkpaZ4EsfS/68YMp672HvSfFJNXaXAjAIe1hDi4kSjqNEolho1hHh8ojGu0RgvNWoI8aqZ3Vm/rpZYf
+i1Y2KMbEeOCEgtEalQ/mbaESaZwNL9CzRd+Q2sdwfmO/ylxyt3+1ZcPCwE+12dt8+au+Fi5veRLfQHbSDIvQY7aGXaB91EUPf0
+A/0C/0OPgafgy/B1zm1sbHouYlORfD9D4DRX3E=</latexit>
+ω[k] =
+target (x[k])
+proposal (x[k])
+ω[k] =
+p
+!
+x[k]
+1:t
+""" z1:t, u1:t
+#
+p
+!
+x[k]
+t
+""" xt→1, ut
+#
+p
+!
+x[k]
+1:t→1
+""" z1:t→1, u1:t→1
+#
+=
+ωp
+!
+zt
+"""x[k]
+1:t, z1:t→1
+#
+p
+!
+x[k]
+t
+""" xt→1, ut
+#
+p
+!
+x[k]
+1:t→1
+""" z1:t→1, u1:t→1
+#
+p
+!
+x[k]
+t
+""" xt→1, ut
+#
+p
+!
+x[k]
+1:t→1
+""" z1:t→1, u1:t→1
+#
+= ωp
+!
+zt
+"""x[k]
+1:t, z1:t→1
+#
+第五章 移动机器人感知技术6-机器人地图构建算法
+57
+3.2.6 数据关联
+n 观测的特征属于地图中的那个特征
+n 存在多种匹配的可能
+n 数据匹配是以基于机器人位姿为基础的
+n 机器人位姿估计误差直接影响数据匹配结果
+n 每个粒子代表一个机器人位姿估计
+第五章 移动机器人感知技术6-机器人地图构建算法
+58
+3.2.6 数据关联
+n 观测的特征与地图特征的匹配概率
+p 地图中特征的位置和方差:
+p 依据观测值距离特征均值的大小和方向由高斯分布可以确定其匹配概率
+n 数据关联方法:
+p 选择概率大的进行匹配
+p 按照概率进行随机匹配
+n 如果匹配概率过低, 产生一个新特征
+n FastSLAM利用多假设分析可以在数据关联时忽略将机器人位姿误差的影响
+n 基于随机采样的数据关联算法简单且有效——相较于EKF最重要的优势
+P(observation|red) = 0.3 
+P(observation|brown) = 0.7 
+!
+x[k]
+t→1,
+!
+µ[k]
+1,t→1, ![k]
+1,t→1
+"
+, · · ·
+"
+第五章 移动机器人感知技术6-机器人地图构建算法
+59
+3.2.7 FastSLAM算法仿真实验
+第五章 移动机器人感知技术6-机器人地图构建算法
+60
+3.2.8 FastSLAM总结
+n 利用RBPL将SLAM后验估计问题进行降维, 提升算法的效率
+n 利用粒子采样进行机器人位姿和路径估计
+n 利用给定的粒子路径计算特征位置
+n 基于随机采样的数据关联具有更高的鲁棒性
+n 利用多假设分析可以在数据关联时忽略将机器人位姿误差的影响
+n 粒子数量的选取
+p 内存利用率
+p 粒子枯竭——定位与建图错误
+n GMAPPING
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+61
+基于优化的SLAM算法
+第五章 移动机器人感知技术6-机器人地图构建算法
+62
+4.1 Graph-based SLAM——基于优化的思想
+n 机器人运动过程中，机器人位姿通过某种约束相互连接
+p 这种约束体现了不确定性
+n 当机器人观测到已构建地图的区域，会与之前机器人位
+姿状态构成额外约束
+n 利用优化思想，基于观测数据对机器人位姿进行修正，
+以使机器人观测结果最优
+n 利用图论描述SLAM问题
+n 使用图中的节点表征SLAM过程中机器人的位姿
+n 两个节点间的边表征机器人位姿间的空间约束
+n 图优化SLAM：构建图，寻求最优的节点构型使得约束
+误差最小
+第五章 移动机器人感知技术6-机器人地图构建算法
+63
+4.1 Graph-based SLAM——基于优化的思想
+n 图中的每一个节点均代表一个机器人位姿
+n 图中的两个节点间的边代表了节点间的空间约束
+n 基于构建的图和图中节点的约束关系，可以以此
+修正节点（机器人的位姿）以最大程度上满足空
+间约束（即边的约束）
+n 基于修正的节点位姿（机器人的位姿）修正地图
+第五章 移动机器人感知技术6-机器人地图构建算法
+64
+4.2 Graph-based SLAM算法构成
+n 基于图优化的SLAM就是构建图（前端）与图优化（后端）不断迭代的结果
+n 一致性地图描述有助于通过减少搜索空间来确定新的约束
+n 可在线SLAM，也可离线优化
+Graph
+Construction
+(Front-End)
+Graph
+Optimization
+(Back-End)
+graph
+(nodes & edges)
+node positions
+raw data
+第五章 移动机器人感知技术6-机器人地图构建算法
+65
+4.3.1 前端（图的构建）——节点
+n 节点（Node）：
+p 机器人位姿：𝑥= 𝑥9:; , 其中，𝑥! 𝑥, 𝑦, 𝜃为机器人𝑡!时刻的位姿
+p 特征或路标：𝑚= 𝑚9:; , 其中，𝑚! 𝑥, 𝑦为第i个路标
+n 仅含有位姿节点的图：Pose Graph
+n 含有特征的图：Pose-feature Graph
+第五章 移动机器人感知技术6-机器人地图构建算法
+66
+4.3.2 前端（图的构建）——边
+n 边（Edge）：节点间的空间约束
+p 里程计测量：
+ü 机器人状态𝑥&运行至𝑥&)*，两者间的相对位姿关系的估计
+p 观测：
+ü 机器人在状态𝑥&和状态𝑥&)*下对同一环境下的观测
+ü 构建虚拟测量，获得从状态𝑥&“观测”状态𝑥&)*，获得相对位姿关系
+ü 机器人状态𝑥&观测路标𝑚4的状态
+𝒙𝒊
+𝒙𝒊39
+𝒙𝒊
+𝒙𝒊39
+里程计测量
+状态𝑥#对环境的观测
+状态𝑥#$%对环境的观测
+从状态𝑥#“观测”状态𝑥#$%
+𝒙𝒊
+虚拟测量
+𝒙𝒋
+第五章 移动机器人感知技术6-机器人地图构建算法
+67
+4.3.2 前端（图的构建）——边
+n 边（Edge）数学描述：齐次坐标
+p 边描述的是相对位姿关系
+p 里程计测量：
+ü 机器人状态
+对应与齐次坐标描述为
+ü 里程计测量得到的边为
+p 观测：
+ü 机器人在状态
+和状态
+下对同一环境下的观测
+ü 构建虚拟测量，获得从状态
+“观测”状态
+，获得相对位姿关系为
+ü 机器人状态
+观测路标
+的状态：
+robot
+landmark
+Robot translation
+!
+X→1
+i
+Xi+1
+"
+!
+X→1
+i
+Xi+1
+"
+Xi(xi, yi, ωi)
+Xi =
+
+
+cos ωi
+→sin ωi
+xi
+sin ωi
+cos ωi
+yi
+0
+0
+1
+
+
+Xi+1
+Xi
+Xi+1
+Xi
+ˆzij(xi, mj) = R→
+i (mj →ti)
+mj
+a1_base64="fczNnt25Wm
+ayhjRPphLWuIKd+0U=">A
+ADt3icfVLbhMxEHWzXE
+q4tfDIiyFCQghFuwgVeKu
+AB14QRSJtpTiKbO/sxqov
+i+0Niax8BjzCd/E3eNOEh
+pTF0q6OZs6cmTMaVknhfJ
+r+2ukV65eu757o3vz1u0
+7d/f27x07U1sOA26ksaeM
+OpBCw8AL+G0skAVk3DCz
+t42+ZMpWCeM/uznFYwULb
+UoBKc+hoZEUT9hBZ6NxXi
+vl/bT5cOXQbYCPbR6R+P9
+zneSG14r0J5L6twSys/C
+tR6wSUsuqR2UF+RksYRq
+ipAjcKy5kX+HGM5LgwNn7
+a42V0syJQ5dxcschsZnTbu
+Sb4z1wT8cZItzWAL16Ngt
+BV7UHz8/5FLbE3uNkLzoU
+F7uU8AsqtiBYwn1BLuY/b
+65IcCpKLIgRiFc4XUfsdR
+NMWPsR2Hyuw1Bv7NBqS0
+Vni7iEkjxr0P+IQq+JEXW
+7RMNXbpSiOg+EMbWIfyiF
+Dix6smLWdN2kwJICEbYQW
+HWhUbVoVGuNFgKbXmhMWz
+Sma40WAts086bNzB83G4y
+4dkycU70sEAmFJ7KQJt5M
+L8PEinLiV0GxoE8JF7EA
+4tV8ZKz7bu9DI6f97OD/s
+GnF73DdHXTu+gBeoSeoAy
+9RIfoPTpCA8SRQd/QD/Qz
+eZ2MkyKZnFM7O6ua+ivl
+3z5DTupRHg=</latexit>xi
+第五章 移动机器人感知技术6-机器人地图构建算法
+68
+4.3.2 前端（图的构建）——边的信息矩阵
+n 观测受传感器测量噪声影响
+n 每个边上的信息矩阵𝛀𝒊𝒋描述两节点间空间约束关系的不确定性
+n 信息矩阵的“值越大”，节点相关性越高，优化过程中越应重视
+n 信息矩阵描述了每个边的约束在优化过程中的权重
+问题：
+n 基于观测的边的信息矩阵与基于里程计测量的信息矩阵形式上的差别
+n 非完整约束下信息矩阵的形态：如很长的走廊
+第五章 移动机器人感知技术6-机器人地图构建算法
+69
+4.4.1 后端（优化算法）——优化目标函数
+其中，系统状态向量：
+for Pose Graph
+for Pose Feature Graph
+Goal: xω = arg min
+x
+!
+ij
+e→
+ij!ijeij
+t sha1_base6
+4="Chu+a+AvN
+A4ySPcSmSrHe
+iC+igE=">AE
+VnicfVNdb9Mw
+FE0/xkaB0cEj
+L4YKaUBVJWUav
+AxNwAPShBiIb
+pPmrIdJ7Xmj
+8h2S6sof4Pfw
+E+CP4Nw0nYtLc
+FSoqNz3X17
+7GCWfG+v6vSr
+VW37q1vXO7ce
+fuvd37zb0HZ0a
+NKE9orjSFxg
+ZypmkPcspxe
+JpkhgTs/x9bs
+8fj6m2jAlv9p
+QvsCxZJFjCDr
+qEHzBxTIDnE
+JlfQquQIchrZ/
+RtyEBR0GyZ7
+oIhobKmvQzIW
+WBiI1cUZYrB
+idFAGoWD+0zyO
+Q8B4MvV+lL+a
+J7kg2aLb/jFw
+tsgmAOWt58nQ
+72qt9hqMhIUGk
+JR8ZcBn5i+yn
+SlhFOswYcGZo
+gco1ieumgRIK
+aflocaQaeOiYE
+kdLukxYU7GpG
+ioQxU4GdMt+p
+WY/l5D9jOWOV4
+mZtAzZ63U+ZT
+EaWSjKrH404s
+Ark1wZCpimxf
+OoAIpq5FgAZIo
+2IdZfbgCGNYM
+iNIVagDBz3u
++pa1rTj67cp4
+RqZJV+nkKkY4E
+mTuEGLZz9D8
+hkwuhQ40GlPQ
+bUIgGaYQY5G
+5P42ZTLHrSbNJ
+XnVQgsJdbBE
+gJOlR1LikSw8
+SgR4vPQYl3iMF
+x4lArzazNuyZ
+m6WVG4YwfQG
+NEK0uLhQB5x5
+WamFYDZLENdEI
+MUPoaWuQFzW
+6Sg/W53QRn3U
+5w2Dn8fNA69u
+czveM98p54+17
+gvfKOvQ/eqdf
+zSGW3clA5qry
+p/az9rm/Vt2f
+SamWe89D7a9Wb
+fwCBJnxE</la
+texit>
+x→=
+!
+x→
+1 , x→
+2 , · · · , x→
+n , m→
+1 , m→
+2 , · · · , m→
+K
+"
+→R3n+2K
+_base64="egs/MH3f/eGTrah
+xl1vf4/3rdU=">AEF3icfV
+LbtNAFJ3GPEp4pbBkMxAhFR
+RFdkGFDVIFLNgCiJtpU4azYz
+HzqjzsGYmIZHl30Dia9ghdog
+lH8IWGDtJE1LMSLaOzj3jO/1
+IZng1oXhj41GcOHipcubV5pXr
+12/cbO1devA6pGhrEe10OaIY
+MsEV6znuBPsKDMSyLYITl9Ud
+YPx8xYrtV7N81YX+JU8YRT7D
+w1aHEksRuSBE5OkNPZMyRY4rb
+PyEFU0R24ZHYWDI21s51lQVU
+FZHg6dA8QV/MeAt+d5I9UMWi1
+w25YHXgeRHPQBvOzP9hqfESx
+piPJlKMCW3schZnr59g4TgUrm
+mhkWYbpKU7ZsYcKS2b7ebWTA
+t73TAwTbfyjHKzY1Y4cS2unkn
+hl+Zl2vVaS/6yVjNa2LUPcM
+nTfs5VNnJM0dn9yUhAp2G5dxh
+zw6gTUw8wNdyPAOkQG0yd/zt
+NFLMExTzJc2QkjAv/ZL5oQ17
+7a97kzGDnTYPc4RNKvGk8EtIU
+adE/xNytRB61GwixT5QLSVWc
+Y4IkYV/s5SrnPiZDJ+Ut65KWC
+VhHtYISLb0yGo8soVHjYCMlx
+7jGo/xwqNGQFaHeV43zNk0Kwq
+/doisle0or5KPRCK0z0w7grM
+gI1MRgxzdRY7gPkun+RoPbfn
+wcFON9rt7r593N4L5neBHfA
+PbANIvAE7IFXYB/0AXfwE/wC
+/wOPgWfgy/B15m0sTHvuQ3+O
+sH3P/9carM=</latexit>
+x→=
+!
+x→
+1 , x→
+2 , · · · , x→
+n
+"
+→R3n
+第五章 移动机器人感知技术6-机器人地图构建算法
+70
+4.4.2 后端（优化算法）——误差的描述
+n 误差函数𝑒!> 𝑥!, 𝑥> (For Pose Graph)：
+节点间的关系
+边约束
+p 误差函数𝑒!> 𝑥!, 𝑥>
+= 0时：
+n 误差函数𝑒!> 𝑥!, 𝑥> (For Pose Feature Graph)：
+p 误差函数𝑒!> 𝑥!, 𝑥>
+= 0时：
+边约束
+节点间的关系
+eij(xi, xj) = t2v
+!
+Z→1
+ij (X→1
+i
+Xj)
+"
+Zij = (X→1
+i
+Xj)
+eij(zi, xj) = ˆzij →zij = R→
+j (zi →tj) →zij
+zij = R→
+j (zi →tj)
+第五章 移动机器人感知技术6-机器人地图构建算法
+71
+例4.1 Pose Graph
+假设一个机器人初始起点在0处𝑥+，然后机器人向前移动，通过编码器测得它向前移动了1m，
+到达第二个地点𝑥* 。接着，又向后返回到𝑥/ ，编码器测得它向后移动了0.8米。但是，通过闭
+环检测，发现它回到了原始起点。请问，机器人位姿的最优状态
+n 里程计预估优化问题：
+p 节点：
+p 边：
+p 定义误差函数：
+p 构建优化目标函数：
+p 目标函数对各个变量求偏导，列些方程：
+ωc
+ωx0
+= 2x0 →2(x1 →x0 →1) →2(x2 →x0)
+= 0
+ωc
+ωx1
+= 2(x1 →x0 →1) →2(x2 →x1 + 0.8)
+= 0
+ωc
+ωx2
+= 2(x2 →x1 + 0.8) + 2(x2 →x0)
+= 0
+
+
+3
+→1
+→1
+→1
+2
+→1
+→1
+→1
+2
+
+
+
+
+x0
+x1
+x2
+
+=
+
+
+→1.0
+1.8
+→0.8
+
+
+or
+!µ = ω
+c =
+4
+!
+i=1
+f 2
+i = x2
+0 + (x1 →x0 →1)2 + (x2 →x1 + 0.8)2 + (x2 →x0)2
+fVNfb9MwE+3AiP82+CRF0O7CaGtS7qxjYdJE/DAC9oQ7I9Ul8pOnNRanESOW1pZeYGPxKfZG+IV8R04J+nWbhRLic93v/vdne9M04hnynEuaguL9Vu37yz
+dte/df/Dw0fLK45MsGUiPHXtJlMgzSjIW8ZgdK64idpZKRgSN2Ck9f2vsp0MmM57En9U4ZV1BwpgH3CMKVL3lP5iykMeaRDyMmZ/bWAz28aFgIfmiN9wcj/j
+aPqZUoC20hjbc4odxKbVnTqUKMypKT+O04bYcsLutPYNyYAMzxnbFaTyKz2Bgf7VpomxvblXn7eIMWuOG5jOWbA4CldN6vVszq6x2JjF/mV1veUGIqFbg
+puJTSsah31VhbXsZ94A8Fi5Ukyzquk6quJlJxL2JwXYOMpcQ7JyHrgBgTwbKuLvqSo1XQ+ChIJHyxQoV2kMTkWVjQEpiOpn121G+W+blGQ8E1wbkEqSK
+LuWkwr2uprH6UCx2CtTCgYRUgky4B8LpmnojEIxJMcqkJen0jiKRgaG/swD4PtMZSID8H7ncM7kGyDxDuMGWSqES+1JjIUJBRDomFeN1I/wPyeAIEybZx
+zL56iRAEGmX6mOtqJinUJPnIRJ2GsAJi2joHQNMrjnQORzrhmAOgwyuO4RyO4YRjDoBOF/NmXjGX1Uwh4NoRzjLRcDWOWKBwFEQJjFHDRVjysK+wLBQ9jZ9
+hxWHmZnxIPaZBL5Ou6tXbYSwIOeMJqOmd5O1NVNDNOV9XWJpNBwpnHaJ7FKROEBPmXiVaNdpHkJMcQis2UrZcJtwbAIgt+F9udf03hpN1yd1o7H7c
+bB0710pasp9Zz64XlWrvWgfXeOrKOLa/2qTaufat9r/+oX9R/1n+V0IVa5fPEmln138BohC6lw=</latexit>
+µ = !→1ω =
+
+
+3
+→1
+→1
+→1
+2
+→1
+→1
+→1
+2
+
+
+→1 
+
+→1.0
+1.8
+→0.8
+
+
+=
+
+
+1
+1
+1
+1
+5/3
+4/3
+1
+4/3
+5/3
+
+
+
+
+→1.0
+1.8
+→0.8
+
+=
+
+
+0
+0.93
+0.07
+
+
+(x0x1) →1m,(x1x2) →↑0.8m, (x2x0) →0m, x0 →0m.
+f1 = x0, f2 = x1 →x0 →1, f3 = x2 →x1 →(→0.8), f4 = x2 →x0
+x0
+x1
+1
+0.8
+0
+x0
+x1
+0
+1
+→0.8
+0
+x2
+x2
+x0, x1, x2
+第五章 移动机器人感知技术6-机器人地图构建算法
+72
+例4.2 Pose Feature Graph
+假设一个机器人初始起点在0处，并观测到其正前方2m处有一个路标。然后机器人向前移动，
+通过编码器测得它向前移动了1m，这时观测到路标在其前方0.8m。请问，机器人位姿和路标
+位姿的最优状态
+p 节点：𝑥+，𝑥* ，𝑙+
+p 边：
+p 定义误差函数：
+p 构建优化目标函数：
+p 目标函数对各个变量求偏导，列些方程：
+(x0l0) →2m,
+_base64="+eRpPyvLm9rITk4k
+qgZWoe8uUk=">AD5HicfVLb
+tNAFJ3GPEp4NG2XbAwREkJtZIc
+qdFOpAhZsEUibaVOZI3H186o8
+7BmJiGRFb6AHYIV4mPYwg/wN4z
+dhIYUM9JYZ849c8bn6sY5Z8YGw
+a+1hnft+o2b67eat+/cvbfR2tw
+6NmqkKfSp4kqfxsQAZxL6lkO
+p7kGImIOJ/H5i7J+MgZtmJLv7D
+SHgSCZCmjxDoqavXSKDzgUbA7
+cbu78yGNugeTKyOYXl8Oq+Gu0
+FnvyT2XD2IWu2gE1TLvwrCOWij
++TqKNhtfcKLoSIC0lBNjzsIgt4
+OCaMsoh1kTjwzkhJ6TDM4clESA
+GRVwJn/yDGJnyrtrR+xS7fKI
+gwZipipxTEDs1qrST/WSsZqxQ3
+Kz9g0/1BwWQ+siDpxfvpiPtW+
+WUT/YRpoJZPHSBUMxfBp0OiCbW
+u1U2cQIoTlhYF1sJPZs7JbjQG
+l67597koIlV+kmBic4EmcxcEzK
+8U6L/CZlcCB1qNrGE91QJQWRS4
+DgWM/eFjMkidpk0m5SvLkugkoC
+DNYI4v/TIazyhUeNIB5feoxrP
+MYLjxpBvBzmeV2YP2mWFK7tPjZ
+GtMCc0gt5ilXbmbaoY81y4YW
+64qICvwAW+YGzN1ykxyuzu1VcN
+zthL1O7+1e+zCYz/Q6uo8eosco
+RM/QIXqFjlAfUfQVfUc/0E8v9T
+56n7zPF9LG2vzONvpred9+A7X8
+Uhs=</latexit>f1 = l0 →x0 →2, f2 = x1 →x0 →1, f3 = l0 →x1 →0.8, f4 = x0
+(x0x1) →1m,(x1l0) →0.8m, x0 →0m,
+c =
+4
+!
+i=1
+f 2
+i = (l0 →x0 →2)2 + (x1 →x0 →1)2 + (l0 →x1 →0.8)2 + x2
+0
+ωc
+ωx0
+= →2(l0 →x0 →2) →2(x1 →x0 →1) + 2x0
+= 0
+ωc
+ωx1
+= 2(x1 →x0 →1) →2(l0 →x1 →0.8)
+= 0
+ωc
+ωl0
+= 2(l0 →x0 →2) + 2(l0 →x1 →0.8)
+= 0
+
+
+3
+→1
+→1
+→1
+2
+→1
+→1
+→1
+2
+
+
+
+
+x0
+x1
+l0
+
+=
+
+
+→3.0
+0.2
+2.8
+
+
+or
+!µ = ω
+µ = !→1ω =
+
+
+3
+→1
+→1
+→1
+2
+→1
+→1
+→1
+2
+
+
+→1 
+
+→3.0
+0.2
+2.8
+
+=
+
+
+0
+1.07
+1.93
+
+
+0
+x0
+x1
+l0
+0
+1
+2
+0.8
+x0
+x1
+1
+2
+l0
+fVLbhMxEHWzXMpya+GRF0OEhBCKdhEqfayAB14QRZCmUh2C7Z3dWPVlZTuhkZVP4LV8G3+DN01oSFlG2tXRmTNnPKNhtRTOZ9mvrU5y7fqNm9u30t37t6
+7v7P74MiZieXQ50Yae8yoAyk09L3wEo5rC1QxCQN2+rbJD6ZgnTD6i5/VMFS0qIUnPpIfc56+6OdbtbLFoGvgnwJumgZh6PdzjkpDJ8o0J5L6txJntV+GKj
+1gkuYp2TioKb8lFZwEqGmCtwLN46x08jU+DS2PhpjxfsekWgyrmZYlGpqB+7zVxD/jPXMN4Y6TYe4Mv9YRC6njQ/KJ/OZHYG9zsAxfCAvdyFgHlVsQRMB
+9TS7mPW0tJASUpRBkCsQoX8+j9DuLQFj7Edh9rsNQb+zwQaitFz+ZxCRV50aD/CYVeCSNKU6LhOzdKUV0Ewpiaxz9UQgcWZ7LirOm6LoGFBCJsEbD60qNu8
+ahXHi0CNr30mLZ4TFceLQK2PsybtmH+TLOmiGvHxDnVzQORUHoiS2nizXRzTKyoxp7YBTEK5DHxIh5YrIqXnG/e7Vw9LKX7/X2Pr3qHmTLm95Gj9AT9Azl
+6DU6QO/RIeojir0A52jn0meDJKvybcLaWdrWfMQ/RWJ+A0iOkCQ</latexit>0.8
+第五章 移动机器人感知技术6-机器人地图构建算法
+73
+4.4.3 后端（优化算法）——优化求解
+n 目标函数：
+n 非线性最小二乘：
+n 高斯-牛顿法：
+ü Define the error function
+ü Linearize the error function
+ü Compute its derivative
+ü Set the derivative to zero
+ü Solve the linear system
+ü Iterate this procedure until convergence
+8iMfbLgql7nXkSaemgy91iY=">AFhHicfZNtb9MwEMfTj
+cITxu85I2h2zTYNDUFBm+AiU1omoQ2JPYg1SVyktq1Y4j2y
+2trHwdPg1vQeLb4KTt1nULliJd7n73v7N9DjJGlW42/9YWFm
+/Vb9Zuveu/g4aPlcenSvRlCehYEKeB0QBoymcaKoZnGc
+SCA8YnAW9vSJ+NgCpqEi/6VEGHU6SlMY0JNq6/JXaRxAQlND
+GE1SiHL3s9/bwJqyCNDQ723ifWCaoOGL9fdQEfmOtcjwEYeE
++L0qCGN3HWGSZVIM0YalNg/93s0S16JFblF9vtBma945k3VRu
+gTQYTVZyu8VckFl+sFlxMWQRhfn5S83mtvNcqHrhjcxGs5kH
+fsri1s4EmGfQ6pDRpRqe81MdwyRmoYMchf3FWQk7JE2tZMCQ
+fVMeV52jNeiIUC2m/VKPSO5thCFdqxANLcqK7aj5WOG+OSU
+lGV4qbAtJCMDXk47fdQxNs76GNBy3FPcZ0gIVE4YiKiHUbGQ
+NEkpqd4XCLpEk1HYOXRxBjCMaG4MlR1FutfBnoOEL7bcUQaS
+aCFfGkxkwskwt40leKuw/gfSdApay3VxCj9CwTmxF4WDgOdm
+MuWB3ZOkw6LqLAIlUlxrBRBklxpZhUY21agAgsGlxqBCYzDVq
+AC2c18qtrMxW5mCHvsCvFG57BDGKNWcyEHaOGh7CkSVdjW
+Tp8g5/Z92tn7qou7qcRSKvXbnXMmosQ5qQHgRi2i+lts45ZxX
+a6VNeMycBeOBicdUmqBS8zbM648UlXjVbZ5LTH3JbWMNRmte
+Gt2t9VC+SufV/e/Gu6bpy2tr2d7Z2vrxu7zclLW3KeOs+dDcd
+z3jq7zoFz7Jw4Ye1n7Vftd+1P/XZ9q/6q/maMLtQmOU+cK6v+
+4R+16uky</latexit>
+Fk(˜xk + !x) = ek(˜xk + !x)→”kek(˜xk + !x)
+→(ek + Jk!x)→”k(ek + Jk!x)
+= e→
+k ”kek + 2e→
+k ”kJk!x + !x→J→
+k ”kJk!x
+= Ck + 2bk!x + !x→Hk!x
+ek(˜xk + !x) →ek(˜xk) + dek
+dxk
+!x = ek + Jk!x
+Jij = ωeij(x)
+ωx
+ωFk
+ω!x = 2bk + 2Hk!x = 0
+!x = →H→1
+k bk =
+!
+J↑
+k ”kJk
+"→1 e↑
+k ”kJk
+Goal: xω = arg min
+x
+!
+ij
+e→
+ij!ijeij
+for Pose Graph
+for Pose Feature Graph
+t sha1_base6
+4="Chu+a+AvN
+A4ySPcSmSrHe
+iC+igE=">AE
+VnicfVNdb9Mw
+FE0/xkaB0cEj
+L4YKaUBVJWUav
+AxNwAPShBiIb
+pPmrIdJ7Xmj
+8h2S6sof4Pfw
+E+CP4Nw0nYtLc
+FSoqNz3X17
+7GCWfG+v6vSr
+VW37q1vXO7ce
+fuvd37zb0HZ0a
+NKE9orjSFxg
+ZypmkPcspxe
+JpkhgTs/x9bs
+8fj6m2jAlv9p
+QvsCxZJFjCDr
+qEHzBxTIDnE
+JlfQquQIchrZ/
+RtyEBR0GyZ7
+oIhobKmvQzIW
+WBiI1cUZYrB
+idFAGoWD+0zyO
+Q8B4MvV+lL+a
+J7kg2aLb/jFw
+tsgmAOWt58nQ
+72qt9hqMhIUGk
+JR8ZcBn5i+yn
+SlhFOswYcGZo
+gco1ieumgRIK
+aflocaQaeOiYE
+kdLukxYU7GpG
+ioQxU4GdMt+p
+WY/l5D9jOWOV4
+mZtAzZ63U+ZT
+EaWSjKrH404s
+Ark1wZCpimxf
+OoAIpq5FgAZIo
+2IdZfbgCGNYM
+iNIVagDBz3u
++pa1rTj67cp4
+RqZJV+nkKkY4E
+mTuEGLZz9D8
+hkwuhQ40GlPQ
+bUIgGaYQY5G
+5P42ZTLHrSbNJ
+XnVQgsJdbBE
+gJOlR1LikSw8
+SgR4vPQYl3iMF
+x4lArzazNuyZ
+m6WVG4YwfQG
+NEK0uLhQB5x5
+WamFYDZLENdEI
+MUPoaWuQFzW
+6Sg/W53QRn3U
+5w2Dn8fNA69u
+czveM98p54+17
+gvfKOvQ/eqdf
+zSGW3clA5qry
+p/az9rm/Vt2f
+SamWe89D7a9Wb
+fwCBJnxE</la
+texit>
+x→=
+!
+x→
+1 , x→
+2 , · · · , x→
+n , m→
+1 , m→
+2 , · · · , m→
+K
+"
+→R3n+2K
+t sha1_base6
+4="egs/MH3f/
+eGTrahxl1vf4
+/3rdU=">AE
+F3icfVLbtNA
+FJ3GPEp4pbBk
+MxAhFRFdkGFD
+VIFLNgCiJtp
+U4azYzHzqjzs
+GYmIZHl30Dia
+9ghdoglH8IWGD
+tJE1LMSLaOzj
+3jO/1IZng1o
+Xhj41GcOHipc
+ubV5pXr12/cbO
+1devA6pGhrEe
+10OaIYMsEV6z
+nuBPsKDMSyL
+YITl9UdYPx8xY
+rtV7N81YX+JU
+8YRT7Dw1aHEk
+sRuSBE5OkNPZM
+yRY4rbPyEFU0
+R24ZHYWDI21s
+51lQVUFZHg6d
+A8QV/MeAt+d5I
+9UMWi1w25YHX
+geRHPQBvOzP9
+hqfESxpiPJlK
+MCW3schZnr59g
+4TgUrmhkWYb
+pKU7ZsYcKS2b
+7ebWTAt73TAw
+TbfyjHKzY1Y4c
+S2unknhl+Zl2
+vVaS/6yVjNa
+2LUPcMnTfs5VN
+nJM0dn9yUhAp
+2G5dxhzw6gTU
+w8wNdyPAOkQG
+0yd/ztNFLMExT
+zJc2QkjAv/Z
+L5oQ17a97kz
+GDnTYPc4RNKv
+Gk8EtIUadE/xN
+ytRB61GwixT5
+QLSVWcY4IkYV
+/s5SrnPiZDJ+
+Ut65KWCVhHtYI
+SLb0yGo8soVH
+jYCMlx7jGo/x
+wqNGQFaHeV43z
+Nk0Kwq/doisl
+e0or5KPRCK0z
+0w7grMgI1MRg
+xzdRY7gPkun+
+RoPbfnwcFON9
+rt7r593N4L5
+neBHfAPbANIv
+AE7IFXYB/0AX
+fwE/wC/wOPgW
+fgy/B15m0sTH
+vuQ3+OsH3P/9
+carM=</latexi
+t>
+x→=
+!
+x→
+1 , x→
+2 , · · · , x→
+n
+"
+→R3n
+第五章 移动机器人感知技术6-机器人地图构建算法
+74
+4.4.4 优化求解思路
+n 目标函数：
+n 对于边𝑥!𝑥> 其误差函数为：
+n 雅可比阵求取：
+p 对于边𝑥!𝑥> 的误差函数仅与𝑥!和𝑥>相关
+或
+n 目标函数求导等于0：
+稀疏矩阵
+稀疏矩阵
+t sha1_base6
+4="CIN8iMfbLg
+ql7nXkSaemg
+y91iY=">AF
+hHicfZNtb9MwE
+MfTjcITxu85
+I2h2zTYNDUFBm
++AiU1omoQ2JP
+Yg1SVyktq1Y4
+j2y2trHwdPg1
+vQeLb4KTt1nUL
+liJd7n73v7N9
+DjJGlW42/9YW
+Fm/Vb9Zuveu
+/g4aPlcenS
+vRlCehYEKeB0
+QBoymcaKoZnG
+cSCA8YnAW9vSJ
++NgCpqEi/6VE
+GHU6SlMY0JNq
+6/JXaRxAQlND
+GE1SiHL3s9/b
+wJqyCNDQ723if
+WCaoOGL9fdQE
+fmOtcjwEYeE+L
+0qCGN3HWGSZV
+IM0YalNg/93s0
+S16JFblF9vtB
+ma945k3VRugT
+QYTVZyu8VckFl
++sFlxMWQRhfn
+5S83mtvNcqHrh
+jcxGs5kHfsri
+1s4EmGfQ6pDRp
+Rqe81MdwyRmo
+YMchf3FWQk7J
+E2tZMCQfVMeV
+V52jNeiIUC2m
+/VKPSO5thCFdq
+xANLcqK7aj5W
+OG+OSUlGV4qbA
+tJCMDXk47fd
+QxNs76GNBy3FP
+cZ0gIVE4YiKi
+HUbGQNEkpqd4
+XCLpEk1HYOXRx
+BjCMaG4MlR1F
+utfBnoOEL7bc
+UQaSaCFfGkxk
+wskwt40leKuw/
+gfSdApay3VxC
+j9CwTmxF4WDg
+OdmMuWB3ZOkw6
+LqLAIlUlxrBR
+BklxpZhUY21ag
+AgsGlxqBCYzD
+VqAC2c18qtrM
+xW5mCHvsCvF
+G57BDGKNWcyEH
+aOGh7CkSVdjW
+Tp8g5/Z92tn7
+qou7qcRSKvXbn
+XMmosQ5qQHgR
+i2i+lts45ZxXa
+6VNeMycBeOBi
+cdUmqBS8zbM64
+8UlXjVbZ5LTH
+3JbWMNRmteGt
+2t9VC+SufV/e/
+Gu6bpy2tr2d7
+Z2vrxu7zclLW3
+KeOs+dDcdz3j
+q7zoFz7Jw4Ye1
+n7Vftd+1P/XZ
+9q/6q/maMLtQm
+OU+cK6v+4R+1
+6uky</latexi
+t>
+Fk(˜xk + !x) = ek(˜xk + !x)→”kek(˜xk + !x)
+→(ek + Jk!x)→”k(ek + Jk!x)
+= e→
+k ”kek + 2e→
+k ”kJk!x + !x→J→
+k ”kJk!x
+= Ck + 2bk!x + !x→Hk!x
+Goal: xω = arg min
+x
+!
+ij
+e→
+ij!ijeij
+eij(xi, xj) = t2v
+!
+Z→1
+ij (X→1
+i
+Xj)
+"
+eij(zi, xj) = ˆzij →zij = R→
+j (zi →tj) →zij
+Jij = ωeij(x)
+ωx
+ek(x + !x) →eij(x) + Jij!x
+ZIkKS327WqM=">AEtXicfVPfb9MwEHa3so3wa4NHXgzpA2NqanQthekCXjgBTEk9kOqQ2Qnl
+9ZbHAfbLS1W/k7EH4OEk7Zbu1EsJfp8/u67O/uOFRnXpt3+3VhZbd5bW9+47z14+Ojxk82tp2d
+aDlQMp7HMpLpgVEPGczg13GRwUSigmVwzq7eV+fnQ1Cay/yrGRcQCtrLecpjapwp2vxOBDV9lm
+KIL8sd2bUcT38M3mcvetJQZGBpvOsCQZpOa+rP2/GZfBwvutWFegSje65vdaNv7frhe+CY
+Ap8NF0n0dbqHklkPBCQmzijWneDdmFCS5XhcQalRwYaChpf0R50HcypAB3a+m5KvO0sCU6lcl9u
+cG2d97BUaD0WzDGrXPXts8r47zOl6HghuK1IRspM38rJpEeh5XkxMJDHk5TSQYaNxNWT4IQriE
+02doDGiruqcNynisbGPZxHEkhJwlNriRI4KZ32B3D3oOCTC/e5AEWNVK8soaon6Kh0ifXIXoX+R
++T5jOiQ5EcfsRSCJonljAmSveHs8tczUpPqizlOgpoCDSwisuNEolmgUM40lBDa80Rgu0RjO
+NJYQ2Hwx75YVc13NHMNdOyZaCz+wdb+TLM2kayM/wJNOJqo2RJa8Ia7nlvUJYM8AeX0up3Qbnu
+4mqYrYHLUrbq3m4W2RVx36b6dMJl7cLCk6NPcSF7OJ9J4tOs/E6d5CzHMprMpG35QctW45Qem
+6+gtvTdBecdfaDg/2DL2/846PpG2g5+gl2kEBOkTH6CM6QacoRr/Qn8ZaY7152AybSTOdUFca
+U59naGE15V+wfqHQ</latexit>
+eij(xi, xj) = t2v
+!
+z→1
+ij (x→1
+i xj)
+"
+ωFk
+ω!x = 2bk + 2Hk!x = 0
+!x = →H→1
+k bk = →
+!
+J↑
+k ”kJk
+"→1 e↑
+k ”kJk
+ωeij(x)
+ωx
+=
+!
+0
+· · ·
+ωeij(x)
+ωxi
+· · ·
+ωeij(x)
+ωxj
+· · ·
+0
+"
+Jij =
+#
+0
+· · ·
+Aij
+· · ·
+Bij
+· · ·
+0
+$
+b→=
+!
+ij
+b→
+ij =
+!
+ij
+e→
+ij!ijJij
+H =
+!
+ij
+Hij =
+!
+ij
+J→
+ij!ijJij
+第五章 移动机器人感知技术6-机器人地图构建算法
+75
+4.4.5 优化解的数据结构特性
+仅在𝑖, 𝑖, 𝑖, 𝑗
+𝑗, 𝑖, 𝑗, 𝑗处非零
+b→
+ij = e→
+ij!ijJij
+= e→
+ij!ij
+!
+0
+· · ·
+Aij
+· · ·
+Bij
+· · ·
+0
+"
+=
+!0
+· · ·
+e→
+ij!ijAij
+· · ·
+e→
+ij!ijBij
+· · ·
+0"
+Hij = J→
+ij!ijJij
+=
+
+
+
+
+
+
+
+
+
+...
+A→
+ij
+...
+B→
+ij
+...
+
+
+
+
+
+
+
+
+
+!ij
+'
+· · ·
+Aij
+· · ·
+Bij
+· · ·
+(
+=
+
+
+
+
+
+
+
+
+
+...
+...
+· · ·
+A→
+ij!ijAij
+· · ·
+A→
+ij!ijBij
+· · ·
+...
+...
+· · ·
+B→
+ij!ijAij
+· · ·
+B→
+ij!ijBij
+· · ·
+...
+...
+
+
+
+
+
+
+
+
+
+第五章 移动机器人感知技术6-机器人地图构建算法
+76
+4.4.5 优化解的数据结构特性
+H =
+!
+ij
+Hij
+it sha1_bas
+e64="/hZb7o
+8U3zRwPJnu
+zP4KXxvbsk=
+">ADz3icf
+VLbhMxFHU7
+PEp4pbBkMyV
+CQghFGYQKG6
+QKWLBtBJpK
+9VRZHvuTEz9
+GNmetJE1iB3
+iB/gLtvAt/A
+2eadKGlMHSj
+I6Pz32ubq0
+ENy6weD32np
+05eq16xs3Oj
+dv3b5zt7t5b
+9/q0jAYMi20
+OaTEguAKho
+47AYeFASKpg
+AN6/KY+P5iC
+sVyrj25WwEi
+SXPGM+ICNe
+5uYUnchGYxf
+YVtKcef6rO
+qWY37vYG/UG
+z4sgmYMemq
+/d8eb6d5xqV
+kpQjgli7VEy
+KNzIE+M4E1B
+1cGmhIOyY5H
+AUoCIS7Mg3W
+ar4UWDSONMm
+fMrFDbtc4Ym
+0diZpUNbPtK
+tnNfnPs5pxW
+gu78gCXvRx5
+rorSgWJn92e
+liJ2O637FKT
+fAnJgFQJjhI
+ULMJsQ5kJX
+OziFDKc8x4
+bGadV8H4LIb
+SB9+G6DwUY4
+rR54jExuSn
+VWhCjp/W6H9
+CrhbCgDodrO
+CEaSmJSj2mV
+FbhDzlXnoZM
+hp/Wty5LoJF
+AgC0CWlx4FC
+0excKjRUCnF
+x7TFo/pwqNF
+QJfDvG4Lc5
+mSRHaHmNrZS
+/xWEDmsMiED
+jPTS2JseD5
+x2DTE2OMt7H
+gYsFAVJjlZn
+dvLYP9ZP9nu
+b+897+0M5jO
+9gR6gh+gxSt
+ALtIPeoV0R
+Ax9RT/QT/Qr
+2otOos/RlzP
+p+tq85j76a0
+Xf/gCRXU45<
+/latexit>
+b =
+!
+ij
+bij
+第五章 移动机器人感知技术6-机器人地图构建算法
+77
+4.4.5 优化解的数据结构特性
+n 对于边𝑥!𝑥> 的约束，仅能影响：
+p 𝐛!>的第𝑖个和第𝑗个块
+p 𝐇!>的(𝑖, 𝑖), (𝑖, 𝑗), (𝑗, 𝑖), (𝑗, 𝑗)处的数据块
+n 𝐇!> 矩阵为稀疏矩阵
+n 高斯牛顿法需要对大型矩阵
+求逆，由于
+为稀疏矩阵
+p Sparse Cholesky decomposition
+p Conjugate gradients(共轭梯度法)
+p … many others
+!x = →H→1
+k bk
+Hk
+Hk
+第五章 移动机器人感知技术6-机器人地图构建算法
+78
+4.4.5 后端优化流程
+n 对于每一个边𝑥!𝑥> 的约束：
+p 计算误差：
+p 计算其对应的雅可比数据块：
+p 更新对应的系数向量𝐛!>的数据块：
+p 更新对应的系数矩阵𝐇!>的数据块
+n 求解稀疏矩阵的逆，更新优化系统节点
+或
+4="StM1S43IKMv+d1A0ZIkKS327WqM=">AEt
+XicfVPfb9MwEHa3so3wa4NHXgzpA2NqanQth
+ekCXjgBTEk9kOqQ2Qnl9ZbHAfbLS1W/k7EH4O
+Ek7Zbu1EsJfp8/u67O/uOFRnXpt3+3VhZbd5bW
+9+47z14+Ojxk82tp2daDlQMp7HMpLpgVEPGcz
+g13GRwUSigmVwzq7eV+fnQ1Cay/yrGRcQCtr
+Lecpjapwp2vxOBDV9lmKIL8sd2bUcT38M3mc
+vetJQZGBpvOsCQZpOa+rP2/GZfBwvutWFegS
+je65vdaNv7frhe+CYAp8NF0n0dbqHklkPBCQ
+mzijWneDdmFCS5XhcQalRwYaChpf0R50HcypA
+B3a+m5KvO0sCU6lcl9ucG2d97BUaD0WzDGrXP
+Xts8r47zOl6HghuK1IRspM38rJpEeh5XkxMJDH
+k5TSQYaNxNWT4IQriE02doDGiruqcNynisbGP
+ZxHEkhJwlNriRI4KZ32B3D3oOCTC/e5AEWNVK8
+soaon6Kh0ifXIXoX+R+T5jOiQ5EcfsRSCJon
+ljAmSveHs8tczUpPqizlOgpoCDSwisuNEol
+mgUM40lBDa80Rgu0RjONJYQ2Hwx75YVc13NHMN
+dOyZaCz+wdb+TLM2kayM/wJNOJqo2RJa8Ia7
+nlvUJYM8AeX0up3Qbnu4mqYrYHLUrbq3m4W2RV
+x36b6dMJl7cLCk6NPcSF7OJ9J4tOs/E6d5Cz
+HMprMpG35QctW45Qem6+gtvTdBecdfaDg/2D
+L2/846PpG2g5+gl2kEBOkTH6CM6QacoRr/Qn8
+ZaY7152AybSTOdUFcaU59naGE15V+wfqHQ</l
+atexit>
+eij(xi, xj) = t2v
+!
+z→1
+ij (x→1
+i xj)
+"
+UZPHKvDyMgs=">AEwXicfVNLbxMxEN60Adrl1ceRiyGp1K2ylao9FKpohy4IAqiDykOK3t3N
+nHrx8p2QoK1P5QzfwTvJmnTlGBpVzPjbz5/Y8/QnDNjW63ftaXl+qPHT1ZWw6fPnr94uba+cWF
+UXydwniu9BUlBjiTcG6Z5XCVayCcrikN6fl/uUAtGFKfrejHDqCdCXLWEKsD8VrBRbE9miGIH
+bsutieur9itoumzjC+3jnGPWLd7XZRwfu4KV7/C2+/oGtyrdnMm8xNmY7cwnxWqO136oWemhE
+6MRTNZvL68i1OV9AVIm3BiTDtq5bjiLYs4VCEuG8gJ8kN6ULbm5IMB1X3VOBtnwkRZnS/pMW
+VdHZDEeEMSNBPbKUaeb3yuC/97Qmo3uHuxJkleJmTpPNjqOybxvQSZjSVmfI6tQ+TwoZRoSy0
+feIlmviqU9IgmifWPGOIUMpyzDmsBUoLz/0R/D1o+OyP+5KDJlbptw4T3RVkWHhXbxbWv8DM
+jkFeisMsYSfiRKCyNRhSkXh/9Bl0lFfk2bD8tRZCFQ8OYCAM3vOPIFHPmUYwGADu4Bgs4BlO
+BQA6W8yHRcXcVjOD8NeOsDGiETnMIbOYZ1z5NmpECGvW7Vmsq0Ds8Gtsme+5+7y4L1PQnq90HF
+bISon6waoGrbL7m3zjmti312m58ZI6h8cHM57RFolqgyfMxY+UdU4qERONfp5xBaG1jUbUdO7TQ
+8oQj9f0fw0PTQuDvajw/3Dr+8aJ0eTSVsJXgVvgu0gCt4HJ8Gn4Cw4D5LgT21tlHbrJ/WT2v
+6zF0qTbJ2Qzurbr7Cygfplk=</latexit>
+eij(zi, xj) = ˆzij →zij = R→
+j (xj →ti) →zij
+/juGPGY=">AEoXicfVPbhMxEHXbAGW5tfDIi2FTqaAqylao9AWpXB7gAVEQvUhxFNm7s4lb73plOyGR
+tV/HV/AJvMIPMLtJaNoSLFkaz5w5c/GMKJS0rt3+sbK61rhx89b67eDO3Xv3H2xsPjy2emhiOIq10uZUcAt
+K5nDkpFNwWhjgmVBwIs7fVvaTERgrdf7VTQroZryfy1TG3KGqt9FlGXcDkdLXPS/PylcsNTz2rODGSa7o3A
+q1dXv+HPfkDr14nD0r7sgpuxthO1Wuz70uhDNhJDMzmFvc2HJToeZpC7WHFrO1G7cF1fcKyoANLRQ8
+Pud96KCY8wxs19d9KOkWahKaoM3d7TWLnp4nlk7yQiqyTtVul/LfNGD65FNxXIKe1sldycul+18u8GDr
+I42lK6VBRp2nVfpIA7FTExR4bCRWReMBx547/KSAJZCyRKbeM5PRpETud4B9MPARw30qwHCnzXPuOlnf
+FxiYn2U0n/A8p8DkQpCFgO32KdZTxPBMiw78T0Je5F1iTkeMq6iIEagiguAQgiguOYglHMedYAhCjC47R
+Eo7RnGMJQCwW82ZMX+rWUBg2ymzNgsjzxSkjqlUaRyjMKLMyP7AMVMrep49YU7izF3mZcM8AYN8nd2u3wp
+otQTnIPS4U01vR3V9k+F02YGfIgV+ODKDHjudFZ7oM808VlW4W6d5DzHEkM7GDvfDKMmPpsIKAPcr+jqN
+l0Xjndb0V5r7/OL8GB/tmnr5DF5SrZJRF6SA/KeHJIjEpPv5Cf5RX43wsaHxmHjyxS6ujLzeUQunUbnD6+4
+nHg=</latexit>
+Aij = ωeij(xi, xj)
+ωxi
+Bij = ωeij(xi, xj)
+ωxj
+¯b→
+i + = e→
+ij!ijAij
+¯b→
+j + = e→
+ij!ijBij
+¯H→
+ii+ = A→
+ij!ijAij
+¯H→
+ij+ = A→
+ij!ijBij
+¯H→
+ji+ = B→
+ij!ijAij
+¯H→
+jj+ = B→
+ij!ijBij
+第五章 移动机器人感知技术6-机器人地图构建算法
+79
+例4.3
+假设一个机器人初始起点在0处（𝑥+ ），然后机器人向前移动，通过编码器测得它向前移动了
+0.8m（𝑥* ），此时与机器人初始状态时观测到了相同环境信息，根据机器人观测的周围环境
+信息，可得从机器人状态𝑥+处观测机器人状态𝑥* 的虚拟测量为1，该观测的方差为0.4，请问，
+机器人位姿的最优状态
+p 节点：
+，边：
+边信息矩阵
+p 计算误差：
+p 计算雅可比：
+p 更新对应的系数向量𝐛&4：
+p 更新对应的系数矩阵𝐇&4:
+p 更新节点x状态：
+?
+!x = →H→1
+12 b12 ↑xk+1 = xk + !x = →H→1
+12 b12
+H12 = J→
+12!12J12 =
+!
+2.5
+→2.5
+→2.5
+2.5
+"
+b→
+12 = e→
+12!12J12 =
+!
+0.5
+→0.5
+"
+J12 =
+!
+1
+→1
+"
+e12 = z12 →(x1 →x0) = 0.2
+det(H12) = 0
+!12 = 1 ÷ 0.4 = 2.5
+z12 = 1
+x0 = 0, x1 = 0.8
+x1
+z12 = 1
+x2
+第五章 移动机器人感知技术6-机器人地图构建算法
+80
+4.4.5 系数矩阵𝐇𝒌非满秩情况下的处理方法
+n 增加约束：
+p 固定一个节点：一般对于边𝑥!𝑥> ，固定节点𝑥!
+ü 边𝑥!𝑥> 描述的是𝑥!和𝑥>相对位姿关系
+n Simplified Levenberg Marquardt
+p 若𝐇𝒌不满秩
+ü
+ü 其中𝜆为步长系数
+H12 = J→
+12!12J12 =
+!
+2.5
+→2.5
+→2.5
+2.5
+"
++
+!
+1
+0
+0
+0
+"
+!x = →H→1
+12 b12 =
+!
+0
+0.2
+"
+↑ˆx + !x =
+!
+0
+0.8
+"
++
+!
+0
+0.2
+"
+=
+!
+0
+1
+"
+ase64="Pg9ruKr0QE5luHBYUKuCdA+
+o/SI=">AEHnichVJNbxMxEHW6tJT
+wlcKRiyFCKh+NsqgqXJAq6KEcEAWRt
+lIdRbZ3NrFir1e2kyZa7d/gzK/hrg
+h+C8c8G4TmqYsWPLq6c2bN57ZYakU
+1rXbP2srwZXVtavr1+rXb9y8dbuxce
+fQ6pHh0OFanPMqAUpEug4SQcpwao
+YhKO2PB1ET8ag7FCJx/dNIWuov1ExI
+JT56leIyWKugGL8X4vG+ZkD6SjeM5N
+Xm7NISvDH0R/4Kgx+hRvXkh8QqSvG
+VH85tF/PHqNZrvVLg+DMIZaKLZOeh
+trHwikeYjBYnjklp7ErZT182ocYJLy
+OtkZCGlfEj7cOJhQhXYblaOJscPRP
+hWBt/E4dLdjEjo8raqWJeWbzSLscK8
+q+xgnFaS7v0ABe/6GYiSUcOEn5WPx
+5J7DQuxo8jYA7OfWAciN8C5gPqKHc
++Z9UJxHEJBJxlhGjcJR7z3wTRt468
+u9S8FQp83jFDTV3S+yH0ydMC/Uso
+krnQo3qdJHDKtVI0iTLCmMr9F/oiyZ
+jvyYhJUXVRAqUEPKwQsPTcI63wSOc
+eFQI2PvcYV3iM5x4VArbYzKuqZv50s
+6DwY8fEWtUMyIhdkTGUvudaYaYmGL
+niSmJXkbuEyf8gvksv8nh8t5eBofPW
+uFOa+f9dnN3e7bT6+geoA2UYieo12
+0jw5QB3H0Hf2qrdbWgs/Bl+Br8O1Mu
+lKb5dxF07w4zcob2s6</latexit>Hk!x = →bk ↑(Hk + ωI)!x = →bk
+第五章 移动机器人感知技术6-机器人地图构建算法
+81
+4.4.6 Simplified Levenberg Marquardt算法
+第五章 移动机器人感知技术6-机器人地图构建算法
+82
+4.5 Graph SLAM总结
+n 利用图论方法表征SLAM问题
+p 节点：机器人状态
+p 边：节点间的相对位姿约束关系
+p 一致性表征
+n 仅将实际发生关联的约束构建连接，进行优化，算法效率大大提升
+n 并非每次观测均需要优化更新——多分辨率地图
+n 优化思想取代概率思想，算法容易理解，便于计算
+n g2o，Karto，Carter……
+第五章 移动机器人感知技术5-蒙特卡洛定位算法
+83
+面向复杂动态室外场景环
+境感知技术
+第五章 移动机器人感知技术6-机器人地图构建算法
+84
+5.1 面向复杂动态室外场景环境感知的挑战
+2026年5月25日 
+Monday
+复杂异质环境
+大场景
+动态环境
+通用性：多传感器协同融合
+百万平方米作业空间
+大量运动物体严重干扰机器人
+定位精度
+自然环境特性差异巨大
+精度：多层次数据融合
+安全性：语义理解与目标检测
+第五章 移动机器人感知技术6-机器人地图构建算法
+85
+5.1 面向复杂动态室外场景环境感知的挑战
+惯导
+ü 价格便宜
+ü 高动态响应：200Hz
+ü 环境适应性好
+优点
+缺点
+备注
+×
+误差大，且随时间发散
+×
+易受噪声干扰
+视觉
+ü 价格便宜
+ü 处理速度快
+ü 对环境纹理信息敏感
+×
+易受环境光线变化干扰
+×
+颜色相似物体误识别
+×
+雨雪雾天气无法工作
+激光雷达
+ü 精度高
+ü 环境适应性好
+ü 稳定性高
+×
+价格昂贵
+×
+算法复杂，硬件要求高
+×
+开阔区域易退化丢定位
+差分GPS
+ü 价格便宜
+ü 能够提供全局定位信息
+ü 能够提供精准时钟
+×
+易受环境影响
+×
+无法室内使用
+×
+采样频率过低：>1s
+充分利用各个传感器优点进行有机融合，提升系统的鲁棒性和精度
+第五章 移动机器人感知技术6-机器人地图构建算法
+86
+5.1 基于激光雷达环境感知的挑战
+SLAM技术一直是自动驾驶领域的热门技术。多线激光雷达通过
+快速旋转发射激光脉冲，能够获得一个大规模的散点云，对外界环境
+有着丰富的空间描述，为SLAM提供丰富的环境信息。并且近几年激
+光雷达技术飞速发展，雷达价格飞速下降，大多数公司都能承受其价
+格，已经成为自动驾驶不可或缺的一部分。
+1. 对于大规模点云，如何快速准确
+的实现帧间匹配，完成里程计计
+算。
+2. 室外动态复杂环境中，如何有效
+的进行信息选取，提取可靠稳定
+特征。
+3. 室外环境下，如何有效的实现地
+图构建及定位。
+4. 激光栅格地图与北斗数据的配准
+对齐，如何利用高精度北斗数据
+实现激光地图的优化
+挑战
+第五章 移动机器人感知技术6-机器人地图构建算法
+87
+5.2 LOAM: Lidar Odometry and Mapping 
+1. Zhang J, Singh S. LOAM: Lidar Odometry and Mapping in Real-time[C]. Robotics: Science and 
+Systems. 2014, 2(9).
+2. Zhang J, Singh S. Visual–inertial combined odometry system for aerial vehicles[J]. Journal of Field 
+Robotics, 2015, 32(8): 1043-1055.
+3. Zhang J, Kaess M, Singh S. On degeneracy of optimization-based state estimation problems[C]. 
+2016 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2016: 809-816.
+4. Zhang J , Singh S . Low-drift and Real-time Lidar Odometry and Mapping[J]. Autonomous Robots, 
+2017, 41(2):401-416.
+5. Zhang J, Singh S. Laser–visual–inertial odometry and mapping with high robustness and low 
+drift[J]. Journal of Field Robotics, 2018, 35(8): 1242-1264.
+第五章 移动机器人感知技术6-机器人地图构建算法
+88
+5.2 Graph SLAM总结
+第五章 移动机器人感知技术6-机器人地图构建算法
+89
+5.2 LOAM基本思想
+n 运动畸变矫正
+p 给定点云计算每次扫描的运动并使用点云构建地图
+p 匀速运动
+p 底盘编码器,视觉里程计,IMU等进行运动估算
+n 特征点提取
+p 平面点
+p 边缘点
+n 高频低精度odom
+p 特征点匹配
+p 运动估计
+n 低频高精度odom
+n 双频odom融合
+Lidar
+Point Cloud
+Registration
+Lidar
+Odometry
+Lidar Mapping
+Transform Integration
+ˆP
+879f5vJHCI7TlKu4UDY=">ADuHicfVLbhMxEHWzXEq4tfDIiyFCQghFuw
+gVxFMFPCBJpK9VR8HpnN1Z8k+0Njaz8Rl/ht/gbvGlCQ8piaVdHM2fOzB
+lNbgR3Pk1/7XSa9dv3Ny91b195+69+3v7D46cri2DIdNC25OcOhBcwdBzL
++DEWKAyF3CcT983+eMZWMe1+urnBkaSVoqXnFEfQ4RI6ieMCjwYT8d7vbSfL
+h+CrIV6KHVG4z3O+ek0KyWoDwT1LnTLDV+FKj1nAlYdEntwFA2pRWcRqio
+BDcKy6EX+GmMFLjUNn7K42V0syJQ6dxc5pHZDOm2c03wn7km4rUWbmsAX74Z
+Ba5M7UGxi/5lLbDXuFkMLrgF5sU8AsosjxYwm1BLmY/r65ICSlLwMgRiJS4W
+UfsDRNMWPsV2nw1Y6rV9Hgi1laRni7iEirxo0P+IXK2JEXW7RMF3pqWkqg
+kz+Ui/qHiKuTRk+VnTdNCiwpEGELITeXGqZFw6w1Wgj57FJj1qIxW2u0EPJ
+NM+/azPxs8GIa8fEOdnLAhFQeiJKoePN9DJMLK8mnthlYBzIY+J5PLBYFS
+8527bq+DoZT876B98edU7TFc3vYseoSfoGcrQa3SIPqIBGiKGDpHP9DP5G
+3yLakSfkHt7KxqHqK/XmJ/Az9iRMQ=</latexit>Pk
+10Hz Transform
+Update
+1Hz Undistorted Pk
+1Hz Map Output
+1Hz Transform Update
+10Hz Transform Output
+第五章 移动机器人感知技术6-机器人地图构建算法
+90
+5.2 LOAM基本思想（1）
+n 运动畸变矫正
+p 给定点云计算每次扫描的运动并使用点云构建地图
+p 匀速运动
+p 底盘编码器,视觉里程计,IMU等进行运动估算
+第五章 移动机器人感知技术6-机器人地图构建算法
+91
+5.2 LOAM基本思想（2）
+n 特征点提取
+p 曲率
+n 边缘点选择条件:
+p 从曲率最大的点开始,最多选择N个, 只有曲率大于𝑡*的点才能被选取
+n 平面点选择条件:
+p 从曲率最小的点开始,最多选择N个, 只有曲率小于𝑡/的点才能被选取
+n 每条SCAN的边缘5个点不参与特征点选取,因为周边不满足左右各五
+个点计算曲率的条件. 对任意点A, 选取左边五个点, 右边五个点, 共
+十个点.
+n 特征点筛选:
+p 平面/直线与激光近似平行的点
+p 被遮挡的边缘点
+c =
+1
+|S| · kXL
+(k,i)k
+!!!!!!
+X
+j2S,j6=i
+⇣
+XL
+(k,i) −XL
+(k,j)
+⌘
+!!!!!!
+第五章 移动机器人感知技术6-机器人地图构建算法
+92
+5.2 LOAM基本思想（3）
+n 高频低精度odom
+p 特征点匹配
+ü 边缘点匹配目标函数：
+ü 平面点匹配目标函数：
+p 运动估计
+ase64="7eGqpTlxsoJyEi+IH1Yq39
++z1w=">AC7HicpVJLbxMxEPYurzb
+lkcKRi0WElIgS7Va8LkiVuHDoZVIG
+ykOK693NjHxelf2LCLa7G/gwgGEeu0
+P6q3/ps42CGirComR7Pk0n+fzeMZx
+oaTFIDj1/Bs3b92+s7be2rh7/6D9u
+bDA5uXRsBA5Co3w5hbUFLDACUqGBYG
+eBYrOIxn75b84WcwVub6A84LGd8om
+UqBUcXijY9P4nYF/mWpYaLilIcdHs
+XYZSJVCxOFeJnWfO0WH9cTequrNn4
+Zbs1c9ZzM2V/NanXs2MnEyx51QysP+
+vqH4rNm5R/yr2uiL+RXBR+1O0A8ao
+5dBuAIdsrK9qH3CklyUGWgUils7CoM
+CxU3KIWCusVKCwUXMz6BkYOauxaMq
+2ZYNX3qIglNc+OWRtpE/8yoeGaXxb
+qTGcepvcgtg1dxoxLTN+NK6qJE0OL8
+orRUFHO6nDxNpAGBau4AF0a6WqmYcj
+d2dP+j5ZoQXnzyZXCw3Q9f9V/uv+js
+bK/asUYekyekS0LymuyQ92SPDIjwpP
+fV+798LX/zf/pH50f9b1VziPyl/n
+HZyMN7ms=</latexit>
+d⇠=
+!!!
+⇣
+˜X
+L
+(k+1,i) −¯X
+L
+(k,j)
+⌘
+⇥
+⇣
+˜X
+L
+(k+1,i) −¯X
+L
+(k,l)
+⌘!!!
+!!! ¯X
+L
+(k,j) −¯X
+L
+(k,l)
+!!!
+dH =
+!!!!!!
+⇣
+˜X
+L
+(k+1,i) −¯X
+L
+(k,j)
+⌘
+⇣
+˜X
+L
+(k,j) −¯X
+L
+(k,l)
+⌘
+⇥
+⇣
+˜X
+L
+(k,j) −¯X
+L
+(k,m)
+⌘
+!!!!!!
+!!!
+⇣
+˜X
+L
+(k,j) −¯X
+L
+(k,l)
+⌘
+⇥
+⇣
+˜X
+L
+(k,j) −¯X
+L
+(k,m)
+⌘!!!
+f⇠
+⇣
+XL
+k+1,i, T L
+k+1
+⌘
+= d⇠
+fH
+⇣
+XL
+k+1,i, T L
+k+1
+⌘
+= dH,
+i 2 Hk+1
+J =
+@f
+@T L
+k+1
+6uKz6Ol/c8EKRETlLHs=">AChnicdVHLatAFB0pfbjuy0mX3Qw1hZhQI7
+lN0qWhm1K6SMFOApZtrkZX9uCRsxctTVCn5Kf6q5/05FjgvPohWEO5zLfc
+WFkpaC4K/n7z16/ORp61n7+YuXr1539g/OrS6NwLHQSpvLGCwqmeOYJCm8L
+AxCFiu8iFdfGv3iJxordT6idYHTDBa5TKUActS8cxXFWiV2nbmPj+bV6isZ
+98jhSmBMfoX/79+GVAyzjl32ajG3gUKVc8gYjwN1WJhEX9oK8XGblYUm9W
+fQhrvuvYqZfMO92gH2yC3wfhFnTZNs7mnT9RokWZYU5CgbWTMChoWoEhKRTW
+7ai0WIBYwQInDuaQoZ1WmzXW/L1jEp5q415OfMPuZlSQ2aYz52z6tXe1hnxI
+m5SUfp5WMi9KwlxcF0pLxUnz5iY8kQYFqbUDIx0vXKxBAOC3OXabgnh3ZH
+vg/NBPzpH/41B0OtutosbfsHTtkITtlQ/aVnbExE96e1/MG3ke/5f9Y/
+02up725w37Fb4w3+ua8OS</latexit>
+T L
+k+1 T L
+k+1
+!
+JT J + λdiag(JT J)
+"−1 JT d
+第五章 移动机器人感知技术6-机器人地图构建算法
+93
+5.2 LOAM基本思想（4）
+n 低频高精度odom（局部地图构建）
+p 高频里程计输出与地图匹配：
+p 存取当前位置十米（或前后十帧）内的点云数据(局部地图)
+p 特征点匹配
+p 优化位姿估计，更新地图（边缘点和平面约束）
+第五章 移动机器人感知技术6-机器人地图构建算法
+94
+5.3 LOAM算法实验结果
+第五章 移动机器人感知技术6-机器人地图构建算法
+95
+5.3 LOAM算法实验结果
+第五章 移动机器人感知技术6-机器人地图构建算法
+96
+5.4 基于滤波的多传感器融合里程计
+第五章 移动机器人感知技术6-机器人地图构建算法
+97
+5.4 基于滤波的多传感器融合里程计
+第五章 移动机器人感知技术6-机器人地图构建算法
+98
+5.5 基于优化的多传感器融合里程计
+2026年5月25日 
+Monday
+第五章 移动机器人感知技术6-机器人地图构建算法
+99
+5.5 基于优化的多传感器融合里程计
+室外自主机器人实验室
+南开大学-人工智能学院
+6.1 基于深度学习的多源主动环境感知框架
+l 复杂异构环境的多模态机器人协同定位——技术框架。针对超大范围、复杂异质、高度动态、GPS不稳定
+的复杂环境，设计了基于深度学习的多层次紧耦合高精度感知架构，攻克了自然场景下传感器失效导致定
+位建图失败难题，为机器人规划控制提供保障。
+!" #
+$%&'
+()
+*+,-.
+I
+&'012M
+45012M
+%678901,:
+I
+• 室内与室外，人工与自然
+等多种环境或跨环境感知
+通用性
+• 物体识别、人员检测
+安全性
+• 动态环境的抗扰能力
+精确性
+基于深度学习的多层次紧耦合
+感知技术框架
+室外自主机器人实验室
+南开大学-人工智能学院
+6.1 基于滤波+优化的多传感器数据层融合算法
+高精度 ¹
+n 万分之二的里程计精度
+n 平方公里范围厘米级误差
+n 可应对室内、室外、乃至野外环境
+n 部分传感器失效下仍可正常运行
+高适应性
+滤波+优化多传感器融合
+n 1000Hz里程计输出
+n 支持机器人平台高速动态运行
+高响应
+1. 算法实际运行精度通过第三方专业测试公司出具的, 具有国家检验检测机构资质认定标志 (CMA)和中国合格评定国家认可委员会认定(CNAS)的测评报告
+室外自主机器人实验室
+南开大学-人工智能学院
+6.1 基于滤波+优化的多传感器数据层融合算法
+地图清晰度：我们方法在6组序列上均为最优，平均地图熵的均值降低0.4 bit以上
+OURS
+LIO-SAM
+FAST-LIO2
+室外自主机器人实验室
+南开大学-人工智能学院
+6.1 基于滤波+优化的多传感器数据层融合算法
+地图精度：本章方法在6组序列上均为最优，误差均值降低40%以上
+我们算法在GrAco数据集上的的建图结果与卫星图像对齐
+表3.1 各方法相对位姿误差对比（单位：m）
+室外自主机器人实验室
+南开大学-人工智能学院
+6.2 基于语义引导特征与多层次残差融合的多传感器跨层融合感知
+l 复杂异构环境的多模态机器人协同定位——技术框架。针对超大范围、复杂异质、高度动态、GPS不稳定
+的复杂环境，设计了基于深度学习的多层次紧耦合高精度感知架构，攻克了自然场景下传感器失效导致定
+位建图失败难题，为机器人规划控制提供保障。
+!" #
+$%&'
+()
+*+,-.
+I
+&'012M
+45012M
+%678901,:
+I
+• 室内与室外，人工与自然
+等多种环境或跨环境感知
+通用性
+• 物体识别、人员检测
+安全性
+• 动态环境的抗扰能力
+精确性
+基于深度学习的多层次紧耦合
+感知技术框架
+第五章 移动机器人感知技术6-机器人地图构建算法
+105
+6.2 基于语义引导特征与多层次残差融合的多传感器跨层融合感知
+基于机器学习方法的特征提取技术：
+•
+有效抑制动态障碍物干扰，大幅提升算法的适应性；
+•
+基于特征的匹配 Vs. 基于点云的匹配，大幅提升算法的
+运算效率；
+•
+基于特征的匹配可以有效滤除干扰点对于定位精度的影
+响，大幅提升算法的定位精度；
+•
+基于机器学习方法具有知识迁移和知识更新能力，适用
+于复杂动态环境下的特征提取和分类。
+第五章 移动机器人感知技术6-机器人地图构建算法
+106
+6.2 基于语义引导特征与多层次残差融合的多传感器跨层融合感知
+!"#$
+%
+&'()
+*+,-
+./01
+22222222222223456
+!!!!!!!!!!!!!!"#$
+222222222222278
+!"9:
+./01
+;<=01
+>?@A
+>?@A
+BCDEF
+GHIJ
+KLMNO
+>?PQNO
+KLRNO
+STUNO
+NOVW
+!
+"
+#
+$
+%
+#
+!"
+!"#%
+$%C
+'(C
+)
+$%G
++G
+)
+IG
+π
+$%G
++G
+)
+IG
+4XYO
+存在问题
+p 几何特征精度高但鲁棒性差：传统SLAM方法利用场景的几何
+特征，从数据层进行感知，一般情况下，场景几何特征精度较
+高，但在环境复杂或存在干扰时鲁棒性较差；
+p 语义信息鲁棒性高但数量少：语义SLAM引入语义信息，处理
+动态复杂场景，但一般情况下语义信息数量较少且精度不高；
+p 单层感知难以兼顾鲁棒性和精度。
+拟解决方案
+ü
+共同利用几何特征和语义信息：共同作用于状态估计，既利用
+几何特征的准确性，同时利用语义信息的鲁棒性；
+ü
+设计语义相似性残差模型：通过计算语义信息的结构相似程度，
+获得语义一致性误差，完成位姿优化与地图构建；
+ü
+语义引导特征筛选：通过语义分割结果指导特征筛选，剔除动
+态或贡献低的特征，并在特征匹配时引入语义相似性约束。
+第五章 移动机器人感知技术6-机器人地图构建算法
+107
+6.2 基于语义引导特征与多层次残差融合的多传感器跨层融合感知
+Ø 对比实验结果
+Fig 4.3 优化策略消融实验结果
+Table 4.1 对比实验结果
+第五章 移动机器人感知技术6-机器人地图构建算法
+108
+7 行业应用
+基于人工智能的
+环境感知技术
+机场监测
+3C电子
+汽车制造
+烟草物流
+家装浴卫
+钢铁冶金
+仓储物流
+军工装备
+电力巡检
+科学考察
+室外自主机器人实验室
+南开大学-人工智能学院
+4.1 行业应用——科学考察（空地协同主动环境感知）
+109
+南极中山站
+室外自主机器人实验室
+南开大学-人工智能学院
+7.1 行业应用——科学考察（空地协同主动环境感知）
+廓琼岗日冰川空地机器人协同作业
+基于协同控制与决策技术的空地自主跟随
+基于环境约束下行为优化的路径规划引导
+空地协同建模结果
+生成规划路径
+考虑各方向梯度和地形约束
+结合平台能力生成安全区域
+空地协同建模结果引导地面车路径规划
+室外自主机器人实验室
+南开大学-人工智能学院
+7.1 行业应用——科学考察（空地协同主动环境感知）
+藏东南——纳木错站主动环境感知
+室外自主机器人实验室
+南开大学-人工智能学院
+7.2 行业应用——机场道面安全检测
+112
+道面检测机器人已在包括首都国际机场、大兴国际机场、上海虹桥机场、深圳宝安机场、广州白云机场、重庆江北机场、
+天津滨海机场、杭州萧山机场、南京禄口机场、昆明长水机场、乌鲁木齐地窝堡机场、拉萨贡嘎机场、成都双流机场、
+福州长乐机场、太原武宿机场等全国57个机场开展检测服务示范，已在30个机场项目实现工程应用。
+室外自主机器人实验室
+南开大学-人工智能学院
+113
+7.3 行业应用——智能制造
+113
+宝沃汽车
+惠达卫浴
+首钢排渣机器人
+长城汽车
+一汽丰田
+全国首台跨厂区全天候作业AGV
+全天候连续稳定运行时间超过1万小时以上，在
+多个汽车整车厂应用。定位精度小于10mm
+室外自主机器人实验室
+南开大学-人工智能学院
+114
+7.4 行业应用——城市管理
+新疆
+西藏
+青海
+甘肃
+内蒙古
+宁
+夏
+四川
+云南
+海南
+广西
+贵州
+重庆
+陕西
+山西
+黑龙江
+吉林
+辽宁
+河北
+山东
+河南
+湖北
+湖南
+广东
+江西
+福建
+安徽
+江苏
+浙江
+香港
+台
+湾
+澳门
+上海
+天津
+钓鱼岛
+北京
+在全国100多个地区落地运行服务
+室外自主机器人实验室
+南开大学-人工智能学院
+115
+7.5 行业应用——畜牧行业
+棚内推料
+跨棚推料
+极端天气
+夜间推料
+孙雷  教授
+Tel:13512967601
+Email: sunl@nankai.edu.cn
+2026年5月25日 Monday
+声明：本文件部分视频文件下载自优酷视频，部分图片下载自百度图片，仅用作本课程教学使用，任何人不得外传。
+第五章 移动机器人感知技术6
+机器人地图构建算法

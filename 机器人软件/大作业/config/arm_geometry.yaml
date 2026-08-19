@@ -1,0 +1,44 @@
+# Arm geometry parameters for 4-DOF arm + gripper
+# ADJUST THESE VALUES based on physical measurements of your arm
+
+# Link lengths in meters
+link_lengths:
+  L0: 0.05   # base vertical offset (tilt joint to shoulder)
+  L1: 0.12   # upper arm (shoulder to elbow)
+  L2: 0.10   # forearm (elbow to wrist)
+  L3: 0.08   # wrist to gripper tip
+
+# Joint limits in radians
+# Positive direction follows right-hand rule
+joint_limits:
+  tilt_joint:    { min: -1.57, max: 1.57 }    # ±90 deg
+  shoulder_joint: { min: -1.57, max: 1.57 }   # ±90 deg
+  elbow_joint:    { min: -2.09, max: 2.09 }    # ±120 deg
+  wrist_joint:    { min: -1.57, max: 1.57 }    # ±90 deg
+
+# Home position (safe transport) in radians
+home_angles:
+  tilt_joint:    0.0
+  shoulder_joint: 0.0
+  elbow_joint:    1.57
+  wrist_joint:   -1.57
+  hand_joint:    0.0     # closed
+
+# Safe position after grasp (object held) in radians
+carry_angles:
+  tilt_joint:    0.0
+  shoulder_joint: -0.5
+  elbow_joint:    1.0
+  wrist_joint:   -0.5
+  hand_joint:    1.0     # closed (holding)
+
+# Gripper configuration
+gripper:
+  open_position:  0.0    # radians, hand open
+  close_position: 1.57   # radians, hand closed
+
+# Motion parameters
+motion:
+  joint_speed: 0.5        # rad/s (slow for safety)
+  move_tolerance: 0.05    # radians (acceptable position error)
+  settle_time: 0.3        # seconds to wait after motor stops

@@ -1,0 +1,466 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm,headheight=14pt}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{fancyhdr}
+
+% ========== 字体设置 ==========
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setCJKmainfont{SimSun}[BoldFont=SimHei,ItalicFont=KaiTi]
+\setCJKsansfont{SimHei}
+\setCJKmonofont{FangSong}
+
+% ========== 代码高亮设置 ==========
+\lstset{
+  basicstyle=\small\ttfamily,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{green!60!black},
+  stringstyle=\color{red},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  tabsize=4,
+  showstringspaces=false,
+  captionpos=b
+}
+
+% ========== 章标题格式 ==========
+\titleformat{\section}
+  {\centering\fontsize{16pt}{16pt}\selectfont\bfseries\CJKfontspec{SimHei}}
+  {第\chinese{section}章\quad}
+  {0em}
+  {}
+\titlespacing*{\section}{0pt}{24pt}{18pt}
+
+\titleformat{\subsection}
+  {\centering\fontsize{14pt}{14pt}\selectfont\bfseries\CJKfontspec{SimHei}}
+  {第\chinese{subsection}节\quad}
+  {0em}
+  {}
+\titlespacing*{\subsection}{0pt}{24pt}{6pt}
+
+\titleformat{\subsubsection}
+  {\raggedright\fontsize{13pt}{13pt}\selectfont\bfseries\CJKfontspec{SimHei}}
+  {\thesubsubsection\quad}
+  {0em}
+  {}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+\titleformat{\paragraph}
+  {\raggedright\fontsize{12pt}{12pt}\selectfont\bfseries\CJKfontspec{SimHei}}
+  {\theparagraph\quad}
+  {0em}
+  {}
+\titlespacing*{\paragraph}{0pt}{12pt}{6pt}
+
+% ========== 正文段落格式 ==========
+\setlength{\parindent}{2em}
+\linespread{1.0}
+\setlength{\parskip}{0pt}
+
+\captionsetup[figure]{
+  font={small},
+  labelfont={small},
+  skip=12pt,
+  belowskip=0pt,
+  aboveskip=6pt
+}
+
+\captionsetup[table]{
+  font={small},
+  labelfont={small},
+  skip=6pt,
+  belowskip=0pt,
+  aboveskip=6pt
+}
+
+% ========== 页眉页脚 ==========
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\small 基于ROS2的移动机器人自主建图与多点导航系统实验报告}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ========== 自定义命令 ==========
+\newcommand{\cnabstractname}{\fontsize{18pt}{18pt}\selectfont\bfseries\CJKfontspec{SimHei}摘\quad 要}
+
+\begin{document}
+
+% ==================== 封面 ====================
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+
+{\fontsize{28pt}{34pt}\selectfont\bfseries\CJKfontspec{SimHei} 智能工程实验大作业}
+
+\vspace{2cm}
+
+{\fontsize{18pt}{24pt}\selectfont\CJKfontspec{SimHei} 基于ROS2的移动机器人自主建图与多点导航系统}
+
+\vspace{4cm}
+
+{\fontsize{16pt}{24pt}\selectfont\CJKfontspec{SimSun}
+\begin{tabular}{cl}
+组\quad 员： & 杨子源 \quad 刘振毫 \quad 许佳明 \\[0.8em]
+时\quad 间： & 2026.6.3 \\
+\end{tabular}
+}
+
+\vfill
+\end{titlepage}
+
+% ==================== 中文摘要 ====================
+\begin{center}
+  {\cnabstractname}
+\end{center}
+\vspace{18pt}
+
+\fontsize{12pt}{20pt}\selectfont
+本项目基于ROS2（Jazzy版本）和Gazebo仿真环境，以TurtleBot3机器人为平台，实现了未知环境下的自主探索建图与已知环境下的多点自主导航功能。系统集成了slam\_toolbox在线异步SLAM算法、Nav2导航栈以及基于前沿（Frontier）探索的explore\_lite算法，并通过自定义ROS2节点实现了定点巡航逻辑。在自主建图阶段，系统利用激光雷达和里程计数据实时构建二维栅格地图，explore\_lite节点通过广度优先搜索提取前沿区域并驱动机器人完成全图探索；在多点导航阶段，系统采用AMCL算法进行全局定位，结合代价地图实现全局路径规划与局部避障，自定义控制节点按照预设目标点序列依次完成导航任务。实验结果表明，系统能够在仿真环境中稳定完成自主建图与多点巡航，验证了各模块集成的有效性与流程自动化的可行性。
+
+\vspace{6pt}
+\noindent\textbf{关键词：}ROS2；自主建图；前沿探索；多点导航；TurtleBot3
+
+\vspace{24pt}
+
+% ==================== 目录 ====================
+\tableofcontents
+\newpage
+
+% ==================== 正文 ====================
+\section{实验目的}
+
+本实验旨在基于ROS2机器人操作系统和Gazebo物理仿真环境，设计并实现一个完整的移动机器人自主建图与多点导航系统。通过本实验，掌握ROS2工作空间的创建、功能包的组织与colcon编译流程，理解并实践基于slam\_toolbox的2D SLAM建图原理与在线异步建图模式，学习前沿（Frontier）探索算法的工作原理以实现未知环境下的自主探索建图，掌握Nav2导航栈的配置与使用（包括AMCL定位、代价地图构建、全局与局部路径规划），通过自定义ROS2节点实现多点序列导航的业务逻辑控制，并综合运用Launch文件、Shell脚本等工具实现系统各模块的自动化启动与流程控制。
+
+\section{实验环境与工具}
+
+\subsection{软件环境}
+
+本实验所采用的软件环境如表\ref{tab:software}所示。系统运行于Ubuntu 24.04（WSL2）操作系统，采用ROS2 Jazzy Jalisco发行版，仿真引擎为Gazebo Harmonic。机器人平台选用TurtleBot3 Burger构型，SLAM算法采用slam\_toolbox的在线异步模式，导航框架为Nav2（Navigation2），探索算法使用explore\_lite（m-explore-ros2）。编程语言涉及Python 3.12与C++17，构建工具为colcon。
+
+\begin{table}[H]
+\centering
+\caption{软件环境配置}
+\label{tab:software}
+\begin{tabular}{ll}
+\toprule
+组件 & 版本/说明 \\
+\midrule
+操作系统 & Ubuntu 24.04 (WSL2) \\
+ROS2发行版 & ROS2 Jazzy Jalisco \\
+仿真引擎 & Gazebo Harmonic \\
+机器人平台 & TurtleBot3 Burger \\
+SLAM算法 & slam\_toolbox (Online Async) \\
+导航框架 & Nav2 (Navigation2) \\
+探索算法 & explore\_lite (m-explore-ros2) \\
+编程语言 & Python 3.12 / C++17 \\
+构建工具 & colcon \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{硬件平台}
+
+本实验采用TurtleBot3 Burger构型作为仿真机器人平台。该平台尺寸为138mm $\times$ 178mm $\times$ 192mm，采用双轮差速驱动方式，搭载360度2D激光雷达传感器（LDS-01），扫描半径为3.5m。计算平台为Raspberry Pi（仿真中由Gazebo模拟），最大线速度为0.22m/s，最大角速度为2.84rad/s。
+
+\subsection{仿真环境}
+
+实验采用Gazebo提供的TurtleBot3 World标准仿真场景。该场景为一个封闭式矩形平面区域（约5m $\times$ 5m），外围由实体墙壁界定，内部非均匀散布六棱柱、圆柱和立方体等静态障碍物。障碍物的排列形成了回环通道、不规则转角及开阔区域，提供了丰富的几何特征，有利于验证2D激光雷达的空间扫描性能及SLAM算法的局部特征匹配与回环检测精度。
+
+\section{系统总体设计}
+
+\subsection{系统架构}
+
+本系统采用模块化的分层架构设计，整体分为仿真层、感知定位层、建图探索层、导航规划层和应用控制层五个层次，如图\ref{fig:architecture}所示。最底层为仿真层，由Gazebo和TurtleBot3 Burger构成，提供物理仿真与传感器数据；感知定位层负责激光雷达数据、里程计数据与TF坐标变换的处理；建图探索层包含slam\_toolbox和explore\_lite，分别负责实时建图与自主探索；导航规划层为Nav2导航栈，涵盖AMCL定位、全局规划器、局部控制器与代价地图；最上层为应用控制层，由auto\_navigator和auto\_explorer节点实现业务逻辑。
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{|c|}
+\hline
+\textbf{应用控制层}：auto\_navigator / auto\_explorer \\
+\hline
+\textbf{导航规划层}：Nav2 (AMCL + Planner + Controller + Costmap) \\
+\hline
+\textbf{建图探索层}：slam\_toolbox + explore\_lite \\
+\hline
+\textbf{感知定位层}：LiDAR / Odometry / TF \\
+\hline
+\textbf{仿真层}：Gazebo + TurtleBot3 Burger \\
+\hline
+\end{tabular}
+\caption{系统分层架构示意图}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{工作空间结构}
+
+项目工作空间\texttt{ros2\_project\_ws}的核心目录结构如下：\texttt{scripts/}目录包含4个流程控制Shell脚本，分别用于启动建图与自主探索（\texttt{1\_mapping.sh}）、保存栅格地图（\texttt{2\_save\_map.sh}）、启动导航与多点巡航（\texttt{3\_navigation.sh}）以及独立启动探索算法（\texttt{4\_auto\_explore.sh}）；\texttt{src/}目录包含自定义功能包\texttt{course\_demo}（含Launch启动文件、Python节点代码、参数配置文件和RViz2配置文件）以及第三方前沿探索功能包\texttt{m-explore-ros2}；\texttt{maps/}目录存放保存的栅格地图数据；\texttt{build/}和\texttt{install/}分别为编译输出和安装输出目录。
+
+\subsection{功能包说明}
+
+\subsubsection{course\_demo功能包}
+
+\texttt{course\_demo}是本项目的自定义ROS2功能包，承担系统集成与业务逻辑控制的核心职责。其Launch文件包含\texttt{slam\_demo.launch.py}和\texttt{nav\_demo.launch.py}，前者组合启动Gazebo仿真、SLAM Toolbox、Nav2导航栈（不含AMCL）及Explore Lite节点，后者组合启动Gazebo仿真、Nav2导航栈（含AMCL）及RViz2可视化界面。Python节点方面，\texttt{auto\_navigator.py}实现了多点序列导航控制逻辑，\texttt{auto\_explorer.py}实现了基于激光雷达的简单避障探索功能。参数配置方面，\texttt{burger.yaml}存储Nav2参数，\texttt{explore.yaml}存储Explore Lite参数。
+
+\subsubsection{m-explore-ros2功能包}
+
+\texttt{m-explore-ros2}是引入的开源探索功能包，其核心节点\texttt{explore\_lite}实现了基于前沿的自主探索算法。该功能包采用C++编写，主要包含三个模块：Explore节点（\texttt{explore.cpp}）负责前沿搜索调度、导航目标发送与探索状态管理；FrontierSearch模块（\texttt{frontier\_search.cpp}）实现基于广度优先搜索的前沿检测与代价计算；Costmap2DClient模块（\texttt{costmap\_client.cpp}）负责代价地图数据的订阅与更新管理。
+
+\section{核心算法与实现}
+
+\subsection{基于前沿探索的自主建图}
+
+\subsubsection{SLAM建图原理}
+
+系统采用\texttt{slam\_toolbox}的在线异步（Online Async）建图模式，利用激光雷达扫描数据与轮式里程计数据，通过基于图优化的SLAM方法实时构建二维占用栅格地图（Occupancy Grid Map）。其核心流程为：首先根据轮式编码器数据推算机器人位姿先验（里程计预测），然后将当前激光扫描与已有地图进行匹配以优化位姿估计（扫描匹配），接着构建位姿图并通过回环检测约束进行全局优化（图优化），最后将优化后的位姿与扫描数据融合以更新栅格地图（地图更新）。
+
+\subsubsection{前沿探索算法}
+
+前沿（Frontier）是指已探索自由区域与未探索未知区域的交界线。前沿探索算法的核心思想是不断驱动机器人前往最近的前沿区域，从而逐步扩展已知地图，直至环境中不再存在可达的未知区域。
+
+前沿检测算法基于广度优先搜索（BFS），从机器人当前位置出发遍历代价地图，识别满足以下条件的栅格单元作为前沿单元：该单元的状态为\texttt{NO\_INFORMATION}（未知），且该单元的4邻域中至少存在一个\texttt{FREE\_SPACE}（自由）单元。检测到前沿单元后，算法通过8邻域BFS将相邻的前沿单元聚合为前沿区域，并计算每个前沿区域的质心（centroid）、最近距离（min\_distance）和规模（size）。核心代码如下：
+
+\begin{lstlisting}[language=C++,title={前沿检测核心代码（frontier\_search.cpp）}]
+std::vector<Frontier>
+FrontierSearch::searchFrom(geometry_msgs::msg::Point position)
+{
+  std::vector<Frontier> frontier_list;
+  std::queue<unsigned int> bfs;
+  // initialize BFS from nearest free cell
+  while (!bfs.empty()) {
+    unsigned int idx = bfs.front();
+    bfs.pop();
+    for (unsigned nbr : nhood4(idx, *costmap_)) {
+      if (map_[nbr] <= map_[idx] && !visited_flag[nbr]) {
+        visited_flag[nbr] = true;
+        bfs.push(nbr);
+      } else if (isNewFrontierCell(nbr, frontier_flag)) {
+        frontier_flag[nbr] = true;
+        Frontier new_frontier = buildNewFrontier(nbr, pos, frontier_flag);
+        if (new_frontier.size * costmap_->getResolution()
+            >= min_frontier_size_) {
+          frontier_list.push_back(new_frontier);
+        }
+      }
+    }
+  }
+  for (auto& frontier : frontier_list) {
+    frontier.cost = frontierCost(frontier);
+  }
+  std::sort(frontier_list.begin(), frontier_list.end(),
+    [](const Frontier& f1, const Frontier& f2)
+    { return f1.cost < f2.cost; });
+  return frontier_list;
+}
+\end{lstlisting}
+
+每个前沿区域的代价由以下公式计算：
+
+\begin{equation}
+  C(F) = \alpha \cdot d_{\min}(F) \cdot r - \beta \cdot s(F) \cdot r
+  \label{eq:frontier_cost}
+\end{equation}
+
+其中，$d_{\min}(F)$为前沿到机器人的最小距离，$s(F)$为前沿的规模（包含的栅格数），$r$为地图分辨率，$\alpha$为距离权重（\texttt{potential\_scale}），$\beta$为增益权重（\texttt{gain\_scale}）。该代价函数在距离与信息增益之间取得平衡：距离越近代价越低，规模越大（信息增益越高）代价越低。本实验中，参数配置为$\alpha = 1.0$，$\beta = 3.0$，最小前沿尺寸为0.75m，规划频率为2.0Hz。
+
+Explore节点的主控逻辑由定时器驱动，按规划频率周期性执行\texttt{makePlan()}函数。其流程为：首先获取机器人当前位姿，然后调用\texttt{FrontierSearch::searchFrom()}搜索所有前沿区域；若无前沿则发布探索完成状态并停止；否则选择代价最小的非黑名单前沿作为目标，通过Nav2 Action Client发送\texttt{NavigateToPose}目标；同时监控导航进度，若超时无进展则将目标加入黑名单；导航完成后立即重新规划。
+
+\begin{lstlisting}[language=C++,title={探索主控逻辑（explore.cpp）}]
+void Explore::makePlan()
+{
+  auto pose = costmap_client_.getRobotPose();
+  auto frontiers = search_.searchFrom(pose.position);
+  if (frontiers.empty()) {
+    stop(true);
+    return;
+  }
+  auto frontier = std::find_if_not(frontiers.begin(),
+    frontiers.end(),
+    [this](const Frontier& f) {
+      return goalOnBlacklist(f.centroid);
+    });
+  if (frontier == frontiers.end()) {
+    stop(true);
+    return;
+  }
+  auto goal = nav2_msgs::action::NavigateToPose::Goal();
+  goal.pose.pose.position = frontier->centroid;
+  move_base_client_->async_send_goal(goal, send_goal_options);
+}
+\end{lstlisting}
+
+\subsubsection{代价地图客户端}
+
+\texttt{Costmap2DClient}类负责订阅和更新代价地图数据。它订阅\texttt{/map}话题获取完整的占用栅格地图，并订阅\texttt{/map\_updates}话题获取增量更新。数据接收后，通过线性映射将OccupancyGrid的$[0, 100]$范围转换为代价地图的$[0, 255]$范围：
+
+\begin{equation}
+  c_{\text{costmap}} = 1 + \frac{251 \times (c_{\text{grid}} - 1)}{97}
+  \label{eq:costmap_translation}
+\end{equation}
+
+其中特殊值为：$c_{\text{grid}} = 0$映射为0（无障碍），$c_{\text{grid}} = 99$映射为253（内切障碍），$c_{\text{grid}} = 100$映射为254（致命障碍），$c_{\text{grid}} = -1$（未知）映射为255。
+
+\subsection{基于Nav2的多点自动巡航}
+
+\subsubsection{Nav2导航栈}
+
+Nav2（Navigation2）是ROS2的标准导航框架，本实验中使用的Nav2导航栈包含以下核心组件：AMCL（自适应蒙特卡洛定位）基于粒子滤波的概率定位算法，通过激光扫描与已知地图的匹配估计机器人位姿；全局代价地图基于静态地图构建全局代价信息，用于全局路径规划；局部代价地图基于传感器实时数据提供局部代价信息，用于局部避障；全局规划器基于代价地图计算从起点到目标的全局路径；局部控制器根据全局路径和局部代价地图输出速度指令，实现路径跟踪与避障；行为服务器处理导航过程中的恢复行为（如旋转清除代价地图）。
+
+\subsubsection{多点导航控制节点}
+
+自定义控制节点\texttt{auto\_navigator.py}实现了多点序列导航的业务逻辑。启动后，节点首先通过API发送初始位姿$(0.0, 0.0, 0.0)$完成AMCL定位系统的初始化，然后调用\texttt{waitUntilNav2Active()}阻塞等待导航栈完全启动。随后，程序按预设的四个目标点坐标依次发送导航请求并阻塞等待结果，同时发布\texttt{MarkerArray}消息在RViz2中显示目标点位置与序号。四个预设目标点如表\ref{tab:waypoints}所示。
+
+\begin{lstlisting}[language=Python,title={多点导航核心代码（auto\_navigator.py）}]
+# Set initial pose
+initial_pose = PoseStamped()
+initial_pose.header.frame_id = 'map'
+initial_pose.pose.position.x = 0.0
+initial_pose.pose.position.y = 0.0
+initial_pose.pose.orientation.w = 1.0
+navigator.setInitialPose(initial_pose)
+navigator.waitUntilNav2Active()
+
+# Predefined waypoints
+goals = [(1.5, 1.5), (2.0, -1.5), (4.0, 1.0), (0.0, 0.0)]
+
+# Sequential navigation
+for idx, (x, y) in enumerate(goals):
+    goal = PoseStamped()
+    goal.header.frame_id = 'map'
+    goal.pose.position.x = x
+    goal.pose.position.y = y
+    goal.pose.orientation.w = 1.0
+    navigator.goToPose(goal)
+    while not navigator.isTaskComplete():
+        feedback = navigator.getFeedback()
+        time.sleep(1.0)
+    result = navigator.getResult()
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\caption{预设巡航目标点}
+\label{tab:waypoints}
+\begin{tabular}{ccc}
+\toprule
+序号 & 坐标$(x, y)$ / m & 说明 \\
+\midrule
+1 & (1.5, 1.5) & 左上方区域 \\
+2 & (2.0, $-$1.5) & 左下方区域 \\
+3 & (4.0, 1.0) & 右上方区域 \\
+4 & (0.0, 0.0) & 返回原点 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{简单避障探索节点}
+
+此外，项目还实现了\texttt{auto\_explorer.py}节点，采用基于激光雷达的简单反应式避障策略。该节点订阅\texttt{/scan}话题获取激光扫描数据，当正前方30度范围内检测到障碍物距离小于0.6m时，切换为旋转避障状态；否则保持前进并附加随机角速度扰动以增加探索覆盖范围。
+
+\begin{lstlisting}[language=Python,title={简单避障探索代码（auto\_explorer.py）}]
+def scan_callback(self, msg):
+    front_ranges = msg.ranges[-30:] + msg.ranges[:30]
+    valid_ranges = [r for r in front_ranges
+                    if r > 0.1 and r < float('inf')]
+    if len(valid_ranges) > 0:
+        min_dist = min(valid_ranges)
+        if min_dist < 0.6:
+            if self.state == 'FORWARD':
+                self.state = 'TURN'
+                self.turn_time = random.randint(15, 30)
+        else:
+            if self.state == 'TURN' and self.turn_time <= 0:
+                self.state = 'FORWARD'
+\end{lstlisting}
+
+\section{系统集成与流程控制}
+
+\subsection{Launch文件设计}
+
+系统通过两个Launch文件实现不同阶段的模块组合启动。\texttt{slam\_demo.launch.py}用于自主建图阶段，其依次启动Gazebo仿真环境、SLAM Toolbox在线异步建图节点和Nav2导航栈（不含AMCL，由SLAM提供定位），延迟3秒启动RViz2可视化界面，延迟8秒启动Explore Lite前沿探索节点。延迟启动策略确保了各模块按依赖关系依次初始化，避免因资源竞争导致的启动失败。\texttt{nav\_demo.launch.py}用于多点导航阶段，首先声明地图文件路径参数（默认为\texttt{\textasciitilde/ros2\_project\_ws/maps/my\_map.yaml}），然后启动Gazebo仿真环境和Nav2导航栈（含AMCL定位与静态地图加载），延迟5秒启动RViz2可视化界面。
+
+\subsection{Shell脚本封装}
+
+为简化操作流程，项目通过4个Shell脚本封装了完整的实验流程。\texttt{1\_mapping.sh}负责配置环境变量（\texttt{TURTLEBOT3\_MODEL=burger}、\texttt{LIBGL\_ALWAYS\_SOFTWARE=1}），source工作空间，清理残留Gazebo进程，并启动\texttt{slam\_demo.launch.py}。\texttt{2\_save\_map.sh}调用\texttt{nav2\_map\_server}的\texttt{map\_saver\_cli}工具，将SLAM生成的栅格地图保存至\texttt{maps/}目录。\texttt{3\_navigation.sh}首先检查地图文件是否存在，然后启动\texttt{nav\_demo.launch.py}，等待15秒后启动\texttt{auto\_navigator}节点。\texttt{4\_auto\_explore.sh}为独立启动探索算法节点的辅助脚本。
+
+\subsection{Explore Lite参数配置}
+
+Explore Lite节点的参数配置如表\ref{tab:explore_params}所示。
+
+\begin{table}[H]
+\centering
+\caption{Explore Lite参数配置}
+\label{tab:explore_params}
+\begin{tabular}{lcc}
+\toprule
+参数名 & 值 & 说明 \\
+\midrule
+\texttt{robot\_base\_frame} & base\_link & 机器人基座坐标系 \\
+\texttt{return\_to\_init} & true & 探索完成后返回起点 \\
+\texttt{costmap\_topic} & map & 代价地图话题 \\
+\texttt{visualize} & false & 是否可视化前沿 \\
+\texttt{planner\_frequency} & 2.0 & 规划频率（Hz） \\
+\texttt{progress\_timeout} & 5.0 & 进度超时（秒） \\
+\texttt{potential\_scale} & 1.0 & 距离权重$\alpha$ \\
+\texttt{gain\_scale} & 3.0 & 增益权重$\beta$ \\
+\texttt{min\_frontier\_size} & 0.75 & 最小前沿尺寸（m） \\
+\texttt{transform\_tolerance} & 0.3 & TF变换容差（秒） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{实验过程与结果}
+
+\subsection{实验步骤}
+
+本实验按照以下步骤依次执行：首先在\texttt{ros2\_project\_ws}目录下执行\texttt{colcon build}编译所有功能包；然后执行\texttt{bash scripts/1\_mapping.sh}启动自主建图，系统自动启动Gazebo仿真、SLAM Toolbox、Nav2导航栈和Explore Lite节点，机器人开始自主探索未知环境并实时构建栅格地图；待探索完成后，执行\texttt{bash scripts/2\_save\_map.sh}将构建的地图保存为\texttt{my\_map.yaml}和\texttt{my\_map.pgm}；最后执行\texttt{bash scripts/3\_navigation.sh}启动多点导航，系统加载已保存的地图，启动Nav2导航栈（含AMCL定位），并自动运行\texttt{auto\_navigator}节点，机器人依次前往四个预设目标点完成巡航任务。
+
+\subsection{自主建图结果}
+
+在自主建图阶段，Explore Lite节点成功检测到环境中的前沿区域并驱动机器人逐一前往探索。机器人从原点出发，按照前沿代价从小到大的顺序依次访问各前沿区域，最终完成了对TurtleBot3 World仿真环境的完整建图。建图过程中，SLAM Toolbox实时更新栅格地图，地图质量良好，墙壁轮廓清晰，障碍物位置准确。Explore Lite节点的探索状态通过\texttt{explore/status}话题发布，当所有前沿区域均被探索后，节点发布\texttt{EXPLORATION\_COMPLETE}状态并自动停止。由于配置了\texttt{return\_to\_init: true}，机器人随后自动返回初始位姿。
+
+\subsection{多点导航结果}
+
+在多点导航阶段，\texttt{auto\_navigator}节点成功完成了四个预设目标点的序列导航。机器人从原点出发，沿规划路径顺利到达左上方区域目标点1 (1.5, 1.5)，导航状态为SUCCEEDED；随后从目标点1出发绕过中间障碍物到达左下方区域目标点2 (2.0, $-$1.5)，导航状态为SUCCEEDED；接着从目标点2出发穿越开阔区域到达右上方区域目标点3 (4.0, 1.0)，导航状态为SUCCEEDED；最后从目标点3返回原点目标点4 (0.0, 0.0)，导航状态为SUCCEEDED。导航过程中，RViz2界面实时显示机器人位姿、全局路径、局部代价地图和目标点标记，AMCL定位稳定，路径规划合理，局部避障有效。
+
+\section{实验分析与讨论}
+
+\subsection{前沿探索算法分析}
+
+本实验采用的前沿探索算法具有良好的完备性，在连通环境中能够保证对所有可达区域的探索，因为只要存在未探索区域就一定存在前沿。代价函数综合考虑了距离和信息增益，使机器人优先探索近距离的大面积未知区域，提高了探索效率。黑名单机制和进度超时机制有效处理了导航失败和局部最优问题，当某个前沿目标无法到达时，算法会将其加入黑名单并尝试其他前沿，增强了鲁棒性。然而，前沿探索算法属于贪心策略，不保证全局最优的探索路径，在大型复杂环境中可能存在重复探索已访问区域的情况，这是其局限性所在。
+
+\subsection{导航系统分析}
+
+Nav2导航栈在本实验中表现稳定。AMCL定位在特征丰富的环境中精度较高，但在长走廊等几何特征匮乏的区域可能出现粒子退化，需要足够的初始粒子数和合理的初始位姿估计。全局规划器基于Dijkstra或A*算法，能够生成无碰撞的最短路径；局部控制器基于DWB（Dynamic Window Approach）算法，能够实时避障并跟踪路径。全局代价地图基于静态地图构建，局部代价地图基于实时传感器数据更新，两者结合实现了全局规划与局部避障的协调。当导航失败时，Nav2会触发旋转清除等恢复行为，但在某些情况下可能导致机器人偏离预期路径。
+
+\subsection{系统集成问题与解决}
+
+在系统集成过程中遇到了若干主要问题。首先是模块启动时序问题，各功能模块存在依赖关系，若同时启动可能导致资源竞争或连接失败，解决方案是采用\texttt{TimerAction}实现延迟启动，确保底层模块先于上层模块初始化。其次是WSL环境下RViz渲染问题，在WSL2中运行RViz2时可能出现OpenGL渲染异常，解决方案是设置环境变量\texttt{LIBGL\_ALWAYS\_SOFTWARE=1}启用软件渲染模式。再次是Gazebo残留进程问题，多次运行实验后可能残留Gazebo进程导致端口占用，解决方案是在启动脚本中加入\texttt{pkill -9 -f "gz sim"}清理残留进程。最后是SLAM与Nav2的定位冲突问题，在建图阶段SLAM提供定位功能，此时不应启动AMCL，解决方案是在\texttt{slam\_demo.launch.py}中使用\texttt{navigation\_launch.py}（不含AMCL），而在\texttt{nav\_demo.launch.py}中使用\texttt{bringup\_launch.py}（含AMCL）。
+
+\section{实验总结}
+
+本实验基于ROS2 Jazzy和Gazebo仿真环境，以TurtleBot3 Burger为平台，成功实现了移动机器人的自主建图与多点导航系统。在自主建图方面，通过集成slam\_toolbox和explore\_lite，实现了未知环境下的自主探索建图，前沿探索算法能够高效地驱动机器人完成全图探索，探索完成后自动返回起点。在多点导航方面，通过Nav2导航栈和自定义控制节点，实现了已知环境下的多点序列导航，AMCL定位稳定，路径规划合理，四个目标点均成功到达。在系统集成方面，通过Launch文件和Shell脚本实现了系统各模块的自动化启动与流程控制，简化了操作流程，提高了实验效率。在工程实践方面，深入理解了ROS2的节点通信机制（话题、服务、动作）、TF坐标变换、参数配置等核心概念，积累了机器人系统开发与调试的实践经验。
+
+本实验的不足之处在于仿真环境相对简单，未在真实机器人上验证；前沿探索算法的参数需要针对不同环境进行调整；多点导航的目标点为硬编码，缺乏动态规划能力。未来可考虑引入更高级的探索策略（如信息论方法）和动态目标点规划算法，进一步提升系统的智能化水平。
+
+\end{document}

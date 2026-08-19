@@ -1,0 +1,63 @@
+✓ 下次运行将从 epoch 56 继续训练
+
+✓ Training completed! Final loss: 0.0001
+
+============================================================
+🔮 Generated Text Results
+============================================================
+
+📝 Test 1/10: "time traveller"
+-------------------------------------------------------
+time traveller's tongue. messenger: royal commanders, be in readiness: for with a 
+band of thirty thousand men comes warwick, backing of the duke of york; and in the towns, as they do march along, proclaims him king, and many fly to him: darraign 
+your battle, for they are at hand. clifford: i would your highness w
+
+
+📝 Test 2/10: "traveller"
+-------------------------------------------------------
+travellerone, it may not be; and you that do abet him in this kind cherish rebellion and are rebels all. northumberland: the noble duke hath sworn his coming is but for his own; and for the right of that we all have strongly sworn to give him aid; and let him ne'er see joy that breaks that oath! duke of york
+
+
+📝 Test 3/10: "the time traveller says that"
+-------------------------------------------------------
+the time traveller says thaten on our woes! nurse: madam! juliet: nurse? nurse: your lady mother is coming to your chamber: the day is broke; be wary, look about. juliet: then, window, let day in, and let life out. romeo: farewell, farewell! one 
+kiss, and i'll descend. juliet: art thou gone so? love, lord, ay, husband, friend!
+
+📝 Test 4/10: "when the time traveller returns to the garden"
+-------------------------------------------------------
+when the time traveller returns to the gardeness of his proceeding, it shall become him well; wherein if he chance to fail, he hath sentenced himself. escalus: i am going to visit the prisoner. fare you well. duke vincentio: peace be with you! he who the sword of heaven will bear should be as holy as severe; pattern in himself to know, grace t
+
+
+📝 Test 5/10: "the time traveller begins learning the language"
+-------------------------------------------------------
+the time traveller begins learning the languages. and yet thou wilt tutor me from 
+quarrelling! benvolio: an i were so apt to quarrel as thou art, any man should buy the fee-simple of my life for an hour and a quarter. mercutio: the fee-simple! o 
+simple! benvolio: by my head, here come the capulets. mercutio: by my heel, i care not. tybalt: follo
+
+
+📝 Test 6/10: "the time traveller determines that"
+-------------------------------------------------------
+the time traveller determines thater change my disposition. florizel: what you do 
+still betters what is done. when you speak, sweet. i'ld have you do it ever: when 
+you sing, i'ld have you buy and sell so, so give alms, pray so; and, for the ordering your affairs, to sing them too: when you do dance, i wish you a wave o' the sea, tha
+
+
+📝 Test 7/10: "the time traveller knows he will have to stop"
+-------------------------------------------------------
+the time traveller knows he will have to stop'd your ears against the general suit of rome; never admitted a private whisper, no, not with such friends that thought them sure of you. coriolanus: this last old man, whom with a crack'd heart i have sent to rome, loved me above the measure of a father; nay, godded me, indeed. their latest refuge
+
+
+📝 Test 8/10: "when he wakes up"
+-------------------------------------------------------
+when he wakes upurder the clouds, as high as heaven itself? o, in this love, you love your child so ill, that you run mad, seeing that she is well: she's not well married that lives married long; but she's best married that dies married young. dry up your tears, and stick your rosemary on this fair corse; and, as t
+
+
+📝 Test 9/10: "the time traveller finds himself"
+-------------------------------------------------------
+the time traveller finds himself and nature lengthens it. queen elizabeth: so long as hell and richard likes of it. king richard iii: say, i, her sovereign, am her 
+subject love. queen elizabeth: but she, your subject, loathes such sovereignty. king richard iii: be eloquent in my behalf to her. queen elizabeth: an honest tale speed
+
+
+📝 Test 10/10: "the time traveller tells the narrator to wait for him"
+-------------------------------------------------------
+the time traveller tells the narrator to wait for himelf. pompey: i beseech your honour, ask me. escalus: well, sir; what did this gentleman to her? pompey: i beseech you, sir, look in this gentleman's face. good master froth, look upon his honour; 'tis for a good purpose. doth your honour mark his face? escalus: ay, sir, very well. pompey: nay; i bes

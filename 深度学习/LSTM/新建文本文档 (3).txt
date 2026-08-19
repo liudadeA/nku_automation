@@ -1,0 +1,69 @@
+Using device: cuda
+✓ GPU: NVIDIA GeForce RTX 4060
+✓ GPU Memory: 8.59 GB
+Training: 100%|█| 43/43 [28:54:23<00:00, 2420.07s/epoch, best=
+
+✓ 训练完成，检查点文件已清理
+
+✓ Training completed! Final loss: 0.0481
+
+============================================================   
+🔮 Generated Text Results
+============================================================   
+
+📝 Test 1/10: "time traveller"
+-------------------------------------------------------        
+time travellery against it with my life. provost: pardon me, good father; it is against my oath. duke vincentio: were you sworn to the duke, or to the deputy? provost: to him, and to his substitutes. duke vincentio: you will think you have made no offence, if the duke avouch the justice of your dealing? provost:  
+
+
+📝 Test 2/10: "traveller"
+-------------------------------------------------------        
+travellery, and will obey. gloucester: we are the queen's abjects, and must obey. brother, farewell: i will unto the king; and whatsoever you will employ me in, were it to call king edward's widow sister, i will perform it to enfranchise you. meantime, this deep disgrace in brotherhood touches me deeper than      
+
+
+📝 Test 3/10: "the time traveller says that"
+-------------------------------------------------------        
+the time traveller says that thou hadst call'd me all these bitter names. queen margaret: why, so i did; but look'd for no reply. o, let me make the period to my curse! gloucester: 'tis done by me, and ends in 'margaret.' queen elizabeth: thus have you breathed your curse against yourself. queen margaret: poor painted queen, v
+
+
+📝 Test 4/10: "when the time traveller returns to the garden"  
+-------------------------------------------------------        
+when the time traveller returns to the gardeness of his presence? florizel: apprehend nothing but jollity. the gods themselves, humbling their deities to love, have taken the shapes of beasts upon them: jupiter became a bull, and bellow'd; the green neptune a ram, and bleated; and the fire-robed god, golden apollo, a poor humble swain, as i se
+
+
+📝 Test 5/10: "the time traveller begins learning the language"-------------------------------------------------------        
+the time traveller begins learning the languages, and teach me 
+how to curse mine enemies! queen margaret: forbear to sleep the nights, and fast the days; compare dead happiness with living 
+woe; think that thy babes were fairer than they were, and he that slew them fouler than he is: bettering thy loss makes the bad causer worse: revolving this w
+
+
+📝 Test 6/10: "the time traveller determines that"
+-------------------------------------------------------        
+the time traveller determines thater. romeo: i'll go along, no 
+such sight to be shown, but to rejoice in splendor of mine own. lady capulet: nurse, where's my daughter? call her forth to me. nurse: now, by my maidenhead, at twelve year old, i bade her 
+come. what, lamb! what, ladybird! god forbid! where's this girl? what, juliet! jul
+
+
+📝 Test 7/10: "the time traveller knows he will have to stop"  
+-------------------------------------------------------        
+the time traveller knows he will have to stop'd your ears against the general suit of rome; never admitted a private whisper, 
+no, not with such friends that thought them sure of you. coriolanus: this last old man, whom with a crack'd heart i have sent 
+to rome, loved me above the measure of a father; nay, godded me, indeed. their latest refuge
+
+
+📝 Test 8/10: "when he wakes up"
+-------------------------------------------------------        
+when he wakes uproad such prophecies that edward shall be fearful of his life, and then, to purge his fear, i'll be thy death. king henry and the prince his son are gone: clarence, thy turn is next, and then the rest, counting myself but bad till i be 
+best. i'll throw thy body in another room and triumph, henry, in
+
+
+📝 Test 9/10: "the time traveller finds himself"
+-------------------------------------------------------        
+the time traveller finds himself and catches for his master. petruchio: a good swift simile, but something currish. tranio: 'tis well, sir, that you hunted for yourself: 'tis thought your deer does hold you at a bay. baptista: o ho, petruchio! tranio hits you now. lucentio: i thank thee for that gird, good tranio. hortensio: confe
+
+
+📝 Test 10/10: "the time traveller tells the narrator to wait for him"
+-------------------------------------------------------        
+the time traveller tells the narrator to wait for himelf. lucio: well, my lord. mariana: my lord; i do confess i ne'er was married; and i confess besides i am no maid: i have known my husband; yet my husband knows not that ever he knew me. lucio: he was drunk then, my lord: it can be no better. duke vincentio: for the benefit of silence, would thou we
+
+(C:\Users\Administrator\Desktop\study\vision\.conda) PS E:\shendu\LSTM>

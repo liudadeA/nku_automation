@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>course_demo</name>
+  <version>0.0.0</version>
+  <description>TurtleBot3 mapping and navigation demo for course</description>
+  <maintainer email="zy@todo.todo">zy</maintainer>
+  <license>Apache License 2.0</license>
+
+  <exec_depend>ros2launch</exec_depend>
+  <exec_depend>turtlebot3_gazebo</exec_depend>
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,45 @@
+# Color detection parameters for object grasping
+# TUNE THESE VALUES based on lighting conditions and target object color
+
+# HSV threshold for target object (OpenCV HSV: H=[0,179], S=[0,255], V=[0,255])
+# Default: red object detection (red wraps around hue 0)
+color_ranges:
+  # Red objects typically require two ranges (wraps around hue 0/180)
+  range1:
+    hsv_lower: [0, 100, 100]
+    hsv_upper: [10, 255, 255]
+  range2:
+    hsv_lower: [170, 100, 100]
+    hsv_upper: [179, 255, 255]
+
+# Alternative presets (uncomment and adjust):
+# Green object:
+#   range1:
+#     hsv_lower: [35, 50, 50]
+#     hsv_upper: [85, 255, 255]
+# Blue object:
+#   range1:
+#     hsv_lower: [100, 50, 50]
+#     hsv_upper: [130, 255, 255]
+# Yellow object:
+#   range1:
+#     hsv_lower: [20, 100, 100]
+#     hsv_upper: [35, 255, 255]
+
+# Minimum contour area to filter noise (pixels)
+min_contour_area: 300
+
+# Morphological kernel size (odd number, larger = more aggressive noise removal)
+morph_kernel_size: 5
+
+# Camera topics
+camera:
+  rgb_topic: "/camera/rgb/image_raw"
+  depth_topic: "/camera/depth_registered/image_raw"
+  camera_info_topic: "/camera/rgb/camera_info"
+
+# Detection timeout (seconds) before giving up
+detection_timeout: 30.0
+
+# Debug mode: publish annotated image to /object_detector/debug_image
+debug: true

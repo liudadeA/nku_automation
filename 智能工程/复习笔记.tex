@@ -1,0 +1,1174 @@
+\documentclass[11pt,a4paper]{article}
+
+% ============== 中文支持 ==============
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.8cm,bottom=2.5cm,headheight=14pt}
+
+% ============== 数学与符号 ==============
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{mathtools}
+
+% ============== 图表与超链接 ==============
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!60!black}
+
+% ============== 页面与排版 ==============
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+
+% 页眉页脚
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{智能工程复习笔记}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% 章节标题样式
+\titleformat{\section}{\Large\bfseries\color{blue!50!black}}{第\chinese{section}章}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue!40!black}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{blue!30!black}}{\thesubsubsection}{1em}{}
+
+% 列表样式
+\setlist[itemize]{leftmargin=2em,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=2em,itemsep=2pt,parsep=0pt}
+
+% 自定义高亮盒子
+\newtcolorbox{keypoint}[1][]{
+  breakable, enhanced, colback=yellow!5, colframe=orange!60!black,
+  fonttitle=\bfseries, title=核心要点, #1
+}
+\newtcolorbox{formula}[1][]{
+  breakable, enhanced, colback=blue!3, colframe=blue!60!black,
+  fonttitle=\bfseries, title=关键公式, #1
+}
+\newtcolorbox{notebox}[1][]{
+  breakable, enhanced, colback=green!5, colframe=green!50!black,
+  fonttitle=\bfseries, title=注意, #1
+}
+\newtcolorbox{example}[1][例题]{
+  breakable, enhanced, colback=gray!5, colframe=gray!60!black,
+  fonttitle=\bfseries, title=#1
+}
+
+\linespread{1.25}
+
+\title{\textbf{智能工程复习笔记}\\[0.3em]\large 移动机器人运动学、感知与规划}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+本笔记以课程 PDF 为准整理，按 PDF 分章：运动学建模（约束法与 ICR 法，大题）、里程计误差传导（通用雅可比形式，计算题）、最小二乘与点云到直线特征（RANSAC、霍夫变换）、SVD 与 ICP 点云配准、卡尔曼滤波、蒙特卡洛定位（MCL/AMCL）、建图算法与 SLAM（EKF-SLAM、FastSLAM、Graph-SLAM 重点含例题，简答为主）、运动规划（图搜索 A*、DWA、TEB）。
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ==================================================================
+% 第三章 运动学
+% ==================================================================
+\section{运动学}
+
+\begin{keypoint}
+\textbf{本章重点：运动模型构建。}两种建模方法——\textbf{ICR 法}与\textbf{约束法}，主要考\textbf{大题}（给定机器人结构，用两种方法建立运动学方程）。
+\end{keypoint}
+
+\subsection{运动学模型的特点}
+
+\begin{itemize}
+  \item 运动学模型构建机器人驱动（输入）与空间位姿（输出）间的关系。
+  \item 与机械臂区别：机械臂本体坐标系固定（精度高）；移动机器人本体坐标系随运动变化（精度低），无法从位置空间找到一一对应关系。
+  \item 采用\textbf{微分运动学}（速度空间映射）替代位置空间映射。
+  \item 运动学模型是机械结构设计、控制器设计、环境感知的基础，与车轮密切相关。
+\end{itemize}
+
+\subsection{车轮类型及约束}
+
+\subsubsection{四种基本车轮}
+
+\begin{center}
+\begin{tabular}{p{2.5cm}|p{2.8cm}|p{2cm}|p{4.5cm}}
+\toprule
+类型 & 自由度 & 约束数 & 特点 \\
+\midrule
+标准轮（Standard） & 2：滚动+转动 & 1：沿轮轴滑动 & 高指向性；分固定轮（1 自由度）与转向轮（2 自由度） \\
+脚轮（Castor） & 3：滚动+转动+沿轴运动 & 0 & 偏心距 $d$；常作随动轮；调向时施加扭矩 \\
+瑞典轮（Swedish） & 3 & 0（全向轮） & 无法单独使用，至少 3 个；麦克纳姆轮 $\gamma=45^\circ$ \\
+球轮（Spherical） & 3 & 0 & 真正全向轮；成本高、可靠性差，极少使用 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{运动学约束前提假设}
+\begin{itemize}
+  \item 在水平面上运动；车轮与地面点接触；车轮不变形。
+  \item 纯滚动：接触点无滑动速度（无滑动、打滑）。
+  \item 舵机转轴与地面垂直；轮子安装在刚体表面上。
+\end{itemize}
+
+\subsubsection{标准轮的两个约束}
+\begin{enumerate}
+  \item \textbf{滚动约束}：沿轮平面方向的运动约束（主动轮需考虑）。
+  \item \textbf{滑动约束}：沿轮轴方向无运动（主动轮与随动标准轮均需考虑）。
+\end{enumerate}
+\begin{notebox}
+不论滚动约束还是滑动约束，只考虑\textbf{独立约束}。平面运动输出状态为三维向量，最多有 3 个独立约束。
+\end{notebox}
+
+\subsection{运动学建模方法之一：ICR 法}
+
+\subsubsection*{原理}
+\begin{keypoint}
+\begin{itemize}
+  \item 移动机器人可视为刚体：每个点相对距离不变——\textbf{各点角速度相同}。
+  \item 固定标准轮沿轮轴方向运动约束（$\dot{y}_R=0$）。
+  \item 所有轮轴延长线交于\textbf{瞬时旋转中心 ICR}（Instantaneous Center of Rotation）。
+  \item 设 ICR 到机器人坐标系原点距离为 $R$，轮子中心距原点为 $l$，可解得速度。
+\end{itemize}
+\end{keypoint}
+
+\subsubsection*{建模步骤}
+\begin{enumerate}
+  \item 确定系统输入（轮速 $\dot{\varphi}$、舵机转角 $\beta$）。
+  \item 确定惯性参考坐标系 $I$ 与机器人参考坐标系 $R$，确定输出。
+  \item 构建坐标系间变换关系：$\dot{\xi}_R = R(\theta)\dot{\xi}_I$。
+  \item 利用刚体角速度相同 + 轮轴滑动约束确定 ICR 位置。
+  \item 由 ICR 几何关系求机器人速度。
+\end{enumerate}
+
+\subsubsection*{优缺点}
+\begin{itemize}
+  \item \textbf{优点}：比较直观；对标准轮建模容易。
+  \item \textbf{缺点}：一事一议，不具备通用性；仅适用于标准轮建模。
+\end{itemize}
+
+\subsubsection*{双轮差速机器人 ICR 法建模}
+设两轮半径为 $r$，轮距机器人中心为 $l$，轮速 $\dot{\varphi}_L,\dot{\varphi}_R$。由 ICR 法可得：
+\begin{formula}
+\[
+v=\frac{r(\dot{\varphi}_R+\dot{\varphi}_L)}{2},\qquad
+\omega=\frac{r(\dot{\varphi}_R-\dot{\varphi}_L)}{2l}
+\]
+世界坐标系下运动学模型：
+\[
+\dot{x}=v\cos\theta,\quad \dot{y}=v\sin\theta,\quad \dot{\theta}=\omega
+\]
+\end{formula}
+
+\subsection{运动学建模方法之二：约束法}
+
+\subsubsection*{原理}
+对每个车轮分别建立滚动约束方程与滑动约束方程，合成构成机器人整体运动学约束。适用于所有轮型，具有通用性。
+
+\subsubsection{固定标准轮约束方程}
+
+设轮的位置角 $\alpha$（轮心在机器人坐标系中的极角）、转向角 $\beta$（轮平面与机器人坐标系 $x_R$ 轴夹角）、轮心到原点距离 $l$、轮半径 $r$。
+
+\begin{formula}
+\textbf{滚动约束}（沿轮平面纯滚动）：
+\[
+\begin{bmatrix}\sin(\alpha+\beta) & -\cos(\alpha+\beta) & -l\cos\beta\end{bmatrix}\dot{\xi}_I = r\dot{\varphi}
+\]
+\textbf{滑动约束}（沿轮轴无运动）：
+\[
+\begin{bmatrix}\cos(\alpha+\beta) & \sin(\alpha+\beta) & l\sin\beta\end{bmatrix}\dot{\xi}_I = 0
+\]
+其中 $\dot{\xi}_I=[\dot{x},\dot{y},\dot{\theta}]^T$ 为世界坐标系下速度。
+\end{formula}
+
+\subsubsection{转向标准轮约束方程}
+与固定标准轮形式相同，但 $\beta=\beta(t)$ 是时变变量（舵机转角）。
+
+\subsubsection{脚轮约束方程}
+由于偏心距 $d$ 的存在，连杆相对于惯性系的角速度为 $\dot{\theta}_R+\dot{\beta}$，约束方程中需考虑偏心距 $d$ 的影响。脚轮可通过控制垂直旋转轴角速度 $\dot{\beta}$ 实现全方位运动；随动脚轮不给机器人带来运动约束（全向运动轮）。
+
+\subsubsection{麦克纳姆轮约束方程}
+设辊子角度 $\gamma$（$\gamma=0$ 为 90 度瑞典轮，$\gamma=45^\circ$ 为麦克纳姆轮）：
+\begin{formula}
+\textbf{滚动约束}：
+\[
+\begin{bmatrix}\sin(\alpha+\beta+\gamma) & -\cos(\alpha+\beta+\gamma) & -l\sin(\beta+\gamma)\end{bmatrix}R(\theta)\dot{\xi}_I - r\dot{\varphi}\sin\gamma - r_{sw}\dot{\varphi}_{sw}=0
+\]
+\textbf{滑动约束}：
+\[
+\begin{bmatrix}\cos(\alpha+\beta+\gamma) & \sin(\alpha+\beta+\gamma) & l\cos(\beta+\gamma)\end{bmatrix}R(\theta)\dot{\xi}_I - r\dot{\varphi}\cos\gamma =0
+\]
+\end{formula}
+麦克纳姆轮为全向轮，当作为随动轮时可不考虑运动约束。
+
+\subsubsection{约束法合成}
+\begin{keypoint}
+给定机器人含 $M$ 个车轮，每个车轮提供 0 个或多个约束：
+\begin{itemize}
+  \item 驱动轮：同时考虑滚动和滑动约束。
+  \item 随动轮：仅考虑滑动约束（只有标准轮作为随动轮时需考虑）。
+  \item 滚动约束方程与滑动约束方程融合，可得机器人整体运动学约束。
+\end{itemize}
+\end{keypoint}
+
+\subsection{建模例题}
+
+\begin{example}[双轮差速机器人约束法建模]
+轮 $A$ 沿 $X_R$ 轴正方向，$\alpha_A=-\pi/2,\ \beta_A=\pi$；轮 $B$ 沿 $X_R$ 轴正方向，$\alpha_B=\pi/2,\ \beta_B=0$。
+
+\textbf{滚动约束}（代入公式）：
+\[
+\begin{cases}
+\text{轮}A:\ [-1,\ 0,\ 0]\,R(\theta)\dot{\xi}_I = r\dot{\varphi}_A\\
+\text{轮}B:\ [1,\ 0,\ 0]\,R(\theta)\dot{\xi}_I = r\dot{\varphi}_B
+\end{cases}
+\]
+\textbf{滑动约束}（两轮共线，仅一个独立约束）：
+\[
+[0,\ 1,\ 0]\,R(\theta)\dot{\xi}_I = 0\ \Longrightarrow\ \dot{y}_R=0
+\]
+联立解得：$v=\frac{r(\dot{\varphi}_A+\dot{\varphi}_B)}{2},\ \omega=\frac{r(\dot{\varphi}_B-\dot{\varphi}_A)}{2l}$。
+\end{example}
+
+\begin{example}[叉车式机器人（两种方法对比）]
+叉车有 3 个轮子：2 个随动固定标准轮（轮 $A$、轮 $B$，$L_1=1$），1 个主动转向标准轮（轮 $P$，$L_2=2$，$\beta_0=\pi/2$，$\beta$ 为舵机转角）。
+
+\textbf{ICR 法}：由随动轮滑动约束得 $\dot{y}_R=0$，ICR 在 $y_R$ 轴上。$R=L_2/\cos\beta$，解得：
+\[
+\dot{\theta}_R=-\frac{r\dot{\varphi}}{L_2}\cos\beta,\qquad
+\dot{\xi}_R=\dot{x}_R=r\dot{\varphi}\sin\beta
+\]
+
+\textbf{约束法}：
+\begin{itemize}
+  \item 主动轮滚动约束：$\dot{x}_R\sin\beta-\dot{y}_R\cos\beta-\dot{\theta}_R L_2\cos\beta=r\dot{\varphi}$
+  \item 主动轮滑动约束：$\dot{x}_R\cos\beta+\dot{y}_R\sin\beta+\dot{\theta}_R L_2\sin\beta=0$
+  \item 随动轮滑动约束：$\dot{y}_R=0$
+\end{itemize}
+联立解得与 ICR 法相同结果。
+\end{example}
+
+\subsection{自由度分析}
+
+\subsubsection{基本概念}
+\begin{itemize}
+  \item \textbf{移动度 $\delta_m$}（瞬时自由度）：衡量瞬时改变运行方向的能力。
+  \[
+  \delta_m = 3 - \mathrm{rank}\bigl(C_1(q)\bigr)
+  \]
+  $C_1(q)$ 的秩越大，约束越多，瞬时改变方向能力越弱。
+  \item \textbf{转向度 $\delta_s$}（附加自由度）：独立的能够转向的舵机个数，$0\le\delta_s\le 2$。
+  \item \textbf{机动度 $\delta_M$}（综合自由度）：$\delta_M=\delta_m+\delta_s$。
+\end{itemize}
+
+\begin{notebox}
+\begin{itemize}
+  \item 机动度相同的机器人，结构不一定相同。
+  \item $\delta_M=2$ 的机器人，其 ICR 必位于一条直线上。
+  \item $\delta_M=3$ 的机器人，其 ICR 可分布于空间中任意一点。
+  \item 机动度描述的是综合能力，不是瞬时能力。
+\end{itemize}
+\end{notebox}
+
+\subsubsection{五类轮式机器人}
+\begin{center}
+\begin{tabular}{c|p{3.5cm}|p{6cm}}
+\toprule
+$(\delta_m,\delta_s)$ & 名称 & 代表示例 \\
+\midrule
+(3,0) & 完整约束全方位移动机器人 & CMU 单球机器人、NKOMNI 脚轮机器人、麦克轮排渣车 \\
+(2,1) & 非完整约束全方位移动机器人 & 舵机+脚轮/瑞典轮，横向平移稳定性差 \\
+(1,2) & 非完整约束全方位移动机器人 & 深圳普智联科停车机器人 \\
+(2,0) & 非完整约束移动机器人 & KIVA 双轮差速车、先锋机器人 \\
+(1,1) & 非完整约束移动机器人 & 自动牵引车、叉车、玉兔号月球车、机遇号火星车 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ==================================================================
+% 第六章 里程计模型
+% ==================================================================
+\section{里程计模型}
+
+\begin{keypoint}
+\textbf{本章考计算题：}里程计积分 + 误差传导（通用雅可比形式）。
+\end{keypoint}
+
+\subsection{由正运动学得到里程计}
+
+里程计模型由正运动学得到，核心是对路程 $\Delta s$ 和角度 $\Delta\theta$ 做数值积分。
+\[
+\Delta s = \frac{r}{2}(\Delta\phi_R+\Delta\phi_L),\qquad
+\Delta\theta = \frac{r}{2d}(\Delta\phi_R-\Delta\phi_L)
+\]
+
+\subsection{数值积分方法}
+
+给定码盘读数 $\Delta s,\Delta\theta$（$v_k T_s=\Delta s$，$\omega_k T_s=\Delta\theta$）：
+
+\subsubsection*{1. 欧拉法}
+\[
+\begin{cases}
+x_{k+1}=x_k+\Delta s\cos\theta_k\\
+y_{k+1}=y_k+\Delta s\sin\theta_k\\
+\theta_{k+1}=\theta_k+\Delta\theta
+\end{cases}
+\]
+
+\subsubsection*{2. 解析积分法}
+\[
+\begin{cases}
+x_{k+1}=x_k+\dfrac{\Delta s}{\Delta\theta}\bigl(\sin\theta_{k+1}-\sin\theta_k\bigr)\\[0.4em]
+y_{k+1}=y_k-\dfrac{\Delta s}{\Delta\theta}\bigl(\cos\theta_{k+1}-\cos\theta_k\bigr)\\[0.4em]
+\theta_{k+1}=\theta_k+\Delta\theta
+\end{cases}
+\]
+（$\Delta\theta=0$ 时退化为直线）
+
+\subsubsection*{3. 二阶 Runge-Kutta 法（最常用）}
+\[
+\boxed{\;
+\begin{cases}
+x_{k+1}=x_k+\Delta s\cos\!\left(\theta_k+\dfrac{\Delta\theta}{2}\right)\\[0.4em]
+y_{k+1}=y_k+\Delta s\sin\!\left(\theta_k+\dfrac{\Delta\theta}{2}\right)\\[0.4em]
+\theta_{k+1}=\theta_k+\Delta\theta
+\end{cases}\;}
+\]
+
+\subsection{误差传导模型（通用雅可比形式）}
+
+\begin{keypoint}
+\textbf{核心公式（计算题重点）：}
+\[
+\boxed{\;\Sigma_{k+1}=F_p\,\Sigma_k\,F_p^{T}+F_\Delta\,\Sigma_\Delta\,F_\Delta^{T}\;}
+\]
+\begin{itemize}
+  \item $F_p=\dfrac{\partial f}{\partial p}$：运动模型对\textbf{位姿}的雅可比。
+  \item $F_\Delta=\dfrac{\partial f}{\partial \Delta}$：运动模型对\textbf{输入}（码盘读数）的雅可比。
+  \item $\Sigma_k$：当前位姿估计的协方差；$\Sigma_\Delta$：输入误差协方差。
+\end{itemize}
+\end{keypoint}
+
+\subsubsection*{输入误差建模}
+假设左右轮误差独立，方差正比于转过的距离绝对值：
+\[
+\Sigma_\Delta=\mathrm{covar}(\Delta\phi_R,\Delta\phi_L)=
+\begin{bmatrix}k_r|\Delta\phi_R| & 0\\ 0 & k_l|\Delta\phi_L|\end{bmatrix}
+\]
+
+\subsubsection*{雅可比矩阵（二阶 RK 法下）}
+运动模型 $p_{k+1}=f(p_k,\Delta_k)$，其中 $p_k=(x_k,y_k,\theta_k)^T$，$\Delta_k=(\Delta\phi_R,\Delta\phi_L)^T$。
+
+\textbf{位姿雅可比 $F_p$}：
+\[
+F_p=\frac{\partial f}{\partial p}=
+\begin{bmatrix}
+1 & 0 & -\Delta s\sin\!\left(\theta_k+\dfrac{\Delta\theta}{2}\right)\\[0.3em]
+0 & 1 & \Delta s\cos\!\left(\theta_k+\dfrac{\Delta\theta}{2}\right)\\[0.3em]
+0 & 0 & 1
+\end{bmatrix}
+\]
+
+\textbf{输入雅可比 $F_\Delta$}：
+\[
+F_\Delta=\frac{\partial f}{\partial \Delta}=
+\begin{bmatrix}
+\dfrac{\partial x}{\partial \Delta\phi_R} & \dfrac{\partial x}{\partial \Delta\phi_L}\\[0.4em]
+\dfrac{\partial y}{\partial \Delta\phi_R} & \dfrac{\partial y}{\partial \Delta\phi_L}\\[0.4em]
+\dfrac{\partial \theta}{\partial \Delta\phi_R} & \dfrac{\partial \theta}{\partial \Delta\phi_L}
+\end{bmatrix}
+\]
+其中利用 $\Delta s=\frac{r}{2}(\Delta\phi_R+\Delta\phi_L)$，$\Delta\theta=\frac{r}{2d}(\Delta\phi_R-\Delta\phi_L)$ 求偏导。
+
+\subsubsection*{误差传导特性}
+\begin{itemize}
+  \item 直线运动：垂直于运动方向的误差增长快于运动方向。
+  \item 曲线运动：误差椭圆不再保持垂直于运动方向。
+  \item 系统误差标定：单向/双向正方形路径实验。
+\end{itemize}
+
+% ==================================================================
+% 第七章 最小二乘与点云到直线特征（对应 PDF：第五章感知2-激光传感器定位原理）
+% ==================================================================
+\section{最小二乘与点云到直线特征}
+
+\begin{keypoint}
+本章对应 PDF\,《激光传感器定位原理》，包含最小二乘法与从点云提取直线特征两部分。
+\end{keypoint}
+
+\subsection{最小二乘}
+
+\begin{notebox}
+最小二乘法假设最佳拟合曲线使给定数据集的偏差平方和最小。\textbf{本课程不要求重点掌握}。
+\end{notebox}
+
+\subsubsection*{数学表达}
+设数据点 $(x_i,y_i)$，拟合曲线 $f(x)$，偏差 $d_i=y_i-f(x_i)$：
+\[
+\Pi=\sum_{i=1}^n d_i^2=\sum_{i=1}^n\bigl[y_i-f(x_i)\bigr]^2=\min
+\]
+
+\subsubsection*{矩阵形式与最优解}
+回归模型 $Y=X\beta+\epsilon$，残差平方和 $S(\beta)=(Y-X\beta)^T(Y-X\beta)$：
+\[
+\beta=(X^TX)^{-1}X^TY
+\]
+
+\subsection{2D 点云到直线特征}
+
+\subsubsection*{动机}
+数据压缩、信息丰富、高级特征基础、环境适应性（直线段适用于办公室类环境）。
+
+\subsubsection*{三个主要问题}
+\begin{enumerate}
+  \item 有多少条线？
+  \item 分割：哪些点属于哪条线？
+  \item 直线拟合：给定属于一条线的点，如何估计直线参数？
+\end{enumerate}
+
+\subsubsection*{常用算法}
+\begin{itemize}
+  \item \textbf{Split-and-merge}（分割与合并）：递归拟合与分割，$O(N\log N)$，确定性强。
+  \item \textbf{Linear regression}（线性回归）：滑动窗口拟合。
+  \item \textbf{RANSAC}（随机采样一致性）：\textbf{重点}，鲁棒，适用于存在离群点的情况。
+  \item \textbf{Hough-Transform}（霍夫变换）：点对参数空间投票。
+\end{itemize}
+
+\subsubsection*{RANSAC 算法步骤}
+\begin{enumerate}
+  \item 随机选取 2 个点作为样本。
+  \item 计算拟合该样本的模型参数。
+  \item 计算每个数据点的误差。
+  \item 选择支持当前假设的数据（内点）。
+  \item 重复采样，取 $k$ 次迭代后内点数最多的集合。
+\end{enumerate}
+
+\subsubsection*{RANSAC 迭代次数}
+设 $w$ 为内点比例，$p$ 为选取无离群点最小集合的概率：
+\[
+\boxed{\;k=\frac{\log(1-p)}{\log(1-w^2)}\;}
+\]
+\begin{notebox}
+迭代次数 $k$ 与点数 $N$ \textbf{无关}，仅与内点比例 $w$ 有关。例：$p=99\%,w=50\%$ 时 $k=16$ 次。
+\end{notebox}
+
+\subsubsection*{霍夫变换}
+\begin{itemize}
+  \item 图像空间一条直线对应 Hough 空间一个点。
+  \item 图像空间一点映射到 Hough 空间一条曲线（极坐标下为正弦曲线）。
+  \item 极坐标表示：$\rho = x\cos\theta + y\sin\theta$。
+\end{itemize}
+
+\subsubsection*{算法比较}
+\begin{center}
+\begin{tabular}{l|c|c|c|c}
+\toprule
+方法 & 复杂度 & 速度 (Hz) & 误检率 & 精度 \\
+\midrule
+Split-and-Merge & $N\log N$ & 1500 & 10\% & +++ \\
+Incremental & $SN$ & 600 & 6\% & +++ \\
+Line-Regression & $NN_f$ & 400 & 10\% & +++ \\
+RANSAC & $SNk$ & 30 & 30\% & ++++ \\
+Hough-Transform & $SNN_C+SNRN_C$ & 10 & 30\% & ++++ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{加权最小二乘直线拟合}
+每个传感器测量具有不确定性 $\sigma^2$，加权平方误差：
+\[
+S=\sum_i w_i d_i^2 = \sum_i w_i\bigl(\rho_i\cos(\theta_i-\alpha)-r\bigr)^2,\quad
+w_i=\frac{1}{\sigma_i^2}
+\]
+点到直线距离 $d_i=\rho_i\cos(\theta_i-\alpha)-r$。
+
+% ==================================================================
+% 第八章 SVD 与 ICP 点云配准（对应 PDF：第五章感知3-SVD 算法与 ICP 算法）
+% ==================================================================
+\section{SVD 与 ICP 点云配准}
+
+\begin{keypoint}
+本章对应 PDF\,《SVD 算法与 ICP 算法》。\textbf{需要掌握} SVD 的分解思想与算法步骤。SVD 要会写，ICP 也要会写，但\textbf{不考推导}。
+\end{keypoint}
+
+\subsection{SVD（奇异值分解）用于点云配准}
+
+\subsubsection*{问题描述}
+给定两个对应点集 $P=\{p_1,\dots,p_n\}$，$Q=\{q_1,\dots,q_n\}$，求刚体变换 $(R,t)$：
+\[
+(R,t)=\arg\min_{R,t}\sum_{i=1}^n w_i\bigl\|(Rp_i+t)-q_i\bigr\|^2
+\]
+
+\subsubsection*{SVD 求解步骤}
+\begin{enumerate}
+  \item \textbf{加权平均}：$\hat{p}=\frac{\sum w_i p_i}{\sum w_i}$，$\hat{q}=\frac{\sum w_i q_i}{\sum w_i}$，其中 $w_i=1/\sigma_i(\rho_i)$。
+  \item \textbf{去中心化}：$x_i:=p_i-\hat{p}$，$y_i:=q_i-\hat{q}$。
+  \item \textbf{构造 SVD 矩阵}：$W=\mathrm{diag}(w_1,\dots,w_n)$，$S=XWY^T=U\Sigma V^T$。
+  \item \textbf{求旋转矩阵}：$R=VU^T$。
+  \item \textbf{求平移矩阵}：$t=\hat{q}-R\hat{p}$。
+\end{enumerate}
+
+\subsection{ICP 算法}
+
+\begin{keypoint}
+ICP（Iterative Closest Point）用于在\textbf{数据关联未知}的情况下，估计两组点云之间的位姿变换。要会流程、流程图与匹配过程。
+\end{keypoint}
+
+\subsubsection*{基本流程}
+\begin{enumerate}
+  \item \textbf{计算最近点集}：对源点云 $P$ 中每个点 $p_i$，在目标点云 $X$ 中找最近点 $y_i$。
+  \item \textbf{计算变换矩阵}：用 SVD 求解 $(R,t)$。
+  \item \textbf{更新变换矩阵}：应用变换到源点云。
+  \item \textbf{计算目标函数并进行阈值判断}：若未收敛则迭代。
+\end{enumerate}
+
+\subsubsection*{最近点集定义}
+\[
+d(\vec{p}_i,X)=\min_{\vec{x}\in X}\|\vec{x}-\vec{p}_i\|,\qquad
+Y=C(P,X)=\bigl\{(\vec{p}_i,\vec{y}_i)\mid d(\vec{p}_i,\vec{y}_i)=d(\vec{p}_i,X)\bigr\}
+\]
+
+\subsubsection*{点云采样（数据预处理）}
+\begin{itemize}
+  \item \textbf{目的}：减少计算量、降低噪声干扰、避免冗余与局部过拟合、加速迭代收敛。
+  \item \textbf{常见方法}：均匀采样、随机采样、法向量空间采样、基于特征的采样、体素网格采样。
+\end{itemize}
+
+\subsubsection*{点集匹配方法}
+\begin{itemize}
+  \item \textbf{Closest Point Matching}：稳定但慢，需预处理。
+  \item \textbf{Normal Shooting Matching}：沿法线方向投影求交；对平滑结构略优。
+  \item \textbf{Point-to-Plane Matching}：求源曲面点到目标曲面切平面的垂足。
+  \item \textbf{Projection Matching}：沿投影线求交；速度快 $1\sim2$ 个数量级。
+\end{itemize}
+
+\subsubsection*{Point-to-Point 与 Point-to-Distribution}
+\begin{itemize}
+  \item Point-to-Point 采用欧氏距离：$\hat{R}=\arg\max_R \sum w_i\|(Rp_i+t)-q_i\|^2$。
+  \item Point-to-Distribution 采用马氏距离：
+  \[
+  \hat{T}=\arg\max_T\sum_{i=1}^n d_i^\top(\Sigma_b+T\Sigma_a T^\top)^{-1}d_i
+  \]
+\end{itemize}
+
+\begin{notebox}
+\textbf{ICP 总结：}
+\begin{itemize}
+  \item ICP 是计算不同扫描结果之间位移关系的强大算法。
+  \item 主要难点在于正确确定数据关联关系。
+  \item 一旦数据关联正确，变换矩阵可通过 SVD 高效求解。
+\end{itemize}
+\end{notebox}
+
+% ==================================================================
+% 第八章 卡尔曼滤波
+% ==================================================================
+\section{卡尔曼滤波}
+
+\begin{keypoint}
+\textbf{不考推导与公式。}核心思想：测量能看到的和实际看到的存在偏差；根据先验误差与观测误差确定增益 $K$。先验误差越大，通常取较大的 $K$。
+\end{keypoint}
+
+\subsection{相关概念}
+
+\begin{itemize}
+  \item \textbf{先验状态估计} $\hat{x}^-_k$：基于过程转移方程和第 $k$ 步之前的状态得出。
+  \item \textbf{先验估计误差}：$e^-_k \equiv x_k - \hat{x}^-_k$，协方差 $P^-_k = E[e^-_k e^{-T}_k]$。
+  \item \textbf{后验状态估计} $\hat{x}_k$：结合测量值 $z_k$ 和先验估计。
+  \item \textbf{后验估计误差}：$e_k \equiv x_k - \hat{x}_k$，协方差 $P_k = E[e_k e^T_k]$。
+\end{itemize}
+
+\subsection{卡尔曼增益}
+
+后验状态估计为先验估计与测量新息的加权线性组合：
+\[
+\hat{x}_k=\hat{x}^-_k + K\bigl(z_k-H\hat{x}^-_k\bigr)
+\]
+目标函数 $\arg\min_K P_k$，对 $K$ 求导令其为零：
+\[
+\boxed{\;K=P^-_k H^T\bigl(HP^-_k H^T+R\bigr)^{-1}\;}
+\]
+
+\begin{notebox}
+\textbf{极限情况：}
+\begin{itemize}
+  \item $R\to 0$ 时，$K\to H^{-1}$（完全相信测量）。
+  \item $P^-_k\to 0$ 时，$K\to 0$（完全相信先验）。
+\end{itemize}
+\end{notebox}
+
+\subsection{算法流程（Predict $\to$ Correct）}
+
+\subsubsection*{Predict（预测步）}
+\[
+\bar{x}^-_k=A\bar{x}_{k-1},\qquad P^-_k=AP_{k-1}A^T+Q
+\]
+
+\subsubsection*{Correct（修正步）}
+\[
+K=P^-_k H^T\bigl(HP^-_k H^T+R\bigr)^{-1}
+\]
+\[
+\bar{x}_k=\bar{x}^-_k+K\bigl(\bar{z}_k-H\bar{x}^-_k\bigr),\qquad
+P_k=(I-KH)P^-_{k-1}
+\]
+
+\subsection{机器人定位中的应用}
+
+\begin{itemize}
+  \item \textbf{Action update}：通过本体感受传感器估计位置，不确定性\textbf{增长}。
+  \item \textbf{Perception update}：使用外感受传感器观测，不确定性\textbf{缩小}。
+\end{itemize}
+
+\begin{notebox}
+\textbf{基于卡尔曼滤波定位算法总结：}
+\begin{itemize}
+  \item 仅能处理\textbf{位置跟踪}问题，无法进行全局定位。
+  \item 可融合里程计与激光（精度可达 5mm），但严重依赖匹配精度。
+  \item 匹配错误则定位失败，且无法判断失败、无法从失败中恢复。
+  \item 收敛速度受初始状态误差与协方差阵精度影响较大。
+\end{itemize}
+\end{notebox}
+
+% ==================================================================
+% 第九章 蒙特卡洛定位 (MCL)
+% ==================================================================
+\section{蒙特卡洛定位算法（MCL）}
+
+\subsection{蒙特卡洛方法基本思想}
+
+\begin{keypoint}
+\begin{itemize}
+  \item \textbf{工作原理}：不断抽样 $\to$ 逐渐逼近。
+  \item \textbf{优点}：非常通用，可解决十分复杂的问题。
+  \item \textbf{缺点}：收敛速度慢，不精确。
+  \item \textbf{应用实例}：蒙特卡洛搜索树——AlphaGo。
+\end{itemize}
+\end{keypoint}
+
+\subsection{粒子滤波核心思想}
+
+任意概率分布都可以通过样本（粒子 Particle）分布来描述。某一区间样本越多，对应发生概率越高。可有效处理非高斯分布以及各种复杂分布。
+
+\subsubsection*{未知概率分布求取粒子分布——基于重要性的重采样}
+\begin{formula}
+核心思想：使用提议分布 $g$（proposal）生成来自目标分布 $f$（target）的样本。重要性权重 $w=f/g$。
+
+\textbf{重采样步骤：}
+\begin{enumerate}
+  \item \textbf{重要性评估}：计算重要性指标 $\omega=f/g$。
+  \item \textbf{权重归一化}：$\bar{\omega}_i=\frac{\bar{\omega}_i^{fg}}{\sum_{i=1}^N \bar{\omega}_i^{fg}}$。
+  \item \textbf{重采样}：利用更新后的概率分布进行重采样，得到新的粒子集。
+\end{enumerate}
+\end{formula}
+
+\subsection{蒙特卡洛定位算法 (MCL)}
+
+\subsubsection*{目标与输入输出}
+\begin{itemize}
+  \item \textbf{目标}：给定环境地图，确定机器人在环境中的位姿。
+  \item \textbf{输入}：上一时刻信念 $X_{t-1}$、执行指令 $u_t$、传感器数据 $z_t$。
+  \item \textbf{输出}：新的信念 $X_t$。
+\end{itemize}
+
+\subsubsection*{算法流程}
+\begin{enumerate}
+  \item \textbf{初始化}：从 $X_{t-1}$ 的分布开始。
+  \item \textbf{预测步}：基于运动模型更新并采样。
+  \item \textbf{修正步}：通过传感器模型计算权重（重要性评估）。
+  \item \textbf{重采样}：基于归一化权重进行重采样（幸运转盘）。
+  \item \textbf{输出}：获得 $X_t$ 的分布。
+\end{enumerate}
+
+\subsection{激光雷达观测模型}
+
+\subsubsection*{物理模型（基于光束的物理反射特性）}
+\begin{itemize}
+  \item 测量误差包含随机噪声，一般服从高斯分布。
+  \item 没有检测到障碍物时返回最大测距距离。
+  \item 随机错误时返回错误的距离值。
+\end{itemize}
+
+\subsubsection*{Likelihood Field（似然场）}
+\begin{itemize}
+  \item 将激光束末端投影到地图中。
+  \item 计算投影点距离地图上最近障碍物点的距离。
+  \item 以最近障碍物点为均值，激光测距偏差为方差构建高斯分布。
+\end{itemize}
+\begin{notebox}
+\textbf{似然场优点：}在线计算量小、平滑性好可确保算法收敛、更加符合实际情况。\\
+\textbf{似然场缺点：}没有明确的物理意义；仅适用于相对静态的环境。
+\end{notebox}
+
+\subsection{MCL 算法总结}
+
+\begin{notebox}
+\textbf{优点：}
+\begin{itemize}
+  \item 可解决大范围全局定位问题。
+  \item 可适用于多种分布模型。
+  \item 计算简单。
+\end{itemize}
+\textbf{缺点：}
+\begin{itemize}
+  \item 粒子数量过大时占用大量内存，计算效率低。
+  \item 位置确定后大量粒子冗余；但大地图下少量粒子又易导致发散。
+  \item 无法判断机器人绑架问题（定位错误问题）。
+\end{itemize}
+\end{notebox}
+
+\subsection{自适应蒙特卡洛定位算法（AMCL）}
+
+\begin{keypoint}
+\textbf{自适应体现}（核心思想是长程滤波器与短程滤波器）：
+\begin{itemize}
+  \item 解决机器人绑架问题：当粒子平均分数突然降低时，在全局重新撒入随机粒子。
+  \item 解决粒子数固定问题：当粒子集中时（定位已收敛），减少粒子数量以提高效率。
+\end{itemize}
+\end{keypoint}
+
+\subsubsection*{KLD 采样}
+采用 KLD（Kullback-Leibler Divergence）确定粒子数量。
+\begin{itemize}
+  \item 核心思想：根据基于采样近似质量的统计界限确定粒子数量。以概率 $1-\sigma$ 确保真实后验概率与采样近似分布之间差异小于 $\varepsilon$。
+  \item 实际应用：在栅格地图中统计粒子占据的栅格数。占据栅格多（粒子分散），允许粒子数上限高；占据栅格少（粒子集中），降低上限。
+\end{itemize}
+
+\subsubsection*{AMCL 权重评估机制}
+\begin{itemize}
+  \item 引入长期指数滤波器衰减率 $\alpha_{slow}$ 和短期指数滤波器衰减率 $\alpha_{fast}$（ROS 默认取 0.001 和 0.1）。
+  \item \textbf{机器人绑架/定位错误}：粒子平均权重 $w_{avg}$ 下降，导致 $w_{slow}>w_{fast}$，按一定概率注入随机粒子。
+  \item \textbf{粒子聚集/定位成功}：$w_{slow}<w_{fast}$，不再添加随机粒子，筛选权重较大的粒子。
+\end{itemize}
+
+% ==================================================================
+% 第十一章 建图算法与 SLAM（对应 PDF：第五章感知6-机器人地图构建）
+% ==================================================================
+\section{建图算法与 SLAM}
+
+\begin{keypoint}
+\textbf{本章重点考简答，详细介绍每个算法的原理核心思想、步骤、优缺点。}Graph-SLAM 保留例题，考\textbf{计算题}。
+\end{keypoint}
+
+\subsection{地图表示方法}
+
+\begin{center}
+\begin{tabular}{p{2.5cm}|p{5cm}|p{5.5cm}}
+\toprule
+类型 & 特点 & 应用/备注 \\
+\midrule
+点云地图 & 完全表示环境三维信息；不需预定义尺寸 & 存储要求高；存在检测盲区和空洞；通用性差 \\
+栅格地图 & 离散栅格，每个栅格有占用属性值；定位用 $0\sim1$ 概率，导航用 $0/1$ & 用二元贝叶斯滤波求解；几率对数形式 $l=\log\dfrac{p}{1-p}$ \\
+2.5 维占用栅格 & 在栅格上增加障碍物高度属性 & 典型应用：NASA 火星车；可能存在虚拟障碍物问题 \\
+三维占用栅格（Voxel） & 空间分解为大小相同的正方体 & 原理简单，扩展性强；占用大量存储空间 \\
+多分辨率地图 & 常采用八叉树表示 & 存储效率高 \\
+特征地图 & 连续线性/多边形地图 & 空间占用效率高；定位精度高 \\
+拓扑地图 & 节点表示重要位置点，边表示连接关系 & 难以用于精确定位，但便于导航和路径规划 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{栅格地图构建——二元贝叶斯滤波}
+几率对数形式（$l=\log\frac{p}{1-p}$），每次激光测量独立：
+\[
+l_{i,n}=\log\frac{p(m_i|s_n)}{p(\bar{m}_i|s_n)}+l_0+l_{i,n-1}
+\]
+若栅格占用情况未知，$p=0.5\Rightarrow l_0=0$。
+
+\subsection{SLAM 基本思想}
+
+\begin{itemize}
+  \item \textbf{定位}：根据环境地图和机器人运动/观测序列，确定机器人在地图中的位置和姿态（前提：地图已知）。
+  \item \textbf{建图}：根据观测序列和机器人位姿，确定环境信息（前提：机器人位姿已知）。
+  \item \textbf{SLAM}：同时估计机器人位置和姿态以及环境地图。"先有鸡还是先有蛋"问题。
+  \item \textbf{数据关联是 SLAM 实现收敛的关键}，错误匹配会使算法发散。
+  \item \textbf{闭环检测}：机器人回到以前到过的地方，与之前观测建立正确数据关联，可有效降低估计不确定性。
+\end{itemize}
+
+\subsubsection*{SLAM 算法分类}
+\begin{itemize}
+  \item \textbf{基于滤波}：EKF-SLAM（卡尔曼滤波）、FastSLAM（粒子滤波）——GMAPPING。
+  \item \textbf{基于优化}：基于图优化的 SLAM——g2o，目前主流。
+\end{itemize}
+
+\subsection{EKF-SLAM}
+
+\subsubsection*{原理核心思想}
+\begin{keypoint}
+\begin{itemize}
+  \item 第一个 SLAM 算法（1986 年），面向\textbf{特征地图}（路标特征地图）。
+  \item 采用\textbf{最大似然}（maximum likelihood）进行数据关联。
+  \item 假设特征彼此清晰可分，运动和观测噪声满足\textbf{高斯分布}。
+  \item 以机器人初始位姿为地图坐标系原点。
+  \item 与 EKF 机器人定位类似，但维度大大增加：待估计状态 $x_t\in\mathbb{R}^{3+2N}$。
+\end{itemize}
+\end{keypoint}
+
+\subsubsection*{状态向量与协方差矩阵}
+\[
+x_t=\begin{bmatrix}X_R\\ M_1\\ M_2\\ \vdots\\ M_n\end{bmatrix},\qquad
+\Sigma_t=\begin{bmatrix}
+\Sigma_{X_R} & \Sigma_{X_R m_1} & \dots & \Sigma_{X_R m_n}\\
+\Sigma_{m_1 X_R} & \Sigma_{m_1} & \dots & \Sigma_{m_1 m_n}\\
+\vdots & \vdots & \ddots & \vdots\\
+\Sigma_{m_n X_R} & \Sigma_{m_n m_1} & \dots & \Sigma_{m_n}
+\end{bmatrix}
+\]
+
+\subsubsection*{算法步骤}
+\begin{enumerate}
+  \item \textbf{State Prediction}（状态预测）：基于运动模型进行状态估计。
+  \item \textbf{Measurement Prediction}（观测预测）：基于观测模型进行观测预测。
+  \item \textbf{Observation}（观测）：获得本次观测。
+  \item \textbf{Data Association}（数据关联）：建立预估观测与本次观测的数据关联。
+  \item \textbf{Update}（更新）：利用 Kalman 增益进行状态更新。
+  \item \textbf{Integration of new landmark}（新路标加入）：在地图中加入新的路标。
+\end{enumerate}
+
+\subsubsection*{优缺点}
+\begin{notebox}
+\textbf{优点：}多变量高斯函数表达机器人位姿和路标估计；高斯协方差矩阵体现高度互相关性。
+
+\textbf{EKF 致命缺点：}
+\begin{itemize}
+  \item \textbf{计算复杂度高}（quadratic complexity）：协方差矩阵 $(2N+3)\times(2N+3)$，观测到一个路标整个协方差矩阵被更新，大场景难以满足实时性。
+  \item \textbf{数据关联}（single-hypothesis）：单假设数据关联，即使小部分错误关联也会导致算法发散。
+  \item 仅适用于人工路标情况；只能用点云/特征地图，无法使用栅格地图。
+\end{itemize}
+\end{notebox}
+
+\subsection{FastSLAM}
+
+\subsubsection*{原理核心思想}
+\begin{keypoint}
+\begin{itemize}
+  \item Montemerlo 等人提出（2003 年），是\textbf{粒子滤波器与 EKF 的集成}。
+  \item \textbf{机器人路径估计}：用改进的粒子滤波器估计机器人路径的后验分布，每个粒子代表一条可能运动路径。
+  \item \textbf{路标估计}：路标用 EKF 估计，每个粒子拥有 $N$ 个 EKF（2 维）。
+  \item \textbf{条件独立性}：在机器人路径已知的情况下，路标位置的估计相对独立。
+\end{itemize}
+\end{keypoint}
+
+\subsubsection*{Rao-Blackwell 定理（RBPF 降维）}
+利用变量间依赖关系进行因式分解，将 SLAM 后验概率分解：
+\[
+p(x_{0:t},l_{1:M}\mid z_{1:t},u_{1:t})
+=\underbrace{p(x_{0:t}\mid z_{1:t},u_{1:t})}_{\text{粒子滤波（路径）}}
+\prod_{i=1}^M \underbrace{p(l_i\mid x_{0:t},z_{1:t},u_{1:t})}_{\text{2 维 EKF（路标）}}
+\]
+\begin{itemize}
+  \item 粒子维度从 $3t+2N$ 维降至 3 维（机器人位姿）。
+  \item 每个粒子维护 $M$ 个独立的 2 维 EKF。
+\end{itemize}
+
+\subsubsection*{算法步骤}
+\begin{enumerate}
+  \item \textbf{运动更新}：基于采样（粒子）的机器人位姿表示，每个粒子作为一条完整路径假设。
+  \item \textbf{数据关联与观测更新}：观测特征与地图特征匹配（多假设分析）。
+  \item \textbf{基于 EKF 的地图更新}：每个粒子用 EKF 更新路标位置。
+  \item \textbf{基于观测的权重计算}：根据卡尔曼滤波的估计方差对粒子重要性进行评估。
+  \item \textbf{基于权重的重采样}。
+\end{enumerate}
+
+\subsubsection*{优缺点}
+\begin{notebox}
+\textbf{优点：}
+\begin{itemize}
+  \item 利用 RBPF 降维，提升算法效率。
+  \item 基于随机采样的数据关联具有更高的鲁棒性（相较于 EKF 最重要的优势）。
+  \item 利用多假设分析可在数据关联时忽略机器人位姿误差的影响。
+  \item 应用实例：GMAPPING。
+\end{itemize}
+\textbf{缺点：}粒子数量选取影响内存利用率；粒子枯竭会导致定位与建图错误。
+\end{notebox}
+
+\subsection{Graph-SLAM（重点，考计算题）}
+
+\subsubsection*{原理核心思想}
+\begin{keypoint}
+\begin{itemize}
+  \item 基于\textbf{优化思想}，利用图论描述 SLAM 问题。
+  \item \textbf{节点}：机器人位姿 $x_i=(x,y,\theta)$；或特征/路标 $m_i=(x,y)$。
+    \begin{itemize}
+      \item 仅含位姿节点：\textbf{Pose Graph}。
+      \item 含特征节点：\textbf{Pose-feature Graph}。
+    \end{itemize}
+  \item \textbf{边}：节点间的空间约束（里程计测量、观测/虚拟测量）。
+  \item \textbf{信息矩阵 $\Omega_{ij}$}：描述两节点间约束的不确定性。值越大，节点相关性越高，优化中越应重视。
+  \item 图优化 SLAM：构建图（前端），寻求最优节点构型使得约束误差最小（后端优化）。
+\end{itemize}
+\end{keypoint}
+
+\subsubsection*{算法构成}
+\begin{itemize}
+  \item \textbf{前端（图的构建）}：构建节点与边。
+  \item \textbf{后端（图优化）}：基于构建的图和约束关系，修正节点位姿以最大程度满足空间约束。
+\end{itemize}
+
+\subsubsection*{后端优化目标函数}
+\[
+\vec{x}^*=\arg\min_{\vec{x}}\sum_{ij}\vec{e}_{ij}^T\Omega_{ij}\vec{e}_{ij}
+\]
+\begin{itemize}
+  \item Pose Graph 误差：$e_{ij}(\vec{x}_i,\vec{x}_j)=t2v\bigl(Z_{ij}^{-1}(X_i^{-1}X_j)\bigr)$。
+  \item Pose-feature Graph 误差：$e_{ij}(z_i,\vec{x}_j)=\hat{z}_{ij}-z_{ij}=R_j^{-1}(z_i-t_j)-z_{ij}$。
+\end{itemize}
+
+\subsubsection*{高斯-牛顿法求解}
+对误差函数在当前估计处泰勒展开：$e_k(\tilde{x}_k+\Delta x)\approx e_k+J_k\Delta x$：
+\[
+\vec{b}=\sum_k J_k^T\Omega_k\vec{e}_k,\qquad
+H=\sum_k J_k^T\Omega_k J_k
+\]
+\[
+\boxed{\;\Delta\vec{x}=-H^{-1}\vec{b}\;}
+\]
+
+\subsubsection*{稀疏性}
+\begin{itemize}
+  \item $H$ 矩阵为\textbf{稀疏矩阵}，对边 $x_ix_j$ 的约束仅影响 $H$ 的 $(i,i),(i,j),(j,i),(j,j)$ 处数据块。
+  \item 可利用稀疏矩阵求解算法：Sparse Cholesky decomposition、Conjugate gradients（共轭梯度法）。
+\end{itemize}
+
+\subsubsection*{$H_k$ 非满秩时的处理}
+\begin{itemize}
+  \item \textbf{增加约束}：固定一个节点（一般固定 $\vec{x}_i$）。
+  \item \textbf{Simplified Levenberg-Marquardt}：$(H_k+\lambda I)\Delta\vec{x}=-\vec{b}_k$。
+\end{itemize}
+
+\subsubsection*{优缺点}
+\begin{notebox}
+\textbf{优点：}
+\begin{itemize}
+  \item 仅将实际发生关联的约束构建连接进行优化，效率大大提升。
+  \item 优化思想取代概率思想，算法容易理解、便于计算。
+  \item 常用库：g2o、Karto、Carter。
+\end{itemize}
+\end{notebox}
+
+\subsubsection*{例题 1：Pose Graph（计算题）}
+
+\begin{example}
+机器人初始起点 $x_0=0$，向前移动编码器测得移动 $1\,\mathrm{m}$ 到达 $x_1$，又向后返回编码器测得移动 $-0.8\,\mathrm{m}$ 到达 $x_2$。通过闭环检测发现回到原始起点（$x_2\to x_0$ 虚拟测量为 $0$）。求机器人位姿最优状态。
+
+\textbf{节点}：$x_0,x_1,x_2$。\quad \textbf{边}：$(x_0x_1)\to 1,\ (x_1x_2)\to -0.8,\ (x_2x_0)\to 0,\ x_0\to 0$。
+
+\textbf{定义误差函数}：
+\[
+f_1=x_0,\quad f_2=x_1-x_0-1,\quad f_3=x_2-x_1+0.8,\quad f_4=x_2-x_0
+\]
+
+\textbf{目标函数}：
+\[
+c=\sum_{i=1}^4 f_i^2=x_0^2+(x_1-x_0-1)^2+(x_2-x_1+0.8)^2+(x_2-x_0)^2
+\]
+
+\textbf{对各变量求偏导令其为零}：
+\[
+\begin{bmatrix}3 & -1 & -1\\ -1 & 2 & -1\\ -1 & -1 & 2\end{bmatrix}
+\begin{bmatrix}x_0\\ x_1\\ x_2\end{bmatrix}
+=
+\begin{bmatrix}1.0\\ 1.8\\ -0.8\end{bmatrix}
+\]
+
+\textbf{求解}：
+\[
+\mu=\begin{bmatrix}0\\ 0.93\\ 0.07\end{bmatrix}
+\]
+即 $x_0=0,\ x_1=0.93\,\mathrm{m},\ x_2=0.07\,\mathrm{m}$。
+\end{example}
+
+\subsubsection*{例题 2：Pose Feature Graph（计算题）}
+
+\begin{example}
+机器人初始起点 $x_0=0$，观测到正前方 $2\,\mathrm{m}$ 处有路标 $l_0$。向前移动编码器测得移动 $1\,\mathrm{m}$ 到 $x_1$，观测到路标在前方 $0.8\,\mathrm{m}$。求机器人位姿和路标位姿最优状态。
+
+\textbf{节点}：$x_0,x_1,l_0$。\quad \textbf{边}：$(x_0l_0)\to 2,\ (x_0x_1)\to 1,\ (x_1l_0)\to 0.8,\ x_0\to 0$。
+
+\textbf{误差函数}：
+\[
+f_1=l_0-x_0-2,\quad f_2=x_1-x_0-1,\quad f_3=l_0-x_1-0.8,\quad f_4=x_0
+\]
+
+\textbf{目标函数}：
+\[
+c=(l_0-x_0-2)^2+(x_1-x_0-1)^2+(l_0-x_1-0.8)^2+x_0^2
+\]
+
+\textbf{求偏导令其为零}：
+\[
+\begin{bmatrix}3 & -1 & -1\\ -1 & 2 & -1\\ -1 & -1 & 2\end{bmatrix}
+\begin{bmatrix}x_0\\ x_1\\ l_0\end{bmatrix}
+=
+\begin{bmatrix}3.0\\ 0.2\\ 2.8\end{bmatrix}
+\]
+
+\textbf{求解}：
+\[
+\mu=\begin{bmatrix}0\\ 1.07\\ 1.93\end{bmatrix}
+\]
+即 $x_0=0,\ x_1=1.07\,\mathrm{m},\ l_0=1.93\,\mathrm{m}$。
+\end{example}
+
+\subsubsection*{例题 3：带信息矩阵的优化（计算题）}
+
+\begin{example}
+机器人初始起点 $x_0=0$，向前移动编码器测得移动 $0.8\,\mathrm{m}$ 到 $x_1$。此时观测到与初始状态相同的环境信息，虚拟测量 $z_{12}=1$，方差为 $0.4$。求机器人位姿最优状态。
+
+\textbf{信息矩阵}：$\Omega_{12}=1/0.4=2.5$。
+
+\textbf{计算误差}：$e_{12}=z_{12}-(x_1-x_0)=1-0.8=0.2$。
+
+\textbf{计算雅可比}：$J_{12}=\begin{bmatrix}1\\ -1\end{bmatrix}$（对 $x_0,x_1$）。
+
+\textbf{更新系数矩阵}：
+\[
+H_{12}=J_{12}^T\Omega_{12}J_{12}=2.5\begin{bmatrix}1 & -1\\ -1 & 1\end{bmatrix},\quad
+b_{12}=e_{12}\Omega_{12}J_{12}=\begin{bmatrix}0.5\\ -0.5\end{bmatrix}
+\]
+
+\textbf{固定 $x_0$ 增加约束}（$H$ 非满秩）：
+\[
+H=H_{12}+\begin{bmatrix}1 & 0\\ 0 & 0\end{bmatrix}=\begin{bmatrix}3.5 & -2.5\\ -2.5 & 2.5\end{bmatrix}
+\]
+
+\textbf{求解}：
+\[
+\Delta x=-H^{-1}b=\begin{bmatrix}0\\ 0.2\end{bmatrix},\quad
+x_{\text{new}}=\begin{bmatrix}0\\ 0.8\end{bmatrix}+\begin{bmatrix}0\\ 0.2\end{bmatrix}=\begin{bmatrix}0\\ 1\end{bmatrix}
+\]
+即 $x_0=0,\ x_1=1\,\mathrm{m}$。
+\end{example}
+
+\subsection*{SLAM 算法对比总结}
+
+\begin{center}
+\begin{tabular}{p{2.5cm}|p{3.5cm}|p{3.5cm}|p{4cm}}
+\toprule
+算法 & 核心思想 & 优点 & 缺点 \\
+\midrule
+EKF-SLAM & 卡尔曼滤波，高斯假设 & 第一个 SLAM 算法，理论成熟 & 计算复杂度高 $O(N^2)$；单假设数据关联易发散；仅适用特征地图 \\
+FastSLAM & RBPF 降维：粒子滤波估路径+EKF 估路标 & 鲁棒性强；多假设数据关联；效率高 & 粒子枯竭；粒子数选取影响性能 \\
+Graph-SLAM & 图优化：节点为位姿，边为约束 & 效率高；易于理解；仅优化关联约束 & 依赖前端图构建质量 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ==================================================================
+% 第十二章 运动规划（对应 PDF：第六章 移动机器人运动规划技术）
+% ==================================================================
+\section{运动规划}
+
+\begin{keypoint}
+本章对应 PDF\,《第六章 移动机器人运动规划技术》。重点：图搜索算法（A*）、局部规划（DWA、TEB）的核心思想与优缺点。
+\end{keypoint}
+
+\subsection{运动规划分类}
+\begin{itemize}
+  \item \textbf{路径规划}：只考虑工作空间（环境）的几何约束，不考虑机器人和执行器约束。
+    \begin{itemize}
+      \item 基于图搜索的路径规划算法（\textbf{算法完备}，复杂度大）。
+      \item 基于采样的路径规划算法（\textbf{概率完备}，速度快但可能"有解求不出"）。
+    \end{itemize}
+  \item \textbf{轨迹规划}：在给定路径上考虑机器人和执行器约束生成随时间变化的运动序列。
+\end{itemize}
+
+\subsubsection*{图的构建}
+\begin{itemize}
+  \item \textbf{可视图（Visibility Graph）}：可实现无碰撞的最短距离规划，但太过靠近障碍物。
+  \item \textbf{维诺图（Voronoi Graph）}：路径距离周围两个最近障碍物距离相等，最大化与障碍物距离，最为安全。
+  \item \textbf{栅格地图}：将空间分解为离散栅格。
+\end{itemize}
+
+\subsubsection*{图搜索算法对比}
+
+\textbf{DFS（深度优先搜索）}：以深度为优先级，使用栈结构。完备但不最优，无方向性效率低。
+
+\textbf{BFS（宽度优先搜索）}：以广度为优先级，使用 FIFO 队列。完备但不最优，无方向性效率低。
+
+\textbf{Dijkstra 算法}：基于 BFS，使用优先队列每次选代价最小节点。完备且最优，但效率低（地图信息利用不充分）。
+
+\textbf{A* 算法}：在 Dijkstra 基础上结合目标进行搜索，启发式算法（目标牵引）。
+\begin{formula}
+\[
+f(n)=g(n)+h(n)
+\]
+\begin{itemize}
+  \item $g(n)$：从出发点到当前节点的路径代价。
+  \item $h(n)$：当前节点到目标节点的路径代价估计（启发函数）。
+\end{itemize}
+\textbf{启发函数}：曼哈顿距离 $|x_1-x_2|+|y_1-y_2|$；欧几里得距离 $\sqrt{(x_1-x_2)^2+(y_1-y_2)^2}$；切比雪夫距离 $\max(|x_1-x_2|,|y_1-y_2|)$。
+
+$h(n)=0$ 时退化为 Dijkstra 算法。
+\end{formula}
+
+\textbf{权重 A*}：$f(n)=g(n)+\epsilon\cdot h(n)$（$\epsilon\ge 1$）。权重增加提高速度，但不满足可采纳性，只能得到局部最优解。
+
+\textbf{ARA* 算法}：$\epsilon$ 先取较大值（如 2.5）快速得到路径，再不断降低 $\epsilon$ 至 1 优化路径；引入 INCONS 表减少重复计算。
+
+\subsubsection*{基于采样的路径规划}
+\begin{itemize}
+  \item \textbf{PRM（概率路线图）}：多查询，离线构建 roadmap，在线查询。
+  \item \textbf{RRT（快速随机探索树）}：单查询，从起点向随机采样点扩展，概率完备。
+\end{itemize}
+
+\subsubsection*{局部路径规划——DWA（Dynamic Window Approach）}
+
+\begin{keypoint}
+\textbf{核心思想：控制空间采样。}由 Fox、Burgard、Thrun 于 1997 年提出。
+\end{keypoint}
+
+\begin{itemize}
+  \item 假设 $(v,\omega)$ 在固定 $\Delta t$ 内恒定，每条局部路径为圆弧段。
+  \item \textbf{速度采样}考虑：机器人速度约束、执行器能力约束、环境约束（可接受 admissible：能在碰到障碍物前停下来）。
+  \item \textbf{评价函数}（归一化后加权求优）：方向角评价、空隙（距障碍物距离）、速度大小。
+\end{itemize}
+
+\begin{notebox}
+\textbf{DWA 优缺点：}
+\begin{itemize}
+  \item \textbf{优点}：快速根据环境信息反应；有效避免碰撞；计算复杂度低、对硬件要求低；实用性高。
+  \item \textbf{缺点}：可能得不到全局最优解；局部最优可能使机器人陷入死锁；可预见性差，门口位置速度过快。
+\end{itemize}
+\end{notebox}
+
+\subsubsection*{局部路径规划——TEB（Timed Elastic Band）}
+
+\begin{keypoint}
+\textbf{核心思想：基于优化思想。}由 Roesmann 等人于 2012 年提出。连接起始、目标点，让路径变形，将所有约束当作橡皮筋的外力。
+\end{keypoint}
+
+\begin{itemize}
+  \item \textbf{Elastic-Band}：起始/目标点状态由用户指定，中间插入 $N$ 个控制点（机器人位姿）。
+  \item \textbf{Timed-Elastic-Band}：为控制点赋予时间。
+  \item 通过\textbf{加权多目标优化}获取最优路径点 $B$。
+  \item \textbf{约束目标函数组成}：
+    \begin{enumerate}
+      \item 跟随路径和避障约束（$d_{\min,j}$，$r_{p\max}$，$r_{o\max}$）。
+      \item 速度和加速度约束。
+      \item Non-holonomic 运动学约束（两轮差速机器人）。
+      \item 最小时间约束。
+    \end{enumerate}
+  \item \textbf{优化特性}：每个目标函数只与 elastic band 中某几个连续状态有关，$J$ 为\textbf{稀疏矩阵}（约 15\% 非零元素）；目标函数梯度可视为对 elastic band 施加的外力。
+\end{itemize}
+
+\vfill
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}\\[0.3em]
+\textit{复习笔记完}\\[0.2em]
+\small 智能工程 \quad \today
+\end{center}
+
+\end{document}

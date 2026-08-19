@@ -1,0 +1,1677 @@
+第六章移动机器人运动规划技术
+孙雷  教授
+Tel:13512967601
+Email: sunl@nankai.edu.cn
+2026年6月8日
+Motion Planning Algorithms for Mobile Robot
+第六章 移动机器人运动规划技术
+2
+本章内容
+4. 基于采样的路径规划算法
+3. 基于图搜索的动态路径规划
+1. 移动机器人运动规划
+2. 基于图搜索的静态路径规划
+6. 路径平滑与轨迹规划算法
+5. 面向避碰的局部路径规划算法
+第六章 移动机器人运动规划技术
+3
+1. 运动规划(Motion Planning)
+◼何为运动规划：
+运动规划是一个过程，根据所给定的地图，寻找从起始状
+态到目标状态的运动序列。运动规划常常需要在运动受到
+约束的条件下找到最优解。
+——Wikipedia 
+◼需求：
+安全性：规避障碍物
+可达性：从起点到终点的连通域
+光滑性：能量优化，运行的平稳性，舒适性
+可执行性：
+✓机器人在动力学约束(Kinodynamic feasibility)下的运行可行性
+✓机器人执行单元的性能约束：速度，加速度，加加速度(Jerk)
+第六章 移动机器人运动规划技术
+4
+1.2 移动机器人运动规划方法
+◼分层规划思想：
+路径规划：只考虑工作空间（环境）的几何约
+束，不考虑机器人和执行器约束
+✓基于图搜索的路径规划算法
+✓基于采样的路径规划算法
+轨迹规划：在给定路径上，考虑机器人和执行
+器约束生成随时间变化的运动序列
+✓在线轨迹规划
+✓离线轨迹规划
+第六章 移动机器人运动规划技术
+5
+1.2 移动机器人路径规划方法
+◼路径规划：在自由构型空间（Configuration 
+Space，C-Space）中寻求一条从初始位置到目标
+位置的联通路径
+◼C-Space：机器人简化为一个可移动的点，不考虑姿态
+和体积
+✓自由空间
+✓障碍物空间
+◼只考虑工作空间（环境）的几何约束，不考虑机器人和
+执行器约束
+◼完备性：当解存在时，能够在有限时间内找到解
+◼算法完备：基于图搜索方法
+◼概率完备：基于采样的方法
+第六章 移动机器人运动规划技术
+6
+1.2 移动机器人路径规划方法
+◼图搜索的路径规划算法（算法完备）
+如果在起始点和目标点间有路径解存在那么一定可以得到解，如果得不到解那么一定说明
+没有解存在。
+完备的算法的优势在与它对于解的捕获能力是完全的，但是由此产生的缺点就是算法复杂
+度较大。
+◼基于采样的路径规划算法（概率完备）
+这种算法一般是不直接在grid地图进行最小栅格分辨率的规划，它们采用在地图上随机撒
+一定密度的粒子来抽象实际地图辅助规划。
+基于采样的算法速度较快，但是生成的路径代价（可理解为长度）较完备的算法高，而且
+会产生“有解求不出”的情况
+这样的算法一般在高维度的规划问题中广泛运用
+第六章 移动机器人运动规划技术
+7
+02
+基于图搜索的静态路径规划
+Graph Search-Based Static Path Planning
+第六章 移动机器人运动规划技术
+8
+2.1 图搜索的基本概念
+◼图：计算机科学中，一个图就是一系列顶点的集
+合，这些顶点通过一系列边连接。顶点用圆圈表
+示，边就是顶点间的连线。
+◼图搜索：图搜索是一种将机器人的位姿简化成一
+个点，在图的空间内搜索一条从初始节点到目标
+节点的联通路径
+拓扑图的构建
+基于拓扑图的节点关联关系
+第六章 移动机器人运动规划技术
+9
+2.2 图的构建（1）
+可视图：visibility graph;
+◼可实现无碰撞的最短距离规划
+◼太过靠近障碍物
+qI 
+qG 
+qI 
+qG 
+第六章 移动机器人运动规划技术
+10
+2.2 图的构建（2）
+维诺图：Voronoi Graph
+◼维诺图产生的路径距离周围两个最近的障
+碍物的距离相等
+◼最大化与障碍物的距离
+◼最为安全
+第六章 移动机器人运动规划技术
+11
+2.2 图的构建（2）
+维诺图：Voronoi Graph
+𝐿1 距离下的维诺图路径
+𝐿2 距离下的维诺图路径
+第六章 移动机器人运动规划技术
+12
+2.2 图的构建（3）
+精确单元分解地图：
+第六章 移动机器人运动规划技术
+13
+2.2 图的构建（5）
+栅格地图：
+第六章 移动机器人运动规划技术
+14
+2.2 图的构建（6）
+拓扑地图：
+第六章 移动机器人运动规划技术
+15
+2.2 图的构建（7）——搜索树
+B
+C
+A
+D
+C
+E
+F
+G
+J
+I
+C
+B
+D
+G
+I
+.
+.
+.
+.
+.
+.
+.
+.
+.
+A
+D
+B
+C
+E
+G
+I
+J
+F
+H
+K
+L
+M
+N
+O
+◼基于构建的图，依照起点及其对应连接关系构建搜索树，实现最优路径的选取
+第六章 移动机器人运动规划技术
+16
+2.2 图的构建（7）——搜索树
+B
+C
+A
+D
+C
+E
+F
+G
+J
+I
+C
+B
+D
+G
+I
+.
+.
+.
+.
+.
+.
+.
+.
+.
+将起点设为搜索树的根节点
+寻求与该节点相连的所有节点作为子节点
+每个节点与一个规划路径相关联（搜索树
+上从根节点到该节点的连线）
+对于大部分搜索算法，我们希望尽量避免
+构建全部搜索树
+利用计算机已有的搜索算法可以有效地对
+树进行遍历
+第六章 移动机器人运动规划技术
+17
+2.2 图的构建（7）——搜索树
+◼一般来说，从起点开始生长树结构，直至找到一个解决方案（到达目标的路径）。
+◼Expanding a node refers to adding children to the tree, pushing them onto 
+the open set
+◼Try to expand as few tree nodes as possible
+◼Open set maintains a list of frontier (unexpanded) plans
+Keeps track of what nodes to expand next
+Often stored as a priority queue
+For each node in the open list, we know of at least one path to it from the start
+◼Closed set：用于跟踪已扩展的节点。
+对于Closed set中的每个节点，已经找到了从起点到该节点的成本最低路径。
+第六章 移动机器人运动规划技术
+18
+2.3 图搜索算法（2）
+深度优先搜索：
+A
+D
+B
+C
+G
+I
+J
+B
+Open List (Q):
+Visited:
+{B}
+{B}
+A
+C
+G
+{A, C, G}
+{B, A, C, G}
+C
+D
+{D, C, G}
+{B, A, C, G, D}
+I
+{I, J, C, G}
+{B, A, C, G, D, I, J}
+{J, C, G}
+{B, A, C, G, D, I, J}
+J
+DFS queue will be stack: 
+◼push (Q.Insert) onto the front 
+◼pop (Q.GetFirst) from the front 
+第六章 移动机器人运动规划技术
+19
+2.3 图搜索算法（1）
+深度优先搜索（DFS）：
+◼以深度做为优先级进行搜索
+◼遍历每一个分支，直到找到终点
+◼算法简单，易于实现
+◼具有完备性
+◼不具备最优性，不能保证最短路径
+✓仅考虑到了图中节点间的连接
+属性，未考虑边（即连接代价）
+◼无方向性，效率低下
+第六章 移动机器人运动规划技术
+20
+2.3 图搜索算法（2）
+宽度优先搜索：
+A
+D
+B
+C
+G
+I
+J
+B
+Open List (Q):
+Visited:
+{B}
+{B}
+A
+C
+G
+{A, C, G}
+{B, A, C, G}
+C
+D
+{C, G, D}
+{B, A, C, G, D}
+I
+{G, D, I}
+{B, A, C, G, D, I}
+{D, I}
+{B, A, C, G, D, I}
+J
+{I, J}
+{B, A, C, G, D, I, J}
+BFS queue will be FIFO: 
+◼push (Q.Insert) onto the end 
+◼pop (Q.GetFirst) from the front 
+第六章 移动机器人运动规划技术
+21
+2.2 图搜索算法（2）
+宽度优先搜索（泛洪搜索）：
+◼以广度做为优先级进行搜索
+◼遍历起点周围邻近的点，逐步的向
+外扩散，直到找到终点
+◼算法简单，易于实现
+◼具有完备性
+◼不具备最优性，不能保证最短路径
+✓仅考虑到了图中节点间的连接
+属性，未考虑边（即连接代价）
+◼无方向性，效率低下
+第六章 移动机器人运动规划技术
+22
+2.2 图搜索方法（3）
+Dijkstra算法：
+A
+D
+B
+C
+G
+I
+J
+5
+3
+2
+3
+2
+5
+2
+2
+5
+1
+3
+2
+, R.Insert(x)
+∉𝑄𝑜𝑟𝑅
+Open List (Q):
+Close List (R):
+{B(0)}
+{B(0)}
+{C(2),G(3),A(5)}
+{B(0)}
+{G(3),A(4),D(4),I(7)} {B(0),C(2)}
+{A(4),D(4),I(7)}
+{B(0),C(2),G(3)}
+{D(4),I(7)}
+{B(0),C(2),G(3),A(4)}
+{I(5),J(6)}
+{B(0),C(2),G(3),A(4),D(4)}
+B(0)
+A(5)
+C(2)
+G(3)
+A(4)
+D(4)
+I(7)
+G(4)
+the least
+I(8)
+D(7)
+I(5)
+J(6)
+J(8)
+{J(6)}
+{B(0),C(2),G(3),A(4),D(4),I(5)}
+◼优先弹出距离起点最小的节点
+◼Open列表中保存距离起点最小的节点
+第六章 移动机器人运动规划技术
+23
+2.2 图搜索方法（3）
+Dijkstra算法(1959)：
+◼基于宽度优先算法：完备性
+◼计算每一个节点距离起点的总移动
+代价。
+◼一个优先队列结构。对于所有待遍
+历的节点，放入优先队列中会按照
+代价进行排序。
+◼每次从优先队列中选出代价最小的
+作为下一个遍历的节点
+◼保证路径规划的最优性
+◼无法解决效率问题
+地图信息利用不充分
+第六章 移动机器人运动规划技术
+24
+2.2 图搜索方法（4）
+A*算法：
+◼在Dijkstra算法基础上，结合目标进行搜索
+◼一种启发式算法：目标牵引
+◼评估函数：
+◼从出发点到当前节点的路径代价——Dijkstra算法
+◼当前节点到目标节点的路径代价估计——目标牵引
+◼算法具有完备性和可采纳性(admissible)——理论证明
+完备性：对于一个路径规划算法，在最优路径存在的情况下，如果它一定能够
+找到一条从源节点s到目标节点的最优路径。
+◼最为经典的启发式搜索策略：后续算法的基础
+第六章 移动机器人运动规划技术
+25
+2.2 图搜索方法（4）
+A*算法：
+◼开放列表(Open List)：将路径规划过程中待检测的节点存放于Open List中
+◼关闭列表(Close List)：已检测过的格子则存放于Close List中。
+◼父节点（parent）：在路径规划中用于回溯的节点，可考虑为双向链表结构中的父结点指针。
+◼路径评价函数：
+𝑮(𝒏)代表的是从初始位置A沿着已生成的路径到指定位置的移动开销。
+𝑯(𝒏)(启发函数)当前节点到目标节点的路径代价估计（不考虑障碍）。
+◼可采纳性admissible ：
+◼一致性consistent：
+距离目标的实际代价
+x
+y
+g
+第六章 移动机器人运动规划技术
+26
+2.2 图搜索方法（4）
+◼可采纳性admissible ：
+◼一致性consistent：
+◼启发函数（Heuristics Function）：
+曼哈顿距离：
+欧几里得距离：
+切比雪夫距离：
+Zero: Dijkstra算法
+第六章 移动机器人运动规划技术
+27
+2.2 图搜索方法（4）
+A*算法流程：
+Step1：将源节点𝑺放入OPEN列表中并计算𝑭值
+Step2：取出OPEN列表中𝑭值最小的点𝒏，若点𝒏为目
+标节点，则结束程序，完成规划
+Step3：寻找周围可达节点，并将𝒏设为其父节点，对于
+𝒏的每一个子节点𝒕：
+如果𝒕从未被扩展过，则计算其𝑭值并将其加入
+OPEN表中
+如果𝒕在OPEN表中，则重新计算其𝑭值，如
+果比原来的值小，则选取小的𝑭值
+如果𝒕在CLOSE表中，则跳过𝒕
+Step4：从 Open List 中移除𝒏，放入Close列表，返回
+初始化所有节点
+取出OPEN 列表中 𝑓 值
+最小的点 𝑛
+判断 𝑛 是否
+是目标节点
+对于 𝑛 的每一个子节点 𝑡：
+1. 如果 𝑡 从未被扩展过，则计算其 𝑓 
+值并将其加入OPEN 表中
+2. 如果 𝑡 在OPEN 表中，则重新计
+算其 𝑓 值，如果比原来的值小，
+则选取小的 𝑓 值
+3. 如果 𝑡 在CLOSE 表中，则跳过 𝑡
+否
+将 𝑛 放入CLOSE 
+表中并结束程序
+是
+将源节点 𝑠 放入OPEN 
+列表中并计算 𝑓 值
+第六章 移动机器人运动规划技术
+28
+2.2 图搜索方法（4）
+A*算法例题：
+Step1：将源节点s放入OPEN列表中并计算𝑭值
+Step2：取出OPEN列表中𝑭值最小的点𝒏，若点𝒏为目标节点，则结束程序，完成规划
+第六章 移动机器人运动规划技术
+29
+2.2 图搜索方法（4）
+Step3：寻找周围可达节点，并将𝒏设为其父节点，对于𝒏的每一个子节点𝒕：
+如果𝒕从未被扩展过，则计算其𝑭值并将其加入OPEN表中
+如果𝒕在OPEN表中，则重新计算其𝑭值，如果比原来的值小，则选取小的𝑭值
+如果𝒕在CLOSE表中，则跳过𝒕
+第六章 移动机器人运动规划技术
+30
+2.2 图搜索方法（4）
+Step 4: 当前节点从 Open List 中移除，放入 Closed List ，重返回Step2。
+Step 5: 取出OPEN列表中𝑭值最小的点𝒏，若点𝒏为目标节点，则结束程序，完成规划
+第六章 移动机器人运动规划技术
+31
+2.2 图搜索方法(4)
+第六章 移动机器人运动规划技术
+32
+2.2 图搜索方法(4)
+从终点开始，依次向父节点移动，直到回到
+起点，途经即最佳路线。
+https://qiao.github.io/PathFinding.js/visual/ 
+第六章 移动机器人运动规划技术
+33
+2.2 图搜索方法(4)
+◼由于启发函数的存在，算法效率明显高于Dijkstra算法
+◼最佳路线可能有多条
+◼启发式函数的估算方法优劣是影响算法效率的重要因素
+◼除了网格地图，A* 算法也能处理其他复杂甚至不规则多边形镶嵌的地图。
+◼A* 算法并不保证得到的路线是平滑的。
+◼A* 算法距离最短，非运行时间最短：转向成本
+✓增加额外的 G 值
+◼搜索效率如何提升：
+✓Open List数据结构：从中取出 F 值最小的节点，需要遍历整个 Open List，对其排序。
+✓多分辨率地图
+✓加大启发式函数的权重——权重A*算法（Weighted A*）
+第六章 移动机器人运动规划技术
+34
+2.2 图搜索方法（5）
+权重A*算法（Weighted A*）
+◼A*算法限制了迪杰斯特拉算法在扩展节点过程中的方向，从而实现了算法计算效率的提升；
+◼当启发式信息的权重在评估函数中的比重增加时，对于扩展节点的限制作用会更加明显
+◼膨胀系数𝜖：启发函数的权重，大于等于1
+◼路径评价函数：
+H采用切比雪夫距离
+起点
+终点
+A*算法
+23个节点
+膨胀系数𝜖= 2.5
+16个节点
+第六章 移动机器人运动规划技术
+35
+2.2 图搜索方法（6）
+ARA*算法：
+◼权重A*算法通过加大启发函数的权重（膨胀系数𝜖），提升算法效率
+不满足A*算法中的可采纳性(admissible）
+只能得到局部最优解，无法获得全局最优解
+◼A*可以得到全局最优解，但算法效率低，很难保证实时性
+◼ARA*算法：任意时间法（Anytime algorithm） + 权重A*（Weighted A*）兼顾效率与性能
+◼任意时间法（Anytime algorithm）：
+由Shlomo Zilberstein以及Stuart Russell提出
+普适性算法：一种策略、思路
+在很短的时间内先得出一个次优的解法，然后再对这个解法进行不断的优化。
+✓膨胀系数𝜖先取一个较大值，提升算法速度，然后不断降低，直至为1，或到达给定时间
+◼如何降低迭代过程中的重复计算：
+引入INCONS表：防止已经进入CLOSED表的节点不再进入OPEN表中进行二次扩展
+第六章 移动机器人运动规划技术
+36
+2.2 图搜索方法（6）
+ARA*算法流程
+ARA*算法路径规划部分流程图
+ARA*算法主函数流程图
+扩展节点n 的每个子节点，如果其
+子节点在CLOSED 表中，则将其
+加入INCONS，否则加入OPEN
+取出OPEN 列表中最小的节点n，
+并将其加入CLOSED 表中
+当前路径计算完
+毕或者需要舍弃
+跳出循环
+结束函数
+是
+否
+初始化所有节点以及
+三个列表，并将源节
+点s 放入OPEN 表中
+运行路径规划函数，
+更新膨胀系数，并发
+布路径方案
+膨胀系数
+大于 1
+减小膨胀系数，合并
+OPEN 表和INCONS 
+表，清空CLOSED 表
+运行路径规划函数，
+更新膨胀系数，并发
+布路径方案
+否
+跳出循环
+结束程序
+是
+第六章 移动机器人运动规划技术
+37
+2.2 图搜索方法（6）
+ARA*算法流程
+第六章 移动机器人运动规划技术
+38
+2.2 图搜索方法（6）
+ARA*算法示例
+H采用切比雪夫距离
+起点
+终点
+膨胀系数𝜖= 2.5(16个节点) 膨胀系数𝜖= 1.5(1个节点)
+膨胀系数𝜖= 1(6个节点)
+A*算法23个节点
+ARA*算法:
+◼相比于A*算法，二者得出的最优路径是相同的
+◼ARA*算法得到最优路径和A*算法的时间近乎没有损失
+◼ARA*算法能更好地适用于对时间有苛刻限制的情况
+◼与A*算法一样，仅限于静态环境下使用
+第六章 移动机器人运动规划技术
+39
+03
+基于图搜索的动态路径规划
+Graph Search-Based Dynamic Path Planning
+第六章 移动机器人运动规划技术
+40
+3.1 动态路径规划算法
+◼动态环境 VS. 静态环境：
+ 机器人实际运行过程当中，环境地图可能会改变。
+ 多个机器人同时运行时，其他机器人——动态障碍物
+动态环境是一般性环境，更符合实际
+◼动态路径规划算法
+如何进一步降低算法的复杂度，提高算法的实时性
+✓避免地图变化后重复计算
+✓降低地图变化后拓展节点的数量
+第六章 移动机器人运动规划技术
+41
+3.2 D*算法
+◼什么是D*算法
+D*算法又叫动态A*算法（Dynamic A*）
+用于未知环境或动态环境的路径规划算法。
+将目标点作为规划的起点，将机器人当前位置作为规划的终点
+基于Dijkstra算法进行路径搜索
+D*算法可以通过利用变化前的地图中的已知信息进行动态规划，从而大
+大提高了算法的计算效率。
+第六章 移动机器人运动规划技术
+42
+3.2.1 D*算法的相关概念定义
+◼什么是D*算法
+𝑏(𝑋) = 𝑌： 后向指针，意思是 𝑋 的下一个节点是 𝑌
+𝑐(𝑋, 𝑌)： 𝑌 到 𝑋 的路径的代价
+𝑡(𝑋)： 节点标签，用以区分OPEN，CLOSED，NEW
+𝑜(𝐺, 𝑋)： 𝑋 到目标点 𝐺 的实际最短路径代价
+ℎ(𝐺, 𝑋)： 𝑋 到目标点 𝐺 的路径代价估计，可变。
+𝑘(𝐺, 𝑋)： OPEN表中节点 𝑋 的 ℎ 函数的值（历史值）——D*算法的核心
+✓LOWER: 𝑘(𝐺, 𝑋) ≥ℎ(𝐺, 𝑋)，用以传播代价的减小
+✓RAISE： 𝑘(𝐺, 𝑋) < ℎ(𝐺, 𝑋)，用以传播代价的增加
+第六章 移动机器人运动规划技术
+43
+3.2.2 D*算法的算法描述
+◼PROCESS-STATE + MODIFY-COST两个函数构成算法运行的主体
+◼PS函数是算法的主体运行部分，
+◼MC函数是用来检测环境变化并修改地图的函数
+◼GET-KMIN()：用以返回OPEN中的所有节点最小的𝑘𝑚𝑖𝑛
+◼MIN-STATE()：用以返回OPEN表中具有最小值𝑘𝑚𝑖𝑛所对应的节点
+◼DELETE()：用以移除OPEN表中的节点并将其tag置为CLOSED
+◼INSERT(𝑋, ℎ𝑛𝑒𝑤):用以给节点 𝑋 的 ℎ 函数和 𝑘 函数赋值。
+ 当 𝑋 是NEW时，令
+ 当 𝑋 是OPEN时，令 
+ 当 𝑋 是CLOSED时，令
+第六章 移动机器人运动规划技术
+44
+3.2.2 D*算法流程
+◼PROCESS-STATE+MODIFY-COST两个函数构成算法运行的主体
+PS函数是算法的主体运行部分
+✓𝑘(𝐺, 𝑋) < ℎ(𝐺, 𝑋)，用以传播代价的增加，拓展节点，缩短距离
+✓𝑘(𝐺, 𝑋) = ℎ(𝐺, 𝑋)，用以传播代价的不变，拓展节点，保存信息
+✓𝑘(𝐺, 𝑋) > ℎ(𝐺, 𝑋)，用以传播代价的减小，拓展节点，找到最优
+MC函数是用来检测环境变化并修改地图的函数
+◼GET-KMIN()：返回OPEN中的所有节点中最小的K值
+◼MIN-STATE()：返回OPEN表中𝑘𝑚𝑖𝑛所对应的节点
+◼DELETE()：移除OPEN表中的节点并将其tag置为CLOSED
+◼𝐼𝑁𝑆𝐸𝑅𝑇(𝑋, ℎ𝑛𝑒𝑤):用以给节点X的h函数和k函数赋值。
+ 当X是NEW时，令
+ 当X是OPEN时，令
+ 当X是CLOSED时，令
+第六章 移动机器人运动规划技术
+45
+3.2.2 D*算法流程
+◼MODIFY-COST函数
+ 检测环境变化并修改地图的函数
+L1
+𝑐(𝑋, 𝑌) = 𝑐𝑣𝑎𝑙
+L2
+if 𝑡(𝑋) = 𝐶𝐿𝑂𝑆𝐸𝐷then 𝐼𝑁𝑆𝐸𝑅𝑇(𝑋, ℎ(𝑋))
+L3
+return 𝐺𝐸𝑇−𝐾𝑀𝐼𝑁( )
+Function: MODIFY-COST(X, Y, cval)
+第六章 移动机器人运动规划技术
+46
+3.2.3 D*算法思路
+◼算法起始，初始化地图上的所有节点的tag为NEW，k函数和h函数为0；
+◼将目标点G放入OPEN表中，从目标节点开始进行路径规划。直到机器人当前所
+在的节点X被从OPEN列表中移除，规划完毕。
+◼机器人沿着当前已经规划好的路径序列前进，直到到达目标节点或者检测到地
+图和实际环境不匹配。
+◼当检测到地图和环境有出入的时候，调用MC函数，修改地图上的路径代价信息，
+并通过OPEN表将地图变化的信息传播出去，直到机器人所在的当前节点的路
+径调整完毕后，机器人沿着新的路径继续前进，直到到达终点。
+◼算法一开始的路径规划是迪杰斯特拉算法，并且是从终点开始的迪杰斯特拉算
+法。当第一次迪杰斯特拉算法过后，保留原始的节点状态，机器人开始运行，
+并在检查到路径代价错误时自动调整地图。
+第六章 移动机器人运动规划技术
+47
+3.2.3 D*算法思路
+◼从目标点开始，利用迪杰斯特拉算法（宽度优先）扩张
+◼每个扩张节点都有一个反向指针，它指向指向目标的下
+一个节点，每个节点都知道目标的确切成本
+◼当开始节点是下一个要展开的节点时，算法完成
+◼只需遵循反向指针就可以找到目标的路径
+扩张：
+第六章 移动机器人运动规划技术
+48
+3.2.3 D*算法思路
+◼当在指定的路径上检测到障碍物时，所有受影响的点将再
+次被放到OPEN列表中，标记为RAISE（节点成本增加）。
+◼利用记录的指针，重新评估后继节点，更新节点成本，传
+递RAISE状态，形成波。 
+◼当RAISED节点可以减少时，其的反向指针（backpointer）
+会更新，并将LOWER状态传递给它的邻居。
+动态障碍物处理：
+第六章 移动机器人运动规划技术
+49
+3.2.3 D*算法思路
+◼没有一个点可以通过邻居找到一条新的路线到达目的地。因此，继续传播节点的成
+本增加。只有在通道外才能找到点，这些点可以通过可行的路线到达目的地。这就
+是两个较低的波是如何发展的，它们扩张成具有新路线信息的不可到达的标记点。
+死锁情况处理：
+第六章 移动机器人运动规划技术
+50
+3.3 Fucussed D*算法
+◼Focussed D*算法：
+Focussed D*算法是D*算法的改进版，是由原作者Anthony Stentz自
+己改进的一个算法。
+在原D*算法中，每次路径规划采用的是迪杰斯特拉算法，导致计算效率
+上有所损失， Focussed D*用了启发函数A*算法，从而限定了每次函
+数遍历的方向，能更快地找到机器人所在的当前位置。
+第六章 移动机器人运动规划技术
+51
+3.4 LPA*算法
+◼LPA*算法（全称Lifelong Planning A*算法）
+是一种参考人工智能的增量式搜索进行改进的A*算法
+它被用来处理动态环境下从给定起始点到给定目标点的最短路径问题
+◼基本概念：
+𝒔𝒖𝒄𝒄(𝒔)：𝒔节点的后继节点。
+𝒑𝒓𝒆𝒅(𝒔)：𝒔节点的前置节点。
+𝒄(𝒔, 𝒔𝟎)：边缘代价函数，从𝒔节点到𝒔𝟎节点的路径代价
+𝒈∗(𝒔)：节点𝒔到起始点的实际最短距离(对应于A*算法里的𝒈(𝒏))
+𝒓𝒉𝒔(𝒔)：其中𝒈𝒔是对𝒈∗(𝒔)的估计
+第六章 移动机器人运动规划技术
+52
+3.4 LPA*算法
+◼ 局部一致(locally consistent)：
+◼如果所有的节点都是局部一致，则所有节点的g函数值都等于从起始点到当前点的路
+径代价，即当所有节点的
+时，
+。
+◼ 局部不一致(locally inconsistent)：
+◼过一致(Overconsistent)：
+✓边缘代价函数值𝒄𝒔′, 𝒔
+变低，代表网格上障碍物被清除或搜索到一条更短的“捷径”
+◼ 欠一致(Subconsistent)：
+✓边缘代价函数c值变高，代表着自由网格被障碍物所占据，这时节点点的信息需要被
+重置，这时候就需要重新搜索计算最短路径。
+第六章 移动机器人运动规划技术
+53
+3.4 LPA*算法
+◼𝒌𝒆𝒚𝒔= 𝒌𝟏𝒔; 𝒌𝟐(𝒔) ：代价函数，
+类似于A*算法中的F函数
+◼路径搜索时与A*算法类似，取𝒌𝒆𝒚𝒔
+值小的进行搜索
+◼𝒌𝒆𝒚𝒔大小的比较：
+if 𝒌𝟏𝒔≤𝒌𝟏𝒔′ or ൫
+൯
+𝒌𝟏𝒔=
+𝒌𝟏𝒔′ 𝑎𝑛𝑑𝒌𝟐𝒔≤𝒌𝟐𝒔′
+then
+𝒌𝒆𝒚𝒔≤𝒌𝒆𝒚𝒔′
+第六章 移动机器人运动规划技术
+54
+3.4 LPA*算法
+◼第一次搜索（类似于A*）：从A3出发，到达F0
+第六章 移动机器人运动规划技术
+55
+3.4 LPA*算法
+◼第一次搜索（类似于A*）：从A3出发，到达F0
+第六章 移动机器人运动规划技术
+56
+3.4 LPA*算法
+◼第一次搜索（类似于A*）：从A3出发，到达F0
+第六章 移动机器人运动规划技术
+57
+3.4 LPA*算法
+◼第一次搜索（类似于A*）：从A3出发，到达F0
+第六章 移动机器人运动规划技术
+58
+3.4 LPA*算法
+◼第二次搜索（地图发生变化）首先从边缘代价函数发生变化的节点进
+行更新，并将其后代节点置于优先队列中，该节点的变动对父辈节点
+的状态并无影响。
+第六章 移动机器人运动规划技术
+59
+3.4 LPA*算法
+◼第二次搜索（地图发生变化）
+第六章 移动机器人运动规划技术
+60
+3.4 LPA*算法
+◼第二次搜索（地图发生变化）
+第六章 移动机器人运动规划技术
+61
+3.4 LPA*算法实验对比
+静态地图
+动态地图
+第六章 移动机器人运动规划技术
+62
+3.4 LPA*算法总结
+LPA*提出了一种解决动态环境下的最短路径搜索方法，但是它针对的是
+起始点和目标点固定的情况，如果在机器人按照搜索到的最短路径行走过程
+中，环境中某些节点发生变化，这时如果想获得新的路径，就得以机器人当
+前节点为起始点，重新用LPA*算法解算一次，这效率是很低的。
+第六章 移动机器人运动规划技术
+63
+3.5 D*-Lite算法
+◼D*-lite算法是LPA*算法的动态形式，即将目标点作为规划起点，将机器人
+当前位置作为规划终点
+◼LPA*算法只能适用于给定两点的动态地图导航，而D*-lite算法则可直接用
+于动态机器人的导航
+◼D*-lite算法从算法逻辑上并不是D*算法的改进版本，它被作者称为D* like
+算法。相较于D*算法，代码量更小，逻辑更容易理解，更易于学习，且在
+实验中，D*-lite算法的效率至少和D*算法的效率是一样的。
+第六章 移动机器人运动规划技术
+64
+3.5 D*-Lite算法流程
+◼主函数:
+◼路径规划函数:
+初始化所有节点，并将
+目标节点放入U 列表中
+运行路径规划函数，生
+成一条可执行的路径
+判断环境
+是否发生
+变化
+机器人沿当前计算出的
+路径向下一个节点前进
+更改环境信息，并将更
+改后的节点重新放入U 
+列表中
+否
+重新运行路径规划函数，
+生成一条可执行路径
+是
+机器人是否到
+达目标节点
+弹出U 列表中Key 最
+小的节点𝑛
+G 值是否大于
+𝑟ℎ𝑠值
+令𝑔= ∞，并将𝑛节点
+和其子节点都放入U 
+列表
+令𝑔= 𝑟ℎ𝑠，并扩展所
+有𝑛节点的子节点
+跳出循环
+是
+否
+否
+是
+第六章 移动机器人运动规划技术
+65
+3.5 D*-Lite算法流程
+与LPA*相同
+D*-Lite
+LPA*
+由于每一次地图中路径变化都会导致h函数的变化，
+算法不得不对U列表中的节点重新进行排序，这样
+会浪费很多计算时间。
+第六章 移动机器人运动规划技术
+66
+3.5 D*-Lite算法第二种版本
+◼D*-lite算法第二种版本可以省去每次环境变化后的重排列表，但必
+须首先满足以下条件：
+◼ 在满足条件的基础上更改算法的key函数：
+第六章 移动机器人运动规划技术
+67
+3.5 D*-Lite算法第二种版本
+第六章 移动机器人运动规划技术
+68
+3.5 D*-Lite算法第二种版本
+第六章 移动机器人运动规划技术
+69
+3.6 AD*算法
+◼什么是AD*算法
+ARA*算法适用于复杂环境
+D*以及D*-lite算法适用于动态环境
+在现实应用中，问题都是既复杂又动态的
+AD*算法是结合ARA*算法以及D*-lite算法的一种既可用于动态环境又
+能对时间做出响应的图搜索路径规划算法。
+◼AD*算法思路：
+ɛ=1时，环境发生变化，增大ɛ重新规划。
+当环境发生变化，根据D* Lite的规划方法得到新的路径。
+第六章 移动机器人运动规划技术
+70
+3.6 AD*算法伪代码
+第六章 移动机器人运动规划技术
+71
+3.7 基于图搜索的动态路径规划总结
+最优性
+目标牵引
+动态环境
+算法效率
+◼对于大型复杂动态环境：分层思想
+全局规划：A*、D*、D*-Lite、AD*  根据机器人运行速度，重规划周期小时、分、秒
+局部规划：Weight A*、ARA*、LPA*  根据传感器检测信息，重规划周期百或十毫秒级
+A*
+目标驱动解决
+优化问题
+Dijkstra
+解决最优问题
+1959
+D*
+解决动态问题
+ARA*
+解决实时性问题
+LPA*，D*-Lite
+解决动态效率问题
+AD*
+解决复杂动态问题
+1968
+1994
+2003
+2005
+2006
+START
+第六章 移动机器人运动规划技术
+72
+3.7 基于图搜索的动态路径规划算法对比
+第六章 移动机器人运动规划技术
+73
+自动驾驶技术演进综述
+2026年6月8日
+报告人：李阳
+2019.7-2022.6 南开大学人工智能学院  硕士
+2022.7-2023.5 小鹏汽车，激光雷达感知算法工程师
+2023.5至今 小米汽车，端到端规划模型算法工程师
+报告内容：
+自动驾驶技术的演进
+激光雷达感知的瓶颈、优势及发展趋势
+端到端模型发展现状
+从模块化自动驾驶→端到端→ VLA (Vision-Language-Action Model)
+第六章 移动机器人运动规划技术
+74
+04
+基于采样的路径规划算法
+Simple-based Path Planning
+第六章 移动机器人运动规划技术
+75
+4.1 Motivation for sampling-based 
+◼The previous methods rely on an explicit representation of the obstacles in 
+configuration space 
+◼This may result in an excessive computational burden in: 
+high-dimensions 
+environments with a large number of obstacles 
+◼Avoiding such a representation is the main underlying idea of sampling-based 
+methods 
+◼Instead of using an explicit representation of the environment, sampling-based 
+methods rely on a collision-checking module 
+Geometric
+Models
+Collision
+Detection
+Sampling-Based
+Motion Planning Algorithm
+Discrete
+Searching
+C-Space
+Sampling
+第六章 移动机器人运动规划技术
+76
+4.1.1 Sampling-based Motion Planning 
+◼The two most influential sampling-based motion planning 
+algorithms to date are: 
+Probabilistic Roadmaps (PRM, 1996)
+Rapidly-exploring random trees (RRT, 1998) 
+PRM:
+1. Roadmap construction 
+2. Search 
+RRT: 
+1. Roadmap construction 
+and search online 
+第六章 移动机器人运动规划技术
+77
+4.1.1 The general framework 
+◼Incremental Sampling and Searching: 
+1.
+Initially, the graph is empty 𝐺= (𝑉, 𝐸) 
+2.
+Then, a random configuration is generated and added to 𝑉
+Need a Sampling algorithm 
+3.
+For every new vertex c, select a number of nodes from 𝑉‘near’ c and try to 
+connect c to each of them using a local planner
+Need to define a distance function 
+4.
+If local path is collision free, a new edge is added to 𝐸
+Need collision detection approach 
+5.
+Check for a solution (connection between origin and target) 
+6.
+Return to step 2 
+第六章 移动机器人运动规划技术
+78
+4.1.2 Sampling algorithm 
+◼Random uniform sampling is the easiest of all sampling methods in 
+C-spaces
+Combining samples from different dimensions can combined to provide 
+samples of the whole space 
+◼Uniform sampling is typically used, however there are others based 
+on different heuristics: 
+第六章 移动机器人运动规划技术
+79
+4.1.3 Metrics 
+◼Sampling-based algorithms need to get a ‘sense of proximity’ 
+among samples in configuration space
+What does it mean to be the closest? This depends on your C-space
+◼In virtually all sampling-based algorithms performance depends on 
+the choice of metric 
+◼𝒍𝒑-norm (𝒍𝒑-metrics)
+第六章 移动机器人运动规划技术
+80
+4.1.3 Metrics 
+◼In most robotic problems, the configuration space will include 
+Euclidean points plus angles (𝑥, 𝑦, 𝑧, 𝜙, 𝜃, 𝜓), how should you 
+combine these distances? 
+The simplest one, is to perform a weighted combination between rotational 
+and translational distances 
+第六章 移动机器人运动规划技术
+81
+4.1.4 Collision Detection 
+◼Once it has been decided where the samples will be placed, the next 
+problem is to determine collisions 
+◼In most planning applications, the majority of computation time is 
+spent in collision checking 
+◼A variety of collision detection algorithms exist,
+ranging from theoretical algorithms that have excellent computational 
+complexity
+to heuristic, practical algorithms whose performance is tailored to a particular 
+application 
+◼Examples: 
+Two-phases methods: broad phase, narrow-phase 
+Hierarchical methods: decompose each body intro a tree, each vertex 
+represents a bounding region 
+Checking a path segment: by sampling the interval
+第六章 移动机器人运动规划技术
+82
+4.1.4 Collision Detection 
+◼If objects and robot can be modeled as convex, we can do linear-
+time collision detection 
+◼New representations have been 
+adopted in recent years that facilitate 
+collision checking 
+At the cost of spending more time in 
+building the representation
+第六章 移动机器人运动规划技术
+83
+4.2 Probabilistic Road Maps (PRM)
+◼Probabilistic Road(M)aps (PRMs) use this principle: 
+◼Three steps: 
+Step 1: Build a roadmap by connecting nearby (sampled, free-space) 
+configurations using simple planners to construct a graph of valid path 
+segments 
+Step 2: Collision detection and cut the edge
+Step 3: Query; Search the graph using a graph search technique (A*) 
+Kavraki, Lydia E., et al. "Probabilistic roadmaps for path planning in high-dimensional configuration spaces." IEEE 
+Transactions on Robotics and Automation 12.4 (1996): 566-580. 
+第六章 移动机器人运动规划技术
+84
+4.2 Probabilistic Road Maps (PRM)
+Step 2: Collision detection and cut 
+the edge
+Step 3: Query; Search the graph using a  
+graph search technique 
+第六章 移动机器人运动规划技术
+85
+4.2 Probabilistic Road Maps (PRM)
+◼Conceptually very simple, and became rapidly popular due to PRM’s 
+ability to solve previously challenging problems (high-dimension 
+planning, snake robots, piano-mover) 
+◼A few limitations with the original method, most of which were largely 
+subsequently solved in derivative variations
+Requires holonomic motion
+Can suffer from ‘narrow passage problem’ 
+Not suited for dynamic environments 
+第六章 移动机器人运动规划技术
+86
+4.2 Probabilistic Road Maps (PRM)
+◼A graph is constructed in the configuration space by connecting 
+random configurations 
+◼PRM is designed for multiple-queries
+◼The underlying assumption is that it is worth performing substantial 
+pre-computation on a given environment to enable multiple planning 
+queries 
+◼However, often we are interested only in a efficient single-query 
+without pre-computations
+E.g. in dynamic environments, different robots model 
+◼In this case we want to combine exploration and search into a single 
+method
+This motivates tree-based planning approaches 
+PRM Summary: 
+第六章 移动机器人运动规划技术
+87
+4.3 Tree-based Simple Planners 
+◼Problem – How do we connect all these disjoint paths? 
+◼Solution – Instead of sampling all our target states at once, we start from a 
+start configuration, and incrementally grow outwards from there – forming a 
+tree of connected, dynamically feasible local path
+◼Terminate when we reach a configuration in a goal region
+◼The tree-based simple is for single-query planning
+◼In roadmaps, when planning with differential constraints, it’s not easy to 
+encode control information (undirected edges) 
+◼Tree-based, on the other hand, can include complex dynamics in their 
+directed graphs 
+Control information can be encoded in each edge 
+第六章 移动机器人运动规划技术
+88
+4.3 Tree-based Simple Planners 
+◼There exist many types of sampling-based planners that create tree 
+structures of the free-space
+E.g. RRT (LaValle 1998), EST (Hsu, 2001), SBL (Sanchez, 2005), KPIECE, etc
+◼In general
+Start with a root node
+Employs an expansion heuristic (typically gives the name to the method) 
+Connect node to tree if collision free path 
+◼Note: the methods often bias the expansion of the tree toward the goal state 
+第六章 移动机器人运动规划技术
+89
+4.3 Rapidly Exploring Dense Trees (RDT) 
+◼RDTs are an incremental sampling and searching approach that 
+gives good performance “without any parameter tuning” 
+◼The idea is to incrementally construct a search tree that gradually 
+improves the resolution 
+◼A dense sequence of samples is used to incrementally build the tree
+If the sequence is random, is called rapidly exploring random tree (RRT) 
+Connect nearest point with random point using a local 
+planning that travels from 𝑞𝑛𝑒𝑎𝑟to 𝑞𝑟𝑎𝑛𝑑
+✓No collision : add edge
+✓Collision: new vertex is 𝑞𝑠, as close as possible to 𝐶𝑜𝑏𝑠
+第六章 移动机器人运动规划技术
+90
+4.3 RRT
+LAVALLE S M.Ｒapidly-exploring random trees: a new tool path planning[R]．
+ Ames，USA: Iowa State University，1998: 293-308．
+S. M. LaValle and J. J. Kuffner Jr., “Randomized kinodynamic planning,” IJRR, 
+20(5): 378–400, 2001
+Steve LaValle
+University of Oulu
+Finland
+James Kuffner
+School of Computer Science
+Carnegie Mellon University
+第六章 移动机器人运动规划技术
+91
+4.3.1 RRT核心思想
+◼Let’s consider a simple case, where the motion is unconstrained (holonomic) 
+◼The main idea is to incrementally probe an explore the C-space 
+In the early iterations the RRT quickly reaches the unexplored parts 
+However, RRT is dense in the limit, which means that it will eventually get to any point 
+in the space 
+第六章 移动机器人运动规划技术
+92
+4.3.2 RRT算法仿真实验
+第六章 移动机器人运动规划技术
+93
+4.3.2 RRT算法仿真实验
+第六章 移动机器人运动规划技术
+94
+4.3.3 RRT算法分析
+◼RRT算法可以生成一条可行路径，算法具有完备性（概率上），而
+且RRT无需对空间建模就可以进行路径搜索，能够有效解决高维空
+间和复杂约束的规划问题。
+◼如何提高效率？
+Bidirectional: two-trees
+Multi-directional
+◼算法只能生成一条可行路径，而不是
+最优的。
+◼如何能够得到最优路径？
+第六章 移动机器人运动规划技术
+95
+4.4 RRT*
+S. Karaman and E. Frazzoli, “Sampling-based algorithms for optimal motion 
+planning,” IJRR, 30(7): 846–894, 2011. 
+Sertac Karaman
+Department of 
+Aeronautics and 
+Astronautics
+Massachusetts 
+Institute of Technology 
+Emilio Frazzoli
+Department of 
+Aeronautics and 
+Astronautics
+Massachusetts Institute 
+of Technology
+第六章 移动机器人运动规划技术
+96
+4.4.1 RRT*核心思想
+◼RRT* inherits all the properties of RRT and works similarly to RRT. 
+However, it introduced two promising features called near neighbor 
+search and rewiring tree operations 
+Near neighbor operations finds the best parent node for the new node before 
+its insertion in tree 
+Rewiring operation rebuilds the tree within this radius of area k to maintain the 
+tree with minimal cost between tree connections 
+第六章 移动机器人运动规划技术
+97
+4.4.1 RRT*核心思想
+RRT
+RRT*
+第六章 移动机器人运动规划技术
+98
+4.4.2 RRT*算法流程
+◼将起点加入树中
+◼从搜索空间随机取点扩展树
+◼临近空间搜索、树的重新连接
+节点在更换父节点时也需要判断连线是否经过障碍物。
+◼若树扩展到了目标节点或进入目标区域，便可以在树上找到一条从起
+始点到终点的路径。
+◼继续随机取点优化路径，直至得到最优路径。
+可以通过判断更新后得到的最优路径代价值是否收敛至定值来判
+断是否得到最优路径；为了得到最优路径，随机取点的最大循环
+次数应当要足够大。
+第六章 移动机器人运动规划技术
+99
+4.4.3 RRT*算法分析
+◼RRT*在具备完备性、无需建模等优点的同时，还能得到
+一条较为优化的路径，如何得到最优路径
+◼得到最优路径所需的迭代次数可能会很多，需要消耗大
+量计算资源。那么，如何减少迭代次数？
+第六章 移动机器人运动规划技术
+100
+4.5 Informed RRT*
+Jonathan D. Gammell, Siddhartha S. Srinivasa, Timothy D. Barfoot. Informed 
+RRT*:Optimal Incremental Path PlanningFocused through an Admissible 
+Ellipsoidal Heuristic. IROS. 2014.
+Jonathan D. 
+Gammell
+Oxford Robotics 
+Institute
+Siddhartha S. 
+Srinivasa
+University of 
+Washington Seattle
+第六章 移动机器人运动规划技术
+101
+4.5.1 Informed RRT*核心思想
+概念定义:
+1. 𝑋𝑠𝑡𝑎𝑟𝑡：起点
+2. 𝑋𝑔𝑜𝑎𝑙： 终点
+3. 𝑓(𝑥): 
+经过状态𝑥的最佳路径代价值
+4. 𝑐𝑏𝑒𝑠𝑡:   当前路径的代价值
+5. 𝑋𝑓：     可以优化当前路径的状态的集合
+6. መ𝑓(𝑥)：  启发函数，表示𝑓𝑥的估计值
+7. 
+第六章 移动机器人运动规划技术
+102
+4.5.1 Informed RRT*核心思想
+◼由于经过x的最佳路径的长度最小为x到起点、终点的直线距离和，所
+以，取
+◼进而可以得到：
+该区域为恰好表示为一个椭圆。
+◼在该椭圆内取随机点可以优化当前的最佳路径，所以，只需在该
+椭圆内取点即可对路径进行优化。
+第六章 移动机器人运动规划技术
+103
+4.5.1 Informed RRT*核心思想
+椭圆区域的算法表示为：
+其中：
+而𝑈、𝑉 由矩阵 𝑀= 𝑎1 1
+0 经过奇异值分解
+得到。 
+其中，
+第六章 移动机器人运动规划技术
+104
+4.5.2 Informed RRT*算法流程
+◼按照RRT*的思路得到可行路径。
+◼根据已有最优路径代价值得到椭圆区域，在椭圆区域内随机取点
+◼随着路径的优化，椭圆区域不断减小直至得到最优路径。
+第六章 移动机器人运动规划技术
+105
+4.5.3 Informed RRT*算法仿真
+第六章 移动机器人运动规划技术
+106
+4.5.4 Informed RRT*算法分析
+通过不断缩小随机点的范围，Informed RRT*算法可以大
+大缩短得到最优路径所需要的时间，在计算资源的节省上要
+大大优于RRT*算法。同时，Informed RRT*也具备完备性、
+无需建模等优点，因而该算法实用性较高。
+第六章 移动机器人运动规划技术
+107
+4.6 全局路径规划算法发展历程
+1959 
+Dijkstra
+1968
+A*
+1994
+D*
+1996 
+PRM
+1998
+RRT
+2002
+Weight A*
+2003 ARA*
+2004
+LPA*
+2005 
+D* Lite
+2006 
+AD*
+2010 
+RRT*
+2011
+Informed 
+RRT*
+第六章 移动机器人运动规划技术
+108
+05
+面向避碰的局部路径规划算法
+Local Path Planning for Collision Avoidance 
+第六章 移动机器人运动规划技术
+109
+5 机器人局部路径规划意义
+全局路径规划问题：
+◼全局地图为静态地图，未考虑机器人实际运行时环境的变化，如动态障碍物等
+◼机器人运行时受机器人建模误差、计算误差、里程计测量误差、建图误差等影响，机器人运行时
+会偏离轨迹
+第六章 移动机器人运动规划技术
+110
+5.1 机器人路径规划架构
+第六章 移动机器人运动规划技术
+111
+5.2 DWA(Dynamic Window Approach)
+Fox, D., Burgard, W., & Thrun, S. (1997). The dynamic window approach to collision avoidance. 
+IEEE Robotics & Automation Magazine, 4(1), 23-33. 
+◼Generating full time-varying trajectories 
+for 𝑉(𝑡) and 𝜔(𝑡) is still very challenging 
+◼If we assume (𝑉, 𝜔) are constant for a 
+fixed Δ𝑡, each local path in the future is 
+a circular arc segment 
+◼This can be easily considered as a type 
+of velocity configuration space 
+第六章 移动机器人运动规划技术
+112
+5.2 DWA(Dynamic Window Approach)
+𝜔
+𝜔
+𝑉
+𝑉, 𝜔
+(This is a configuration space!)
+◼在一定的时间窗口下，依照机器人当前状态（位置、
+速度、加速度等）生成多条轨迹
+◼Maximise utility metric (usually maximise speed, 
+minimise distance to goal, maximise distance 
+from obstacles) across configuration samples 
+第六章 移动机器人运动规划技术
+113
+5.2 DWA基本思路
+𝜔
+𝜔
+𝑉
+𝑉, 𝜔
+(This is a configuration space!)
+◼机器人轨迹（运动）估计(龙哥库塔法)：
+◼速度采样：
+移动机器人速度约束
+移动机器人执行器能力约束
+环境约束
+其中𝑑𝑖𝑠𝑡𝑣, 𝜔表示𝑣, 𝜔对应轨迹上离障碍物最近的距离
+注意：这个条件并不是在采样一开始就能得到，需要计算轨迹后判断当前采样的速度能否在
+碰到障碍物之前停下来，如果能停下来则该速度为可接受admissible，否则抛弃
+(其中𝑣𝑐, 𝜔𝑐为当前速度)
+第六章 移动机器人运动规划技术
+114
+5.2 DWA基本思路
+◼评价函数：
+
+方向角评价函数
+机器人当前设定的采样速度下，达到模拟轨迹末端时的朝向与目标间的夹角
+
+空隙
+机器人当前设定的采样速度下，模拟轨迹与最近的障碍物间的距离
+
+速度
+当前采样速度大小（在一次采样中速度大小不变）
+◼指标的归一化处理
+多目标加权求优过程中经常应用的方法
+多个优化指标在相对变化量上的影响一致
+第六章 移动机器人运动规划技术
+115
+5.2 DWA
+第六章 移动机器人运动规划技术
+116
+5.2 DWA算法总结
+◼可以快速根据环境信息作出反应
+◼可有效避免机器人与环境发生碰撞
+◼计算复杂度低，对硬件计算资源需求低
+◼具有较高的实用性，可有效地在实际应用中使用
+◼计算结果与选择权重相关，有可能得不到全局最优解
+◼局部最优的结果有可能使机器人陷入死锁，无法达到目标点
+第六章 移动机器人运动规划技术
+117
+5.2 DWA算法问题
+Goal
+Ci+1
+Ci
+机器人速度
+C0
+C-i
+C*
+𝐺𝑣, 𝜔
+在C0处机器人速度过快，
+无法进入向下的目标通道
+在C-i 处机器人状态与初始
+时状态相同，机器人无法
+达到目标位置
+第六章 移动机器人运动规划技术
+118
+5.2 DWA算法问题
+◼DWA算法在实际应用过程中的问题：
+可预见性差，在接近门口的位置速度过快
+第六章 移动机器人运动规划技术
+119
+5.3.1 TEB (Timed Elastic Band)核心思想
+TEB核心思想：
+◼连接起始、目标点，并让这个路径可以变形，变形的条
+件就是将所有约束当做橡皮筋的外力。
+◼Elastic-Band：起始点、目标点状态由用户/全局规划器
+指定，中间插入N个控制橡皮筋形状的控制点（机器人
+位姿）
+◼Timed-Elastic-Band：为控制橡皮筋形状的控制点赋
+予时间
+◼通过加权多目标优化获取最优的路径点，即最优的𝐵
+C. Roesmann, et al., Trajectory modification considering dynamic constraints of autonomous 
+robots, ROBOTIK 2012, 7th German Conference on Robotics, 74-79
+第六章 移动机器人运动规划技术
+120
+5.3.2 TEB约束目标函数组成
+TEB约束目标函数(1)：
+◼跟随路径和避障约束
+其中，𝑑𝑚𝑖𝑛,𝑗为与第 j 个全局路径点或第 j 个障碍物点 zj 间的最小距离，𝑟𝑝𝑚𝑎𝑥为距离
+全局路径允许的最大偏差，𝑟𝑜𝑚𝑎𝑥为距障碍物的允许的最小距离
+不等式约束不便于优化——等式约束
+每个目标函数只与elastic band中的某几个连续状态有关，而非整条
+band。故𝐽为稀疏矩阵
+For 47 configurations, the first 141 states corresponds to 47 configurations 
+𝑋𝑖and states 142-189 are the related time differences Δ𝑇𝑖. 
+采用分段连续，可微分的代价函数计算破坏约束的惩罚值
+TEB system-matrix is still sparse with 15 
+percent of non-zero elements. 
+an approximation of the constraint xr = 0.4. 
+其中，S 表示缩放，n 表示多项式阶数，𝜖 表示限界值邻域范围
+注意：目标函数的梯度可视为对elastic band施加的外力
+第六章 移动机器人运动规划技术
+121
+5.3.2 TEB约束目标函数组成
+TEB约束目标函数(2)：
+◼速度和加速度约束
+两轮差速机器人运动学：
+电机速度加速度限制：
+不等式约束不便于优化——等式约束
+第六章 移动机器人运动规划技术
+122
+5.3.2 TEB约束目标函数组成
+TEB约束目标函数(3)：
+◼Non-holonomic运动学约束
+两轮差速机器人在平面运动只有两个自由度，运动学约束使得机器人以若干弧段组成的平滑的轨迹运动
+相邻的两个构型应在弧段的两端: 构型𝑋𝑖与运动方向𝑑𝑖,𝑖+1的夹角𝜃𝑖应与构型𝑋𝑖+1与运动方向𝑑𝑖,𝑖+1的夹角𝜃𝑖+1相等
+要注意机器人运动在180度附近的越界的情况
+转弯半径约束：       
+◼最小时间约束
+第六章 移动机器人运动规划技术
+123
+5.3.2 TEB算法优化思路
+第六章 移动机器人运动规划技术
+124
+5.3.4 TEB算法流程
+TEB约束目标函数：
+◼跟随路径和避障约束
+其中，𝑑𝑚𝑖𝑛,𝑗为与第 j 个全局路径点或第 j 个障碍物点 zj 间的最小距
+离，𝑟𝑝𝑚𝑎𝑥为距离全局路径允许的最大偏差，𝑟𝑜𝑚𝑎𝑥为距障碍物的允许
+的最小距离
+注意：目标函数的梯度可视为对elastic band施加的外力
+◼速度和加速度约束
+◼起始点、目标点状态由用户/全局规划器指定，中间插入N个控
+制橡皮筋形状的控制点（机器人位姿）
+第六章 移动机器人运动规划技术
+125
+5.2 TEB
+第六章 移动机器人运动规划技术
+126
+06
+路径平滑与轨迹规划算法
+Path Smoothing and Trajectory Planning
+第六章 移动机器人运动规划技术
+127
+6.1 Path Smoothing 
+Local Collision-free Path Planning
+◼Pros：
+Local motion evaluation is fast 
+In sparse obstacles, works very well
+◼Cons:
+Search space differences
+Local mini 
+Blocked motions
+Free motions
+Perception horizon
+第六章 移动机器人运动规划技术
+128
+6.1.1 Path Smoothing 
+◼Performance Requirement
+Efficiency
+Precision
+◼Constraints by robot 
+Degree of Maneuverability
+Kinematics
+The capacity of actuators
+◼Moves with the robot
+◼Fixed to the world
+◼Circle is suitable?
+START
+GOAL
+第六章 移动机器人运动规划技术
+129
+6.1.2 路径光滑的基本约束
+◼初始、终止状态约束
+初始、终止位置——曲线的起始、终止位置
+初始、终止姿态——曲线的起始、终止位置的切线方向
+◼曲线光滑：
+曲线连续
+✓机器人物理属性
+曲率连续
+✓机器人运动学约束：非完整性属性
+曲率导数连续
+✓执行器约束：电机输出力矩连续：机器人加速度连续
+曲率导数最小
+✓机器人执行精度要求：角加速度最小，避免机器人侧滑
+第六章 移动机器人运动规划技术
+130
+6.1.3 Kinematics Constraints 
+◼差速机器人运动学模型
+◼瞬时旋转中心 (ICR: Instantaneous Center of Rotation)
+◼曲率
+第六章 移动机器人运动规划技术
+131
+6.1.4 曲线形态（1）——圆弧
+◼已知机器人初始位姿及停止位姿分别为：
+◼初始、终止状态约束
+初始、终止位置——曲线的起始、终止位置
+初始、终止姿态——曲线的起始、终止位置
+的切线方向
+◼曲线光滑：
+曲线连续
+曲率连续
+曲率导数连续
+曲率导数最小
+0.2
+0.4
+0.6
+0.8
+x
+0.2
+0.4
+0.6
+0.8
+y
+唯一解
+◆无法根据障碍物实际情况调整曲线
+◆无法与其他段轨迹进行衔接
+第六章 移动机器人运动规划技术
+132
+6.1.4 曲线形态（2）——贝塞尔曲线
+◼ 一阶贝塞尔:
+◼二阶贝塞尔:
+◼高阶贝塞尔:
+第六章 移动机器人运动规划技术
+133
+6.1.4 曲线形态（3）——三阶贝塞尔曲线
+◼ 三阶贝塞尔:
+0.2
+0.4
+0.6
+0.8
+x
+0.2
+0.4
+0.6
+0.8
+y
+唯一解
+◆无法根据障碍物实际情况调整曲线
+◆无法优化最大曲率及曲率导数
+第六章 移动机器人运动规划技术
+134
+6.1.4 曲线形态（3）——五阶贝塞尔曲线
+◼ 五阶贝塞尔:
+0.2
+0.4
+0.6
+0.8
+x
+0.2
+0.4
+0.6
+0.8
+y
+多解
+✓可以根据障碍物实际情况调整曲线
+✓可以优化最大曲率及曲率导数
+◆求解困难——无法在线运行
+第六章 移动机器人运动规划技术
+135
+6.2.1 移动机器人轨迹规划
+◼移动机器人轨迹规划目标
+      以给定约束(执行器速度，加速度限制)的条件下，给出沿给定的光
+滑曲线上可供机器人执行的运动命令序列。
+◼轨迹规划约束条件：
+初始、终止状态约束：位置、速度、加速度
+执行器约束：机器人车轮速度、加速度限幅
+机器人运动学约束：非完整性属性——线速度与角速度的耦合
+◼解决思路：
+给定路径下，路径上的每个位置的曲率是已知的
+𝒗
+𝝎
+第六章 移动机器人运动规划技术
+136
+6.2.2 移动机器人轨迹规划思路
+◼Step1: 基于给定路径求取路径上的每个位置对应的曲率
+◼Step2: 根据机器人模型，求取速度上界
+◼Step3: 根据机器人模型和加速度约束，求取速度上界MVC(s)
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+−1
+−0.5
+0
+0.5
+1
+1.5
+PathLength(m)
+Curvature(m−1)
+𝒗
+𝝎
+加速度约束
+满足约束的最小加速度和最大加速度
+为了保证ሷ𝑠存在，应当要满足𝛼(𝑠, ሶ𝑠) ≤𝛽(𝑠, ሶ𝑠)
+第六章 移动机器人运动规划技术
+137
+6.2.2 移动机器人轨迹规划思路
+根据以上分析，可知对于         上的任意一个s，都有一个对应的    ，当        
+时，加速度将不满足约束条件，我们将这些点组成的曲线称为最大速度曲线
+(MVC)，并且有：
+进而可得𝑀𝑉𝐶(𝑠) 的表达式：
+[0,
+]
+es
+0
+s
+s
+
+0s
+第六章 移动机器人运动规划技术
+138
+6.2.2 移动机器人轨迹规划思路
+◼Step4 连接起点和终点速度
+正向搜索：从起点开始，以最大的路径加速度𝜷(𝒔, ሶ𝒔)进行正向数值积分
+反向搜索：从终点开始，以最小的路径加速度𝜶(𝐬, ሶ𝐬)进行反向数值积分
+满足约束的最小加速度          和最大加速度
+( , )
+s s
+
+( , )
+s s
+
+第六章 移动机器人运动规划技术
+139
+6.2.2 移动机器人轨迹规划思路
+◼Step5 根据求取的路径上每个点的速度值求取角速度值
+◼Step6 依据机器人运动学模型，求取机器人执行器控制输入
+第六章 移动机器人运动规划技术
+140
+6.2.3 移动机器人轨迹规划实验
+第六章 移动机器人运动规划技术
+141
+6.3 最新的移动机器人轨迹规划技术
+第六章 移动机器人运动规划技术
+孙雷  教授
+Tel:13512967601
+Email: sunl@nankai.edu.cn
+2026年6月8日
+Motion Planning Algorithms for Mobile Robot
+声明：本文件部分视频文件下载自优酷视频，部分图片下载自百度图片，仅用作本课程教学使用，任何人不得外传。

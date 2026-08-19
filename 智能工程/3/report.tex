@@ -1,0 +1,307 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{adjustbox}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\titleformat{\section}{\centering\heiti\fontsize{16pt}{16pt}\bfseries}{第\chinese{section}章}{1em}{}
+\titlespacing{\section}{0pt}{24pt}{18pt}
+
+\titleformat{\subsection}{\centering\heiti\fontsize{14pt}{14pt}\bfseries}{第\chinese{subsection}节}{1em}{}
+\titlespacing{\subsection}{0pt}{24pt}{6pt}
+
+\titleformat{\subsubsection}{\heiti\fontsize{13pt}{13pt}}{\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}{1em}{}
+\titlespacing{\subsubsection}{0pt}{12pt}{6pt}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+
+\begin{document}
+
+\begin{center}
+{\heiti\fontsize{22pt}{22pt}\bfseries 智能工程第三次作业}
+
+\vspace{24pt}
+\end{center}
+
+\begin{center}
+{\heiti\fontsize{18pt}{18pt}\bfseries 摘\quad 要}
+
+\vspace{18pt}
+\end{center}
+
+\setlength{\parindent}{2em}
+\setstretch{1.0}
+\fontsize{12pt}{20pt}\selectfont
+
+本文针对叉车式移动机器人，构建了其里程计模型及误差传导模型。首先，基于叉车的运动学特性，建立了以状态向量$z=[x,y,\theta]^T$和输入向量$u=[ds,\delta]^T$表示的里程计模型，采用中点积分方法实现位姿更新。其次，通过对离散模型进行一阶线性化，推导了误差传导方程，建立了协方差矩阵的递推公式。最后，通过Monte Carlo仿真实验对所构建模型进行了验证，仿真结果表明：理论推导的标准差与Monte Carlo实验结果高度吻合，$x$方向、$y$方向和航向角的平均标准差相对偏差分别为0.41\%、1.27\%和0.99\%，均值误差接近于零，验证了所构建模型的正确性。
+
+\vspace{6pt}
+\noindent\textbf{关键词：}叉车机器人；里程计模型；误差传导；Monte Carlo仿真
+
+\vspace{24pt}
+
+\begin{center}
+{\fontsize{18pt}{18pt}\bfseries Abstract}
+
+\vspace{18pt}
+\end{center}
+
+\setlength{\parindent}{2em}
+\setstretch{1.0}
+\fontsize{12pt}{20pt}\selectfont
+
+This paper constructs the odometry model and error propagation model for forklift mobile robots. Firstly, based on the kinematic characteristics of the forklift, an odometry model is established with state vector $z=[x,y,\theta]^T$ and input vector $u=[ds,\delta]^T$, using the midpoint integration method for pose update. Secondly, by performing first-order linearization of the discrete model, the error propagation equation is derived, and the recursive formula for the covariance matrix is established. Finally, the constructed model is validated through Monte Carlo simulation experiments. The simulation results show that the theoretically derived standard deviations are highly consistent with the Monte Carlo experimental results. The average relative deviations of standard deviations in the $x$ direction, $y$ direction, and heading angle are 0.41\%, 1.27\%, and 0.99\% respectively, with mean errors approaching zero, verifying the correctness of the constructed model.
+
+\vspace{6pt}
+\noindent\textbf{Key Words:} Forklift Robot; Odometry Model; Error Propagation; Monte Carlo Simulation
+
+\newpage
+
+\section{叉车的里程计模型}
+
+\subsection{叉车运动学模型}
+
+叉车式移动机器人是一种典型的非完整约束系统，其运动学模型基于Ackermann转向原理。如图\ref{fig:forklift}所示，叉车的状态可由位姿向量$z=[x,y,\theta]^T$描述，其中$(x,y)$表示叉车后轴中心在全局坐标系中的位置，$\theta$表示叉车的航向角。
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.8\textwidth}
+\centering
+\setlength{\unitlength}{0.8cm}
+\begin{picture}(8,6)
+\thicklines
+\put(1,1){\vector(1,0){6}}
+\put(1,1){\vector(0,1){4}}
+\put(1,1){\circle*{0.15}}
+\put(1,1.2){\makebox(0,0)[b]{$O$}}
+\put(6.8,0.8){\makebox(0,0)[b]{$X$}}
+\put(0.8,4.8){\makebox(0,0)[r]{$Y$}}
+\put(3,2.5){\vector(1,1){2.5}}
+\put(3,2.5){\circle*{0.15}}
+\put(2.8,2.3){\makebox(0,0)[tr]{$(x,y)$}}
+\put(5.5,5){\makebox(0,0)[bl]{$\theta$}}
+\put(3.3,2.8){\vector(0,1){0.8}}
+\put(3.5,3.6){\makebox(0,0)[l]{$v$}}
+\put(3,2.5){\line(1,0){2.5}}
+\put(5.5,2.5){\circle*{0.1}}
+\put(5.5,2.3){\makebox(0,0)[t]{$\delta$}}
+\put(5.5,2.5){\line(0,1){0.6}}
+\put(5.5,3.1){\line(1,1){0.4}}
+\put(5.9,3.5){\circle*{0.1}}
+\end{picture}
+\caption{叉车运动学模型示意图}
+\label{fig:forklift}
+\end{minipage}
+\end{figure}
+
+叉车的输入向量为$u=[ds,\delta]^T$，其中$ds$为驱动轮在采样周期内的弧长增量，$\delta$为转向角，$L$为轴距。叉车的瞬时曲率可表示为：
+\begin{equation}
+\kappa = \frac{\tan\delta}{L}
+\end{equation}
+
+\subsection{里程计更新方程}
+
+里程计模型的核心任务是利用传感器测量数据递推估计机器人的位姿。本文采用中点积分形式的里程计更新方法，该方法相比欧拉法具有更高的数值精度。
+
+设采样周期为$\Delta t$，在第$k$时刻，叉车的位姿为$z_k=[x_k,y_k,\theta_k]^T$。里程计更新步骤如下：
+
+首先，计算航向角增量：
+\begin{equation}
+\Delta\theta = ds \cdot \kappa = ds \cdot \frac{\tan\delta}{L}
+\end{equation}
+
+然后，计算中点航向角：
+\begin{equation}
+\theta_{mid} = \theta_k + \frac{\Delta\theta}{2}
+\end{equation}
+
+最后，更新位姿：
+\begin{equation}
+x_{k+1} = x_k + ds \cdot \cos\theta_{mid}
+\end{equation}
+\begin{equation}
+y_{k+1} = y_k + ds \cdot \sin\theta_{mid}
+\end{equation}
+\begin{equation}
+\theta_{k+1} = \theta_k + \Delta\theta
+\end{equation}
+
+中点积分方法通过使用区间中点的航向角来计算位移增量，有效减小了数值积分误差，特别适用于转向角较大的情况。
+
+\section{叉车里程计的误差传导模型}
+
+\subsection{误差来源分析}
+
+叉车里程计的误差主要来源于以下几个方面：
+
+\textbf{（1）里程增量噪声}：编码器测量误差、车轮打滑等因素导致弧长增量测量存在误差。
+
+\textbf{（2）转向角噪声}：转向角传感器测量误差导致转向角$\delta$存在偏差。
+
+\textbf{（3）模型简化误差}：运动学模型假设叉车为刚体，忽略了悬挂系统变形、轮胎变形等因素。
+
+本文将里程增量噪声和转向角噪声建模为零均值高斯白噪声，分别记为$n_s$和$n_\delta$。
+
+\subsection{误差传导方程推导}
+
+对离散里程计模型进行一阶线性化，可以得到误差传导方程。设误差状态为$e_k = z_k - \bar{z}_k$，其中$\bar{z}_k$为名义状态。
+
+对里程计更新方程在名义状态处进行Taylor展开，保留一阶项：
+\begin{equation}
+e_{k+1} = F_k e_k + G_k w_k
+\end{equation}
+其中$w_k = [n_s, n_\delta]^T$为输入噪声向量，$F_k$为状态雅可比矩阵，$G_k$为输入雅可比矩阵。
+
+状态雅可比矩阵$F_k$为：
+\begin{equation}
+F_k = \frac{\partial f}{\partial z}\bigg|_{z=\bar{z}_k} = 
+\begin{bmatrix}
+1 & 0 & -ds \cdot \sin\theta_{mid} \\
+0 & 1 & ds \cdot \cos\theta_{mid} \\
+0 & 0 & 1
+\end{bmatrix}
+\end{equation}
+
+输入雅可比矩阵$G_k$为：
+\begin{equation}
+G_k = \frac{\partial f}{\partial u}\bigg|_{u=\bar{u}_k} = 
+\begin{bmatrix}
+\cos\theta_{mid} - \frac{1}{2}ds \cdot \kappa \cdot \sin\theta_{mid} & -\frac{1}{2}ds^2 \cdot \gamma \cdot \sin\theta_{mid} \\
+\sin\theta_{mid} + \frac{1}{2}ds \cdot \kappa \cdot \cos\theta_{mid} & \frac{1}{2}ds^2 \cdot \gamma \cdot \cos\theta_{mid} \\
+\kappa & ds \cdot \gamma
+\end{bmatrix}
+\end{equation}
+其中$\gamma = \frac{1}{\cos^2\delta \cdot L}$。
+
+\subsection{协方差递推公式}
+
+设状态误差的协方差矩阵为$P_k = E[e_k e_k^T]$，输入噪声的协方差矩阵为$Q_k$：
+\begin{equation}
+Q_k = 
+\begin{bmatrix}
+\sigma_s^2 & 0 \\
+0 & \sigma_\delta^2
+\end{bmatrix}
+\end{equation}
+
+协方差矩阵的递推公式为：
+\begin{equation}
+P_{k+1} = F_k P_k F_k^T + G_k Q_k G_k^T
+\end{equation}
+
+初始协方差矩阵$P_0$通常设为零矩阵（假设初始位姿精确已知）或较小的对角矩阵。
+
+\section{仿真实验与结果分析}
+
+\subsection{仿真参数设置}
+
+为验证所构建里程计模型和误差传导模型的正确性，本文设计了Monte Carlo仿真实验。仿真参数设置如表\ref{tab:params}所示。
+
+\begin{table}[H]
+\centering
+\caption{仿真参数设置}
+\label{tab:params}
+\begin{tabular}{ccc}
+\toprule
+参数名称 & 符号 & 数值 \\
+\midrule
+轴距 & $L$ & 2.0 m \\
+采样周期 & $\Delta t$ & 0.05 s \\
+仿真总时长 & $T$ & 25.0 s \\
+里程噪声标准差 & $\sigma_s$ & 0.004 m + 1\%$|ds|$ \\
+转角噪声标准差 & $\sigma_\delta$ & 0.35$^\circ$ \\
+Monte Carlo次数 & $N$ & 1200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+控制输入采用时变函数：
+\begin{equation}
+v(t) = 0.75 + 0.10\cos(0.30t)
+\end{equation}
+\begin{equation}
+\delta(t) = 0.18\sin(0.22t) + 0.06\cos(0.11t)
+\end{equation}
+
+\subsection{无噪声一致性检验}
+
+首先进行无噪声条件下的模型一致性检验，验证里程计模型与连续运动学模型的一致性。在无噪声条件下，名义里程计与名义运动模型的最大一致性误差为$0$，表明里程计模型的数值实现正确。最终名义位姿为$(16.505, 8.201, 0.080)$，单位分别为m、m、rad。
+
+\subsection{Monte Carlo仿真结果}
+
+通过1200次Monte Carlo仿真实验，对比理论协方差与实验协方差。在$t=5.0, 10.0, 15.0, 20.0, 25.0$ s时刻，分别记录理论标准差和Monte Carlo样本标准差，结果如表\ref{tab:results}所示。
+
+\begin{table}[H]
+\centering
+\caption{理论协方差与Monte Carlo结果对比}
+\label{tab:results}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{c*{2}{cc}*{2}{cc}*{2}{cc}ccc}
+\toprule
+\multirow{2}{*}{时间/s} & \multicolumn{2}{c}{$\sigma_x$/m} & \multicolumn{2}{c}{$\sigma_y$/m} & \multicolumn{2}{c}{$\sigma_\theta$/rad} & \multicolumn{3}{c}{均值误差} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-10}
+ & 理论 & MC & 理论 & MC & 理论 & MC & $e_x$/m & $e_y$/m & $e_\theta$/rad \\
+\midrule
+5.0 & 0.0426 & 0.0425 & 0.0113 & 0.0112 & 0.0036 & 0.0036 & $-0.0002$ & $-0.0001$ & $-0.0001$ \\
+10.0 & 0.0505 & 0.0502 & 0.0353 & 0.0348 & 0.0060 & 0.0060 & $-0.0000$ & $-0.0000$ & $-0.0000$ \\
+15.0 & 0.0479 & 0.0476 & 0.0597 & 0.0584 & 0.0065 & 0.0064 & 0.0009 & 0.0013 & 0.0001 \\
+20.0 & 0.0521 & 0.0521 & 0.0820 & 0.0811 & 0.0073 & 0.0072 & 0.0009 & 0.0020 & 0.0002 \\
+25.0 & 0.0685 & 0.0681 & 0.1042 & 0.1028 & 0.0088 & 0.0087 & 0.0001 & 0.0024 & 0.0001 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{结果分析}
+
+从仿真结果可以得出以下结论：
+
+\textbf{（1）理论值与实验值高度吻合}：$x$方向的平均标准差相对偏差为0.41\%，$y$方向的平均标准差相对偏差为1.27\%，航向角的平均标准差相对偏差为0.99\%。三个方向的相对偏差均小于2\%，表明理论推导的误差传导模型能够准确预测实际误差的统计特性。
+
+\textbf{（2）均值误差接近零}：所有检查点的均值误差均接近于零，最大均值误差仅为0.0024 m（$y$方向），这符合零均值高斯噪声假设，验证了误差模型的正确性。
+
+\textbf{（3）误差随时间累积}：从表\ref{tab:results}可以看出，协方差矩阵的对角元素（即各方向的方差）随时间逐渐增大，这是里程计定位的典型特征。在$t=25$ s时，最终理论$3\sigma$范围约为$x$方向0.205 m，$y$方向0.313 m，航向角1.516$^\circ$。
+
+\textbf{（4）误差各向异性}：$y$方向的误差增长速度快于$x$方向，这与叉车的运动轨迹和转向特性有关。由于叉车主要沿纵向运动，横向误差对转向角噪声更为敏感。
+
+综上所述，仿真实验结果充分验证了所构建叉车里程计模型和误差传导模型的正确性。理论推导的协方差能够准确反映实际定位误差的统计特性，为后续的定位算法设计和性能评估提供了可靠的理论基础。
+
+\section*{符号说明}
+\addcontentsline{toc}{section}{符号说明}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cl}
+\toprule
+符号 & 含义 \\
+\midrule
+$z$ & 状态向量，$z=[x,y,\theta]^T$ \\
+$u$ & 输入向量，$u=[ds,\delta]^T$ \\
+$x, y$ & 叉车后轴中心在全局坐标系中的位置 \\
+$\theta$ & 叉车的航向角 \\
+$ds$ & 驱动轮弧长增量 \\
+$\delta$ & 转向角 \\
+$L$ & 轴距 \\
+$\kappa$ & 瞬时曲率 \\
+$F_k$ & 状态雅可比矩阵 \\
+$G_k$ & 输入雅可比矩阵 \\
+$P_k$ & 状态误差协方差矩阵 \\
+$Q_k$ & 输入噪声协方差矩阵 \\
+$\sigma_s$ & 里程增量噪声标准差 \\
+$\sigma_\delta$ & 转向角噪声标准差 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

@@ -1,0 +1,196 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{ctex}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+
+\geometry{a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\setCJKmainfont{SimSun}[BoldFont=SimHei]
+\setmainfont{Times New Roman}
+
+\newcommand{\chuhao}{\fontsize{21pt}{28pt}\selectfont}
+\newcommand{\xiaochuhao}{\fontsize{18pt}{24pt}\selectfont}
+\newcommand{\yihao}{\fontsize{16pt}{22pt}\selectfont}
+\newcommand{\xiaoyihao}{\fontsize{15pt}{20pt}\selectfont}
+\newcommand{\erhao}{\fontsize{14pt}{19pt}\selectfont}
+\newcommand{\xiaoerhao}{\fontsize{13pt}{17pt}\selectfont}
+\newcommand{\sanhao}{\fontsize{12pt}{16pt}\selectfont}
+\newcommand{\xiaosanhao}{\fontsize{11pt}{15pt}\selectfont}
+\newcommand{\sihao}{\fontsize{10.5pt}{14pt}\selectfont}
+\newcommand{\xiaosihao}{\fontsize{12pt}{16pt}\selectfont}
+\newcommand{\wuhao}{\fontsize{10.5pt}{14pt}\selectfont}
+
+\titleformat{\section}{\centering\heiti\xiaochuhao}{\thesection}{1em}{}
+\titlespacing{\section}{0pt}{24pt}{18pt}
+
+\titleformat{\subsection}{\heiti\erhao}{\thesubsection}{1em}{}
+\titlespacing{\subsection}{0pt}{18pt}{12pt}
+
+\titleformat{\subsubsection}{\heiti\xiaoerhao}{\thesubsubsection}{1em}{}
+\titlespacing{\subsubsection}{0pt}{12pt}{6pt}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+
+\begin{document}
+
+\begin{center}
+{\heiti\chuhao TRPO与PPO算法读书笔记}
+\end{center}
+
+\vspace{6pt}
+
+\begin{center}
+{\sanhao 刘振毫\quad 学号：2312167}
+\end{center}
+
+\vspace{18pt}
+
+\setlength{\baselineskip}{20pt}
+\sanhao
+
+信任域策略优化（TRPO）和近端策略优化（PPO）是深度强化学习领域中两项里程碑式的算法创新。TRPO算法由Schulman等人于2015年提出，通过引入信任域约束，从理论上保证了策略更新的单调改进特性，有效解决了传统策略梯度方法中步长选择困难的问题。PPO算法作为TRPO的简化与改进版本，于2017年由同一团队提出，通过引入裁剪概率比的目标函数，摒弃了TRPO中复杂的二阶优化方法，仅使用一阶梯度方法即可实现类似信任域的效果。本文系统梳理了两篇论文的核心理论、算法设计与实验结果，深入分析了两种算法的理论基础、技术细节和适用场景。
+
+\section{研究背景与动机}
+
+强化学习作为机器学习的重要分支，旨在通过智能体与环境的交互学习最优决策策略。近年来，深度强化学习在游戏AI、机器人控制、自动驾驶等领域取得了突破性进展。然而，传统策略梯度方法面临着步长选择困难、训练不稳定等关键挑战。
+
+在TRPO提出之前，策略梯度方法被认为是最有前途的方向，因为其能直接处理连续动作空间且理论上能收敛到最优策略。然而，策略梯度方法存在一个无法回避的核心问题：缺乏通用的方法来选择合适的步长。传统策略梯度方法（如REINFORCE）对步长高度敏感，过大的步长会导致策略更新过于激进，可能使策略偏离可行区域，造成性能崩溃；过小的步长则导致收敛速度极慢，训练效率低下。这种"步长诅咒"严重制约了策略梯度方法在实际问题中的应用。自然梯度方法虽然通过利用Fisher信息矩阵对参数空间进行黎曼几何变换试图找到最速下降方向，但由于使用固定的拉格朗日乘子，无法自适应调整步长，在复杂任务上表现不稳定。
+
+TRPO算法从理论上证明了存在一种策略更新方式，能够保证策略性能的单调提升。这一突破性成果为深度强化学习奠定了坚实的理论基础。PPO算法则在TRPO基础上进行了实用化改进，通过简化实现方式，使得信任域思想能够大规模应用于实际问题。两篇论文共同推动了策略梯度方法成为连续控制任务的主流方法。
+
+\section{信任域策略优化（TRPO）}
+
+\subsection{核心思想与理论基础}
+
+TRPO旨在解决的核心问题是：如何在保证策略性能非减的前提下，实现尽可能大的策略更新步长，从而达到快速且稳定的收敛。TRPO首先证明了新策略的性能可以表示为旧策略的性能加上优势函数的期望值：
+
+\begin{equation}
+\eta(\tilde{\pi}) = \eta(\pi) + \mathbb{E}_{s_0,a_0,\cdots\sim\tilde{\pi}}\left[\sum_{t=0}^{\infty}\gamma^t A_{\pi}(s_t,a_t)\right]
+\end{equation}
+
+其中$A_{\pi}(s,a)=Q_{\pi}(s,a)-V_{\pi}(s)$为优势函数，衡量动作$a$在状态$s$下比平均水平好多少。由于新策略的状态分布$\rho_{\tilde{\pi}}$难以直接计算，TRPO引入了局部近似的代理目标$L_{\pi}(\tilde{\pi})$，使用旧策略的状态分布$\rho_{\pi}$，并证明了以下性能下界：
+
+\begin{equation}
+\eta(\tilde{\pi}) \geq L_{\pi}(\tilde{\pi}) - \frac{4\epsilon\gamma}{(1-\gamma)^2}D_{TV}^{max}(\pi,\tilde{\pi})^2
+\end{equation}
+
+其中$D_{TV}^{max}$为所有状态上的最大全变差距离，$\epsilon=\max_{s,a}|A_{\pi}(s,a)|$。理论上推导的惩罚系数过大，导致步长过小不实用。TRPO转而使用硬KL散度约束替代惩罚项，将优化问题表述为：
+
+\begin{equation}
+\underset{\theta}{\text{maximize}} \quad L_{\theta_{old}}(\theta) = \mathbb{E}_t\left[\frac{\pi_{\theta}(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}\hat{A}_t\right]
+\end{equation}
+
+\begin{equation}
+\text{subject to} \quad \mathbb{E}_t\left[D_{KL}(\pi_{\theta_{old}}(\cdot|s_t),\pi_{\theta}(\cdot|s_t))\right] \leq \delta
+\end{equation}
+
+其中$\delta$为信任域大小（通常设为0.01），限制新旧策略的差异在可控范围内。
+
+\subsection{实用算法设计}
+
+TRPO提出了两种采样方案。单路径方法直接采样完整轨迹，为每个状态-动作对计算Q值，该方法不需要环境重置，适用于真实物理系统。藤蔓方法在采样主干轨迹后，从中间状态分支执行多个动作并回滚，该方法使用公共随机数降低方差，但仅适用于仿真环境。
+
+约束优化问题无法直接用一阶方法求解。TRPO采用两步方法：首先使用共轭梯度法近似求解自然梯度方向，无需显式计算Fisher信息矩阵；然后沿自然梯度方向进行线性搜索，逐步减小步长，确保满足KL约束且代理目标得到改进。
+
+\subsection{实验结果与分析}
+
+TRPO在多个基准任务上进行了验证。在MuJoCo连续控制任务中，TRPO在Swimmer、Hopper和Walker任务上显著优于CEM、自然梯度等方法，成功学习了复杂的运动策略。在Atari游戏中，TRPO使用卷积神经网络直接从图像输入学习策略，在7个游戏上达到与DQN相当的性能，展现了其通用性。
+
+TRPO提供了理论保证的单调改进，超参数鲁棒性强，在高维连续控制任务上表现稳定。然而，TRPO实现复杂，需要共轭梯度和线性搜索，计算成本高；不兼容dropout和参数共享等神经网络结构；并行化效率低。这些局限性促使研究者寻求更简洁的替代方案。
+
+\section{近端策略优化（PPO）}
+
+\subsection{核心创新：裁剪代理目标}
+
+尽管TRPO性能优异，但存在几个关键痛点：实现复杂难以调试和扩展；不兼容策略与价值网络间的参数共享和dropout；计算效率低阻碍大规模并行训练。PPO的目标是仅使用一阶优化方法模拟TRPO的信任域效果，同时解决上述问题。
+
+PPO提出了裁剪概率比方法，直接在目标函数中限制策略更新幅度，无需显式KL约束。首先定义概率比：
+
+\begin{equation}
+r_t(\theta) = \frac{\pi_{\theta}(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}
+\end{equation}
+
+该比率表示新策略选择动作$a_t$的概率相对于旧策略的比值，$r_t(\theta_{old})=1$。裁剪代理目标定义为：
+
+\begin{equation}
+L^{CLIP}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t\right)\right]
+\end{equation}
+
+其中$\epsilon$为裁剪参数（通常设为0.2）。直观理解：当$\hat{A}_t>0$（动作优于平均）时，限制$r_t(\theta)\leq1+\epsilon$，避免过度奖励概率增加过多的动作；当$\hat{A}_t<0$（动作劣于平均）时，限制$r_t(\theta)\geq1-\epsilon$，避免过度惩罚概率降低过多的动作。取最小值确保目标函数是原始代理目标的悲观下界，仅在安全范围内优化。
+
+作为裁剪目标的替代方案，PPO还提出了自适应KL惩罚方法：
+
+\begin{equation}
+L^{KLPEN}(\theta) = \mathbb{E}_t\left[r_t(\theta)\hat{A}_t - \beta D_{KL}(\pi_{\theta_{old}}(\cdot|s_t),\pi_{\theta}(\cdot|s_t))\right]
+\end{equation}
+
+惩罚系数$\beta$动态调整，使每次更新的KL散度接近目标值$d_{targ}$。实验表明，裁剪目标优于自适应KL惩罚。
+
+\subsection{完整算法流程}
+
+PPO采用Actor-Critic架构结合广义优势估计（GAE）。完整目标函数为：
+
+\begin{equation}
+L_t^{CLIP+VF+S}(\theta) = \mathbb{E}_t\left[L_t^{CLIP}(\theta) - c_1 L_t^{VF}(\theta) + c_2 S[\pi_{\theta}](s_t)\right]
+\end{equation}
+
+其中$L_t^{VF}=(V_{\theta}(s_t)-V_t^{targ})^2$为价值函数的平方误差损失，$S[\pi_{\theta}]$为熵奖励以鼓励探索，$c_1,c_2$为权重系数（通常$c_1=1, c_2=0.01$）。
+
+算法流程如下：首先初始化策略参数$\theta$和价值网络参数；然后迭代执行以下步骤直至收敛——每个并行actor执行策略$T$个时间步收集轨迹数据，计算广义优势估计$\hat{A}_t$和价值目标$V_t^{targ}$，保存旧策略参数$\theta_{old}$，在收集的$NT$个样本上使用小批量Adam优化上述目标函数$K$个epoch。
+
+\subsection{实验结果与分析}
+
+PPO在多个基准上进行了验证。在MuJoCo连续控制的7个基准任务上，PPO（裁剪版本）达到平均归一化分数0.82，显著优于TRPO（0.71）、A2C等方法。在高维任务中，PPO成功训练3D人形机器人执行跑步、转向、起身等复杂动作。在Atari游戏的49个游戏上，PPO的样本效率显著优于A2C，与ACER相当但实现简单得多。
+
+PPO实现极其简单，仅需对原始策略梯度做几行代码修改；兼容所有神经网络结构；支持大规模并行训练，计算效率高；超参数鲁棒性强，在不同任务上表现稳定。其局限在于裁剪参数$\epsilon$仍需根据任务微调，理论保证不如TRPO严格。
+
+\section{TRPO与PPO对比分析}
+
+\begin{table}[h]
+\centering
+\caption{TRPO与PPO对比}
+\label{tab:comparison}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{c c c}
+\toprule
+\textbf{维度} & \textbf{TRPO} & \textbf{PPO} \\
+\midrule
+核心思想 & 硬KL散度信任域约束 & 裁剪概率比隐式限制更新幅度 \\
+优化方法 & 共轭梯度+线性搜索 & Adam/SGD \\
+实现复杂度 & 高 & 极低 \\
+计算效率 & 低 & 高 \\
+神经网络兼容性 & 差 & 好 \\
+并行化能力 & 弱 & 强 \\
+理论保证 & 严格单调改进 & 悲观下界 \\
+样本效率 & 高 & 相当或更高 \\
+超参数鲁棒性 & 强 & 强 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+从理论层面来看，TRPO提供了严格的理论保证，证明了在满足KL约束条件下策略性能的单调改进。PPO虽然缺乏如此严格的理论保证，但通过裁剪机制实现了类似的效果，在实践中表现出色。
+
+从实现层面来看，TRPO需要实现共轭梯度算法和线性搜索，涉及Fisher信息矩阵的近似计算，实现复杂度高。PPO仅需在标准策略梯度基础上添加裁剪操作，实现极其简单，便于调试和扩展。从计算效率来看，TRPO的二阶优化方法计算成本高，难以并行化；PPO使用一阶优化方法，计算效率高，易于大规模并行训练，适合现代GPU/TPU架构。
+
+在适用场景方面，TRPO适用于对理论保证要求严格的场景，以及需要精确控制策略更新幅度的应用；PPO适用于需要快速迭代、大规模训练的场景，是目前工业应用的主流选择。
+
+\section{总结与思考}
+
+TRPO为深度策略优化奠定了坚实的理论基础，证明了通过限制策略更新幅度可以实现稳定的单调改进，为后续所有策略优化算法指明了方向。TRPO展示了理论指导实践的重要性，将强化学习从经验驱动推向理论驱动。
+
+PPO将TRPO的理论思想转化为可大规模应用的实用算法，解决了TRPO实现复杂、计算效率低的问题。目前，PPO已成为深度强化学习的标准基线算法，广泛应用于机器人控制、游戏AI、自然语言处理等领域，是OpenAI Gym、Stable Baselines等主流库的默认实现。
+
+这两篇论文共同推动了策略梯度方法取代DQN成为连续控制任务的主流方法，展示了基于策略的方法在高维复杂任务中的巨大潜力。TRPO和PPO的成功表明，理论严谨性与实践可行性可以兼得，为深度强化学习的发展树立了典范。
+
+尽管PPO已成为主流算法，但仍存在改进空间。未来研究可关注自适应裁剪参数、更高效的探索策略、多任务学习等方面。同时，将TRPO/PPO与模型预测、层次化强化学习等技术结合，有望进一步提升算法性能。
+
+\vspace{18pt}
+
+\end{document}

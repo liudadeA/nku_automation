@@ -1,0 +1,37 @@
+﻿//{{NO_DEPENDENCIES}}
+// 生成的 Microsoft Visual C++ 包含文件。
+// 由 My2312167.rc 使用
+//
+#define IDD_ABOUTBOX				100
+#define IDP_OLE_INIT_FAILED			100
+#define IDR_MAINFRAME				128
+#define IDR_My2312167TYPE				130
+
+// 参数面板控件ID
+#define IDC_RADIO_RECT				1001
+#define IDC_RADIO_ELLIPSE			1002
+#define IDC_RADIO_LINE				1003
+#define IDC_EDIT_X1				1004
+#define IDC_EDIT_Y1				1005
+#define IDC_EDIT_X2				1006
+#define IDC_EDIT_Y2				1007
+#define IDC_COMBO_STYLE				1008
+#define IDC_BTN_COLOR				1009
+#define IDC_STATIC_AREA				1010
+#define IDC_STATIC_PERIMETER			1011
+#define IDC_STATIC_LENGTH			1012
+#define IDC_BTN_CALC				1013
+#define IDC_BTN_RESET				1014
+#define IDC_BTN_CONFIRM				1015
+#define IDC_COLOR_PREVIEW			1016
+
+// 新对象的下一组默认值
+//
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NEXT_RESOURCE_VALUE	310
+#define _APS_NEXT_CONTROL_VALUE		1000
+#define _APS_NEXT_SYMED_VALUE		310
+#define _APS_NEXT_COMMAND_VALUE		32771
+#endif
+#endif

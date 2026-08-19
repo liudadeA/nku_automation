@@ -1,0 +1,271 @@
+\documentclass[a4paper,12pt]{article}
+
+% ==================== 宏包 ====================
+\usepackage[UTF8]{ctex}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+% ==================== 页面设置 ====================
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+
+% ==================== 字体设置 ====================
+\setCJKmainfont{SimSun}  % 宋体
+\setCJKfamilyfont{heifont}{SimHei}  % 黑体
+\renewcommand{\heiti}{\CJKfamily{heifont}}
+
+% ==================== 章标题样式（黑体16磅加粗居中） ====================
+\makeatletter
+\renewcommand\section{%
+  \@startsection{section}{1}{\z@}%
+  {24pt}{18pt}%
+  {\centering\heiti\fontsize{16pt}{16pt}\selectfont\bfseries}%
+}
+% 一级标题（黑体14磅加粗居中）
+\renewcommand\subsection{%
+  \@startsection{subsection}{2}{\z@}%
+  {24pt}{6pt}%
+  {\centering\heiti\fontsize{14pt}{14pt}\selectfont\bfseries}%
+}
+% 二级标题（黑体13磅居左）
+\renewcommand\subsubsection{%
+  \@startsection{subsubsection}{3}{\z@}%
+  {12pt}{6pt}%
+  {\heiti\fontsize{13pt}{13pt}\selectfont}%
+}
+% 三级标题（黑体12磅居左）
+\newcommand\paragraphheading{%
+  \@startsection{paragraph}{4}{\z@}%
+  {12pt}{6pt}%
+  {\heiti\fontsize{12pt}{12pt}\selectfont}%
+}
+\makeatother
+
+% ==================== 正文行距（固定值20磅） ====================
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{2em}
+
+% ==================== 图表标题样式 ====================
+\captionsetup[figure]{font=small, labelfont=small, justification=centering, skip=6pt}
+\captionsetup[table]{font=small, labelfont=small, justification=centering, skip=6pt}
+
+% ==================== 公式编号右对齐 ====================
+
+% ==================== 超链接设置 ====================
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue}
+
+\begin{document}
+
+% ====================================================================
+%                         封 面
+% ====================================================================
+\begin{center}
+  \vspace*{2cm}
+
+  {\heiti\fontsize{26pt}{30pt}\selectfont 基于DDPG算法的小车倒立摆控制研究}
+
+  \vspace{3cm}
+
+  \begin{spacing}{2.0}
+  {\fontsize{16pt}{20pt}\selectfont
+    学\qquad 号：\underline{2312167}{\hspace{6cm}} \\[6pt]
+    姓\qquad 名：\underline{刘振毫}{\hspace{6cm}} \\
+  }
+  \end{spacing}
+
+
+\end{center}
+
+\newpage
+
+% ====================================================================
+%                         中 文 摘 要
+% ====================================================================
+\begin{center}
+  {\heiti\fontsize{18pt}{18pt}\selectfont\bfseries 摘\quad 要}
+\end{center}
+\vspace{-6pt}
+
+\setlength{\parindent}{2em}
+\linespread{1.0}\selectfont
+
+深度确定性策略梯度（Deep Deterministic Policy Gradient）算法是一种融合了深度学习与确定性策略梯度的演员--评论家框架强化学习算法，能够在高维连续动作空间中实现端到端的学习与决策。本研究以经典的小车倒立摆（CartPole-v1）控制问题为实验平台，系统性地探讨了DDPG算法在离散动作空间环境中的适配方法与训练效果。由于DDPG算法原生面向连续动作空间设计，而CartPole环境仅提供两个离散动作，本研究引入了Gumbel-Softmax重参数化技术，使离散动作的选择过程可微分，从而保证了策略梯度能够从评论家网络有效回传至演员网络。实验结果表明，经过约380轮训练后，智能体的平均奖励从初始的10左右稳步提升至496，测试阶段连续10轮均获得500的满分奖励，验证了该适配方案的有效性。本研究还对DDPG算法的核心组件进行了深入分析，包括经验回放池、目标网络的软更新机制、探索策略的选择以及Gumbel-Softmax的温度参数对训练稳定性的影响，为后续将DDPG算法应用于更复杂的离散决策问题提供了理论与实践参考。
+
+\vspace{6pt}
+\noindent\textbf{关键词：}深度确定性策略梯度；小车倒立摆；Gumbel-Softmax；离散动作空间；演员--评论家框架
+
+\newpage
+
+% ====================================================================
+%                         正 文
+% ====================================================================
+
+\section{引言}
+
+强化学习作为机器学习的重要分支，旨在通过智能体与环境的交互来学习最优决策策略，已在游戏博弈、机器人控制、自动驾驶等领域展现出巨大的应用潜力。在强化学习的研究谱系中，如何有效地处理连续动作空间一直是一个核心挑战。传统的Q学习算法及其深度变体DQN虽然在高维状态空间中取得了突破性进展，但其本质上只能处理离散动作空间，无法直接应用于连续控制问题。为了解决这一局限性，Lillicrap等人在2015年提出了深度确定性策略梯度算法，该算法巧妙地将DQN中的经验回放与目标网络机制引入确定性策略梯度框架，实现了在连续动作空间中的稳定训练。
+
+小车倒立摆问题是强化学习领域中最经典的基准测试环境之一，其目标是通过施加左右方向的力来保持杆的竖直平衡。该环境具有状态空间连续、动作空间离散的特点，是验证强化学习算法性能的理想平台。然而，DDPG算法原生面向连续动作空间设计，其演员网络输出连续值并通过加噪进行探索的机制与CartPole的离散动作空间存在天然的不匹配。直接将连续输出通过阈值离散化的方法在实践中效果不佳，因为评论家网络对阈值附近的微小梯度变化不敏感，导致演员网络无法获得有效的策略梯度信号。
+
+针对上述问题，本研究提出了一种基于Gumbel-Softmax重参数化的DDPG适配方案，通过将离散动作的选择过程转化为可微分操作，使得梯度能够从评论家网络顺畅地回传至演员网络，从而在保持DDPG算法核心框架不变的前提下，实现了对离散动作空间环境的有效学习。本文将系统性地介绍DDPG算法的理论基础、适配方案的设计思路、实验设置与结果分析，并对训练过程中的关键问题进行深入讨论。
+
+\section{DDPG算法理论基础}
+
+\subsection{强化学习基本框架}
+
+强化学习问题通常被建模为马尔可夫决策过程，由五元组$\langle \mathcal{S}, \mathcal{A}, P, R, \gamma \rangle$描述，其中$\mathcal{S}$为状态空间，$\mathcal{A}$为动作空间，$P$为状态转移概率，$R$为奖励函数，$\gamma \in [0,1]$为折扣因子。在每一个时间步$t$，智能体观察到状态$s_t \in \mathcal{S}$，根据策略$\pi$选择动作$a_t \in \mathcal{A}$，环境返回奖励$r_t = R(s_t, a_t)$并转移到下一状态$s_{t+1} \sim P(\cdot | s_t, a_t)$。智能体的目标是学习一个最优策略$\pi^*$，使得累积折扣奖励的期望最大化：
+\begin{equation}
+  \pi^* = \arg\max_{\pi} \mathbb{E}_{\pi}\left[\sum_{t=0}^{\infty} \gamma^t r_t\right]
+\end{equation}
+
+在演员--评论家框架中，策略网络负责根据状态选择动作，价值网络负责评估状态--动作对的价值。评论家通过学习动作价值函数$Q^{\pi}(s,a) = \mathbb{E}_{\pi}\left[\sum_{t=0}^{\infty} \gamma^t r_t \mid s_0=s, a_0=a\right]$来指导演员的更新方向，从而实现策略的逐步优化。
+
+\subsection{确定性策略梯度定理}
+
+确定性策略梯度定理是DDPG算法的理论基石。Silver等人在2014年证明了确定性策略$\mu_\theta: \mathcal{S} \rightarrow \mathcal{A}$的梯度可以表示为：
+\begin{equation}
+  \nabla_\theta J(\mu_\theta) = \mathbb{E}_{s \sim \rho^{\mu}} \left[\nabla_\theta \mu_\theta(s) \nabla_a Q^{\mu}(s,a)\big|_{a=\mu_\theta(s)}\right]
+\end{equation}
+其中$\rho^{\mu}$为策略$\mu_\theta$下的状态访问分布。与随机策略梯度相比，确定性策略梯度无需对动作空间进行积分，仅依赖于状态分布的期望，这在高维动作空间中具有显著的计算优势。这一性质使得DDPG算法能够高效地处理连续动作空间中的策略优化问题。
+
+\subsection{DDPG算法核心机制}
+
+DDPG算法在确定性策略梯度的基础上，引入了以下四个关键机制以实现稳定高效的训练。第一，经验回放池机制将智能体与环境交互产生的转移数据$(s_t, a_t, r_t, s_{t+1})$存储在固定容量的缓冲区中，训练时从中随机采样小批量数据，打破了数据之间的时间相关性，满足了随机梯度下降对独立同分布数据的要求。第二，目标网络机制为演员和评论家各维护一个目标网络，其参数通过软更新方式缓慢跟踪主网络参数：
+\begin{equation}
+  \theta^{\tau} \leftarrow \tau \theta + (1-\tau)\theta^{\tau}
+\end{equation}
+其中$\tau \ll 1$为软更新系数，本研究取$\tau = 0.005$。目标网络提供了稳定的目标值，有效缓解了训练过程中的振荡问题。第三，评论家网络的更新采用时序差分方法，目标Q值通过目标网络计算：
+\begin{equation}
+  y_i = r_i + \gamma Q^{\tau}(s_{i+1}, \mu^{\tau}(s_{i+1}))
+\end{equation}
+评论家的损失函数定义为预测Q值与目标Q值之间的均方误差。第四，演员网络的更新通过最大化评论家对演员所选动作的Q值评估来实现，即最小化$-Q(s, \mu_\theta(s))$的期望值。
+
+\section{面向离散动作空间的适配方案}
+
+\subsection{连续到离散的适配挑战}
+
+CartPole-v1环境的动作空间仅包含两个离散动作：向左推（动作0）和向右推（动作1），而DDPG算法的演员网络输出连续值并通过加噪进行探索。这种连续输出与离散动作之间的不匹配构成了适配的核心挑战。初步实验中，我们尝试了两种简单的适配方案：一是将演员网络的连续输出通过阈值离散化，即输出值大于零时选择动作1，否则选择动作0；二是使用Ornstein-Uhlenbeck噪声进行探索。然而，这两种方案均未能使智能体获得有效的学习能力，训练500轮后奖励始终停留在9至10之间，与随机策略的表现相当。
+
+分析其失败原因，阈值离散化方案的核心问题在于argmax操作的不可微性。当演员网络通过argmax选择离散动作后，梯度无法从评论家网络回传至演员网络的参数，导致演员无法根据评论家的评估信号调整策略。此外，评论家网络对阈值附近的微小动作变化不敏感，进一步削弱了梯度信号的有效性。因此，如何在保持DDPG算法框架的前提下，使离散动作的选择过程可微分，成为了解决该问题的关键。
+
+\subsection{Gumbel-Softmax重参数化}
+
+Gumbel-Softmax是一种连续且可微的离散分布近似方法，由Jang等人和Maddison等人在2016年分别独立提出。其核心思想是通过Gumbel噪声的注入和Softmax温度参数的调节，将离散的类别选择过程转化为可微分的连续操作。具体而言，给定类别概率$\pi_1, \pi_2, \ldots, \pi_K$，Gumbel-Softmax采样过程为：
+\begin{equation}
+  y_i = \frac{\exp((\log \pi_i + g_i)/\tau)}{\sum_{j=1}^{K} \exp((\log \pi_j + g_j)/\tau)}
+\end{equation}
+其中$g_i \sim \text{Gumbel}(0,1)$为独立同分布的Gumbel噪声，通过$g_i = -\log(-\log(u_i))$从均匀分布$u_i \sim \text{Uniform}(0,1)$中采样得到，$\tau > 0$为温度参数。当$\tau \to 0$时，Gumbel-Softmax的输出趋近于one-hot向量，即退化为离散的类别选择；当$\tau$较大时，输出更加平滑，近似于均匀分布。
+
+在本研究中，我们将演员网络的输出层设计为产生每个动作的logit值，然后通过Gumbel-Softmax将其转化为可微分的one-hot向量表示。在训练阶段，使用Gumbel-Softmax的hard模式，即前向传播时输出离散的one-hot向量，反向传播时使用软梯度的连续近似，从而既保证了动作选择的离散性，又确保了梯度的有效传递。在推理阶段，直接选择logit值最大的动作，无需噪声注入。
+
+\subsection{探索策略设计}
+
+在离散动作空间中，传统的Ornstein-Uhlenbeck噪声不再适用，本研究采用$\varepsilon$-贪心策略进行探索。具体而言，在每个时间步，智能体以概率$\varepsilon$随机选择动作，以概率$1-\varepsilon$选择演员网络输出的最优动作。$\varepsilon$值按照指数衰减策略从1.0逐渐降低至0.01：
+\begin{equation}
+  \varepsilon_t = \varepsilon_{\text{end}} + (\varepsilon_{\text{start}} - \varepsilon_{\text{end}}) \cdot \exp\left(-\frac{t}{\varepsilon_{\text{decay}}}\right)
+\end{equation}
+其中$\varepsilon_{\text{start}} = 1.0$，$\varepsilon_{\text{end}} = 0.01$，$\varepsilon_{\text{decay}} = 5000$。这一设计确保了训练初期充分的探索和训练后期对已学策略的充分利用。
+
+\section{实验设置与结果分析}
+
+\subsection{实验环境与参数设置}
+
+本研究使用Gymnasium库提供的CartPole-v1环境进行实验。该环境中，小车可以在一维轨道上移动，杆的一端连接在小车上，初始状态为杆略微倾斜。智能体需要在每个时间步选择向左或向右施加力，以保持杆的竖直平衡。环境的状态空间为4维连续向量，包括小车的位置、速度、杆的角度和杆的角速度。每保持杆平衡一个时间步获得1的奖励，当杆的倾斜角度超过$\pm 12^{\circ}$或小车位置超出$\pm 2.4$时回合结束，最大回合长度为500步。
+
+\begin{table}[H]
+  \centering
+  \caption{DDPG算法主要超参数设置}
+  \vspace{3pt}
+  \begin{tabular}{lc}
+    \toprule
+    超参数 & 取值 \\
+    \midrule
+    演员网络学习率 & $1 \times 10^{-3}$ \\
+    评论家网络学习率 & $1 \times 10^{-3}$ \\
+    折扣因子$\gamma$ & 0.99 \\
+    软更新系数$\tau$ & 0.005 \\
+    经验回放池容量 & 100000 \\
+    批量大小 & 64 \\
+    Gumbel-Softmax温度 & 1.0 \\
+    $\varepsilon$起始值 & 1.0 \\
+    $\varepsilon$终止值 & 0.01 \\
+    $\varepsilon$衰减步数 & 5000 \\
+    最大训练轮数 & 500 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+演员网络和评论家网络均采用三层全连接神经网络架构。演员网络的隐藏层维度为256--256，输出层维度为2对应两个动作的logit值；评论家网络的隐藏层维度同样为256--256，输入为状态向量与动作one-hot向量的拼接，输出为标量Q值。两个网络均使用ReLU激活函数，评论家网络额外添加了$1 \times 10^{-4}$的权重衰减以防止过拟合。训练过程中对两个网络的梯度均进行了范数为1的裁剪，以保证训练的稳定性。
+
+\subsection{训练过程分析}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{ddpg_training_curve.png}
+  \caption{DDPG算法在CartPole-v1上的训练奖励曲线}
+\end{figure}
+
+图4.1展示了DDPG算法在CartPole-v1环境上的训练过程，其中蓝色曲线为每轮的即时奖励，红色曲线为10轮滑动平均奖励。训练过程可以清晰地划分为三个阶段。
+
+第一阶段为探索期（第1轮至第240轮），智能体主要依赖$\varepsilon$-贪心策略进行随机探索，平均奖励在10至30之间波动。在此阶段，$\varepsilon$值从1.0逐渐衰减至约0.44，评论家网络正在逐步建立对状态--动作价值函数的合理估计，而演员网络尚未形成有效的策略偏好。尽管Gumbel-Softmax提供了可微分的动作选择机制，但由于评论家的Q值估计尚不准确，演员网络接收到的梯度信号质量较低，策略改进缓慢。
+
+第二阶段为突破期（第250轮至第320轮），随着$\varepsilon$值的进一步衰减和评论家Q值估计的逐步精确，演员网络开始形成有效的策略偏好。平均奖励从第250轮的33.9迅速攀升至第320轮的182.2，呈现出指数级的增长趋势。这一阶段的特征是策略的质变：演员网络学会了根据杆的倾斜方向选择正确的推力方向，从而显著延长了平衡时间。
+
+第三阶段为收敛期（第330轮至第380轮），策略进一步精细化，平均奖励从198.1稳步提升至496.0。在第380轮时，连续10轮的平均奖励达到496，触发提前停止条件。此后在测试阶段，智能体连续10轮均获得500的满分奖励，表明策略已经收敛至最优。
+
+\subsection{测试结果}
+
+\begin{table}[H]
+  \centering
+  \caption{测试阶段各回合奖励}
+  \vspace{3pt}
+  \begin{tabular}{ccccccccccc}
+    \toprule
+    回合 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+    \midrule
+    奖励 & 500 & 500 & 500 & 500 & 500 & 500 & 500 & 500 & 500 & 500 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+表4.2展示了训练完成后在无探索噪声条件下的测试结果。10轮测试全部获得500的满分奖励，表明DDPG算法在Gumbel-Softmax适配方案下已经成功学习到了CartPole-v1环境的最优策略。智能体能够在整个回合中精确地控制小车的推力方向，使杆始终保持竖直平衡，直至达到最大步数限制。
+
+\section{讨论与分析}
+
+\subsection{Gumbel-Softmax的关键作用}
+
+Gumbel-Softmax重参数化技术是本研究中DDPG算法能够在CartPole上成功训练的核心因素。在未引入该技术之前，无论采用阈值离散化还是argmax选择，演员网络都无法获得有效的梯度信号，训练完全停滞。Gumbel-Softmax通过在前向传播中注入Gumbel噪声并进行Softmax归一化，将离散的类别选择转化为可微分的连续操作；在hard模式下，前向传播输出离散的one-hot向量，反向传播则使用连续的Softmax梯度近似，实现了离散选择与梯度传播的统一。
+
+温度参数$\tau$对Gumbel-Softmax的行为具有重要影响。当$\tau$较小时，输出更接近离散的one-hot向量，梯度方差较大但偏差较小；当$\tau$较大时，输出更加平滑，梯度方差较小但引入了估计偏差。本研究固定$\tau = 1.0$，在训练过程中取得了良好的效果。未来工作可以探索温度退火策略，即在训练初期使用较大的$\tau$以促进探索，随后逐渐减小$\tau$以提高策略的确定性。
+
+\subsection{探索策略的影响}
+
+本研究从Ornstein-Uhlenbeck噪声切换至$\varepsilon$-贪心策略，这一改变对训练效果产生了显著影响。OU噪声是一种具有时间相关性的连续噪声，适用于连续动作空间中的精细探索，但在仅有两个离散动作的CartPole环境中，其时间相关性反而可能导致智能体在较长时间内持续选择同一动作，降低了探索的多样性。相比之下，$\varepsilon$-贪心策略在每个时间步独立地决定是否进行随机探索，保证了探索的充分性和多样性。
+
+$\varepsilon$的衰减速率同样是影响训练效果的重要因素。本研究设置的衰减步数为5000，使得$\varepsilon$在第250轮左右衰减至0.4附近，恰好对应训练突破期的开始。这一时间匹配并非巧合：当$\varepsilon$衰减至中等水平时，智能体既有足够的探索来发现更好的策略，又能充分利用已学到的知识进行策略改进，从而实现了从探索到利用的平滑过渡。
+
+\subsection{网络架构与训练稳定性}
+
+本研究的网络架构采用了256--256的隐藏层设计，相较于DDPG原始论文中的400--300架构更为紧凑。这一选择基于CartPole-v1环境的相对简单性：4维状态空间和2维动作空间不需要过大的网络容量，较小的网络反而有助于减少过拟合风险并加速训练收敛。实验中观察到的梯度裁剪和权重衰减对训练稳定性也起到了重要作用。在没有梯度裁剪的情况下，评论家网络的梯度偶尔会出现异常大的值，导致参数更新过大，进而引起Q值估计的剧烈波动。范数为1的梯度裁剪有效地限制了单步更新的幅度，保证了训练过程的平稳进行。
+
+\subsection{与经典算法的比较}
+
+CartPole-v1作为经典的强化学习基准环境，已有多种算法能够高效求解。DQN算法通常在200至300轮内即可收敛，而本研究中的DDPG适配方案需要约380轮。这一差距主要源于DDPG算法中演员--评论家双网络结构的额外复杂性以及Gumbel-Softmax引入的梯度近似误差。然而，DDPG算法的核心优势在于其对连续动作空间的天然支持，本研究的适配方案仅是为了验证DDPG在离散环境中的可行性。在实际应用中，当面对连续控制问题时，DDPG算法无需任何适配即可直接应用，而DQN则需要将连续动作空间离散化，这在高维动作空间中是不可行的。
+
+\section{结论与展望}
+
+本研究系统性地探讨了DDPG算法在离散动作空间环境CartPole-v1中的适配方法与训练效果。通过引入Gumbel-Softmax重参数化技术，成功解决了离散动作选择不可微分导致的梯度断裂问题，使DDPG算法能够在仅包含两个离散动作的环境中有效学习。实验结果表明，经过约380轮训练后，智能体的平均奖励达到496，测试阶段连续10轮均获得500的满分奖励，验证了该适配方案的有效性。
+
+本研究的主要贡献包括三个方面。第一，揭示了DDPG算法在离散动作空间中失效的根本原因，即argmax操作的不可微性导致梯度信号无法从评论家网络回传至演员网络。第二，提出了基于Gumbel-Softmax的DDPG适配方案，通过可微分的离散动作近似实现了梯度传播，同时采用$\varepsilon$-贪心策略替代OU噪声以增强探索效果。第三，对训练过程的三个阶段进行了详细分析，阐明了探索衰减与策略突破之间的内在联系。
+
+未来的研究可以从以下几个方向展开。首先，可以探索温度退火策略，在训练过程中动态调整Gumbel-Softmax的温度参数，以平衡探索与利用。其次，可以将该适配方案推广至更大规模的离散动作空间环境，验证其可扩展性。第三，可以研究Wolpertinger动作扩展等替代方案，将离散动作嵌入连续空间中进行选择，为DDPG在离散环境中的应用提供更多技术路径。最后，可以将该方案与优先经验回放、分布式训练等技术结合，进一步提升训练效率和策略质量。
+
+\end{document}

@@ -1,0 +1,26 @@
+{
+  "type_description_msg": {
+    "type_description": {
+      "type_name": "explore_lite_msgs/msg/ExploreStatus",
+      "fields": [
+        {
+          "name": "status",
+          "type": {
+            "type_id": 17,
+            "capacity": 0,
+            "string_capacity": 0,
+            "nested_type_name": ""
+          },
+          "default_value": ""
+        }
+      ]
+    },
+    "referenced_type_descriptions": []
+  },
+  "type_hashes": [
+    {
+      "type_name": "explore_lite_msgs/msg/ExploreStatus",
+      "hash_string": "RIHS01_ee0410813d9a5019aa6b2969187a8aa00f593a76aac620f05cc0a51cb5a4bc5c"
+    }
+  ]
+}

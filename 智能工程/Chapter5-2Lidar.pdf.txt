@@ -1,0 +1,1278 @@
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+第五章移动机器人感知技术
+激光传感器定位原理
+孙雷教授
+sunl@nankai.edu.cn
+Tel: 13512967601
+机器人与信息自动化研究所(IRAIS)
+天津市智能机器人技术重点实验室(tjKLIR)
+南开大学
+2026 年4 月13 日
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+1 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+主要内容
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+2 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+激光传感器定义及分类
+定义
+利用激光技术进行测量的传感器。它由激光器、激光检测器和测量电路组成。激光
+传感器是新型测量仪表，它的优点是能实现无接触远距离测量，速度快，精度高，量
+程大，抗光、电干扰能力强等。
+利用激光的高方向性、高单色性和高亮度等特点可实现无接触远距离测量。激光传
+感器常用于长度、距离、振动、速度、方位等物理量的测量，还可用于探伤和大气污
+染物的监测等。
+分类
+• 1D 激光
+• 2D 激光
+• 3D 激光
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+3 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+激光测距原理
+激光测距一般基于到达时间法(TOF: Time of Flight)：
+例如:
+为了获得3𝑚𝑚的测量精度，计算机系统需具有什么量级的时间精度？
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+4 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+激光测距原理
+激光测距一般基于到达时间法(TOF: Time of Flight)：
+例如:
+为了获得3𝑚𝑚的测量精度，计算机系统需具有什么量级的时间精度？
+𝑡= 3 × 10−3
+3 × 108 = 10−11𝑠= 10−2𝑛𝑠
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+4 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+激光测距原理(2)
+原理图如图所示，左侧为稳频双频激光器，输出两个正交线偏振光，其两频率分量为𝑓1 和
+𝑓2。输出光经分光镜𝐵𝑆后，反射光经检偏器𝑃1，被光电探测器𝐷1 接收，形成参考信号；透
+射光经偏振分光镜𝑃𝐵𝑆分为两束，一束被反射到固定角锥棱镜𝑀𝑟，另一束被透射至测量镜
+𝑀𝑚，两束光反射后经𝑃𝐵𝑆合成一束，经检偏器𝑃2，被光电探测器𝐷2 接收，形成测量信号。
+参考信号和测量信号经前置放大后，送入外差信号处理系统，进行相位测量，从而得出测量镜
+的位移。
+由多普勒原理可知，在双频激光干涉仪中，相位差𝜑与测量镜的位移Δ𝐿的关系由下式决
+定:
+𝜑= 3600 × Δ𝐿
+𝜆/2
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+5 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+2D 激光雷达原理
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+6 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+激光定位原理
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+7 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+What is Least Squares
+The method of least squares assumes that the best‑fit curve of a given type is the curve that
+has the minimal sum of the deviations squared (least square error) from a given set of data.
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+8 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+What is Least Squares
+The method of least squares assumes that the best‑fit curve of a given type is the curve that
+has the minimal sum of the deviations squared (least square error) from a given set of data.
+Least Squares
+Suppose that the data points are (𝑥1, 𝑦1), (𝑥2, 𝑦2), ⋯, (𝑥𝑛, 𝑦𝑛) where 𝑥is the independent
+variable and 𝑦is the dependent variable. The fitting curve 𝑓(𝑥) has the deviation (error) 𝑑from
+each data point, i.e., 𝑑1 = 𝑦1 −𝑓(𝑥1), 𝑑2 = 𝑦2 −𝑓(𝑥2), ⋯, 𝑑𝑛= 𝑦𝑛−𝑓(𝑥𝑛). According to
+the method of least squares, the best fitting curve has the property that:
+∏= 𝑑2
+1 + 𝑑2
+2 + ⋯+ 𝑑2
+𝑛=
+𝑛
+∑
+𝑖=1
+𝑑2
+𝑖=
+𝑛
+∑
+𝑖=1
+[𝑦𝑖−𝑓(𝑥𝑖)]2 = min .
+(1)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+8 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+The Least‑Squares Line
+The least‑squares line uses a straight line
+𝑦= 𝑓(𝑥) = 𝑎+ 𝑏𝑥
+(2)
+to approximate the given set of data(𝑥1, 𝑦1), (𝑥2, 𝑦2), ⋯, (𝑥𝑛, 𝑦𝑛), where 𝑛⩾2. The best
+fitting curve has the least square error, i.e.,
+∏=
+𝑛
+∑
+𝑖=1
+[𝑦𝑖−𝑓(𝑥𝑖)]2 =
+𝑛
+∑
+𝑖=1
+[𝑦𝑖−(𝑎+ 𝑏𝑥𝑖)]2 = min .
+(3)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+9 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Principle of Least Squares
+Please note that 𝑎and 𝑏are unknown coefficients while all 𝑥𝑖and 𝑦𝑖are given. To obtain the
+least square error, the unknown coefficients 𝑎and 𝑏must yield zero first derivatives.
+⎧
+{
+{
+⎨
+{
+{
+⎩
+𝜕∏
+𝜕𝑎= 2
+𝑛
+∑
+𝑖=1
+[𝑦𝑖−(𝑎+ 𝑏𝑥𝑖)] = 0
+𝜕∏
+𝜕𝑏= 2
+𝑛
+∑
+𝑖=1
+𝑥𝑖[𝑦𝑖−(𝑎+ 𝑏𝑥𝑖)] = 0
+(4)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+10 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Regression Model in Matrix Form
+The linear model with several explanatory variables is given by the equation
+𝑦𝑖= 𝛽1 + 𝛽2𝑥2𝑖+ 𝛽3𝑥3𝑖+ ⋯+ 𝛽𝑘𝑥𝑘𝑖+ 𝜖𝑖
+(𝑖= 1, ⋯, 𝑛).
+(5)
+For simplicity of notation we write 𝛽1 instead of 𝛽1𝑥1𝑖. For purposes of analysis it is
+convenient to express the model (??) in matrix form as
+𝑌= 𝑋𝛽+ 𝜖.
+(6)
+where
+𝑌= ⎛
+⎜
+⎝
+𝑦1
+⋮
+𝑦𝑛
+⎞
+⎟
+⎠
+, 𝑋= ⎛
+⎜
+⎝
+𝑥11
+𝑥21
+⋯
+𝑥𝑘1
+⋮
+⋮
+⋮
+𝑥1𝑛
+𝑥2𝑛
+⋯
+𝑥𝑘𝑛
+⎞
+⎟
+⎠
+, 𝛽= ⎛
+⎜
+⎝
+𝛽1
+⋮
+𝛽𝑘
+⎞
+⎟
+⎠
+, 𝜖= ⎛
+⎜
+⎝
+𝜖1
+⋮
+𝜖𝑛
+⎞
+⎟
+⎠
+.
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+11 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Optimization Based on Least Square
+From (??), we can obtain that
+𝜖= 𝑌−𝑋𝛽.
+(7)
+the sum of squares of the residuals 𝑆(𝛽)(a cost function of 𝛽) as
+𝑆(𝛽) = ∑𝜖2
+𝑖= 𝜖𝑇𝜖= (𝑌−𝑋𝛽)𝑇(𝑌−𝑋𝛽).
+(8)
+Thus the goal of the least squares estimator is obtained by min𝛽[𝑆(𝛽)].
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+12 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Optimization Based on Least Square
+From (??), we can obtain that
+𝜖= 𝑌−𝑋𝛽.
+(7)
+the sum of squares of the residuals 𝑆(𝛽)(a cost function of 𝛽) as
+𝑆(𝛽) = ∑𝜖2
+𝑖= 𝜖𝑇𝜖= (𝑌−𝑋𝛽)𝑇(𝑌−𝑋𝛽).
+(8)
+Thus the goal of the least squares estimator is obtained by min𝛽[𝑆(𝛽)].
+The Optimal Approach Based on Least Square
+To attain the goal, we could set derivatives equal to zero, based on (??) that is
+𝜕𝑆
+𝜕𝛽= −2𝑋𝑇𝑌+ 2𝑋𝑇𝑋𝛽= 0
+(9)
+which gives the normal equations
+𝑋𝑇𝑋𝛽= 𝑋𝑇𝑌⇒𝛽= (𝑋𝑇𝑋)−1𝑋𝑇𝑌
+(10)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+12 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Triangulation using distance estimates
+The location of the unknown node (𝑥, 𝑦) can be determined based on measured distance
+estimateŝ 𝑑𝑖to 𝑛reference nodes {(𝑥1, 𝑦1), ⋯, (𝑥𝑖, 𝑦𝑖), ⋯, (𝑥𝑛, 𝑦𝑛)}. This can be
+formulated as a least squares minimization problem. Let 𝑑𝑖be the correct Euclidean distance to
+the 𝑛reference nodes, i.e.:
+√(𝑥𝑖−𝑥)2 + (𝑦𝑖−𝑦)2
+=
+𝑑𝑖
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+13 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Triangulation using distance estimates
+The location of the unknown node (𝑥, 𝑦) can be determined based on measured distance
+estimateŝ 𝑑𝑖to 𝑛reference nodes {(𝑥1, 𝑦1), ⋯, (𝑥𝑖, 𝑦𝑖), ⋯, (𝑥𝑛, 𝑦𝑛)}. This can be
+formulated as a least squares minimization problem. Let 𝑑𝑖be the correct Euclidean distance to
+the 𝑛reference nodes, i.e.:
+√(𝑥𝑖−𝑥)2 + (𝑦𝑖−𝑦)2
+=
+𝑑𝑖
+⇒
+𝑥2 + 𝑦2
+⏟
+𝑛𝑜𝑛𝑙𝑖𝑛𝑒𝑎𝑟
+−2𝑥𝑖𝑥−2𝑦𝑖𝑦
+=
+𝑑2
+𝑖−(𝑥2
+𝑖+ 𝑦2
+𝑖)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+13 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Triangulation using distance estimates
+The location of the unknown node (𝑥, 𝑦) can be determined based on measured distance
+estimateŝ 𝑑𝑖to 𝑛reference nodes {(𝑥1, 𝑦1), ⋯, (𝑥𝑖, 𝑦𝑖), ⋯, (𝑥𝑛, 𝑦𝑛)}. This can be
+formulated as a least squares minimization problem. Let 𝑑𝑖be the correct Euclidean distance to
+the 𝑛reference nodes, i.e.:
+√(𝑥𝑖−𝑥)2 + (𝑦𝑖−𝑦)2
+=
+𝑑𝑖
+⇒
+𝑥2 + 𝑦2
+⏟
+𝑛𝑜𝑛𝑙𝑖𝑛𝑒𝑎𝑟
+−2𝑥𝑖𝑥−2𝑦𝑖𝑦
+=
+𝑑2
+𝑖−(𝑥2
+𝑖+ 𝑦2
+𝑖)
+Remark
+How can we utilize the Least‑Square in matrix form discussed above to solve this problem ?
+(Note: 𝑌= 𝑋𝛽+ 𝜖)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+13 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+The Least‑Square Fitting
+Least Square in Matrix Form
+Triangulation Using Distance Estimates
+Triangulation using distance estimates
+In order to formulate the problem as a least squares matrix form, the nonlinear parts in the
+equation should be eliminated. Thus, we could substract the 𝑖th equation to the 𝑛th equation,
+i.e.:
+2(𝑥𝑛−𝑥𝑖)𝑥+ 2(𝑦𝑛−𝑦𝑖)𝑦= 𝑑2
+𝑖−𝑑2
+𝑛+ (𝑥2
+𝑛+ 𝑦2
+𝑛) −(𝑥2
+𝑖+ 𝑦2
+𝑖)
+(11)
+that is:
+𝐴̄𝑥= 𝐵
+(12)
+where:
+𝐴=
+⎛
+⎜
+⎜
+⎜
+⎝
+2(𝑥𝑛−𝑥1)
+2(𝑦𝑛−𝑦1)
+2(𝑥𝑛−𝑥2)
+2(𝑦𝑛−𝑦2)
+⋮
+⋮
+2(𝑥𝑛−𝑥𝑛−1)
+2(𝑦𝑛−𝑦𝑛−1)
+⎞
+⎟
+⎟
+⎟
+⎠
+,̄
+𝑥= [𝑥𝑦]𝑇
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+14 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Motivation
+• Point Cloud ⇒extract Lines / Planes
+• Why Features:
+• Raw data: huge amount of data to be stored
+• Compact features require less storage
+• Provide rich and accurate information
+• Basis for high level features (e.g. more abstract features, objects)
+• Here, we will study line segments
+• The simplest geometric structure
+• Suitable for most office‑like environments
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+15 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Uncertainty representation | line extraction
+Extract lines from a point cloud (e.g. range
+scan)
+• Three main problems:
+• How many lines are there?
+• Segmentation: Which points belong to
+which line?
+• Line Fitting/Extraction: Given points
+that belong to a line, how to estimate the
+line parameters?
+• Algorithms we will see:
+1
+Split‑and‑merge
+2
+Linear regression
+3
+RANSAC
+4
+Hough‑Transform
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+16 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 1. split‑and‑merge (standard)
+• Popular algorithm, originates from Computer Vision.
+• A recursive procedure of fitting and splitting.
+• A slightly different version, called Iterative end‑point‑fit, simply connects the end points
+for line fitting.
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+17 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 1. split‑and‑merge (iterative end‑point‑fit)
+• Iterative end‑point‑fit:
+simply connects the end points for line fitting
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+18 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 2. line‑regression
+•“Sliding window”of size 𝑁𝑓points
+• Fit line‑segment to all points in each window
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+19 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• RANSAC = RANdom SAmple Consensus.
+M. Fischler, and R. C.Bolles. Random sample consensus:A paradigm for model fitting with
+applications to image analysis and automated cartography. Graphics and Image Processing,
+1981.
+• A generic & robust fitting algorithm of models in the presence of outliers
+(i.e. points which do not satisfy a model)
+• Can be applied in general to any problem where the goal is to identify the inliers which
+satisfy a predefined model.
+• Typical applications in robotics are:
+line extraction from 2D range data, plane extraction from 3D data, feature matching,
+structure from motion, camera calibration, homography estimation, etc.
+• RANSAC is iterative and non‑deterministic ⇒the probability to find a set free of outliers
+increases as more iterations are used
+• Drawback: a non‑deterministic method, results are different between runs.
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+20 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+• Calculate model parameters that fit the
+data in the sample
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+• Calculate model parameters that fit the
+data in the sample
+• Calculate error function for each data
+point
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+• Calculate model parameters that fit the
+data in the sample
+• Calculate error function for each data
+point
+• Select data that supports current
+hypothesis
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+• Calculate model parameters that fit the
+data in the sample
+• Calculate error function for each data
+point
+• Select data that supports current
+hypothesis
+• Repeat sampling
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+• Calculate model parameters that fit the
+data in the sample
+• Calculate error function for each data
+point
+• Select data that supports current
+hypothesis
+• Repeat sampling
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+• Select sample of 2 points at random
+• Calculate model parameters that fit the
+data in the sample
+• Calculate error function for each data
+point
+• Select data that supports current
+hypothesis
+• Repeat sampling
+• Set with the maximum number of inliers
+obtained after 𝑘iterations
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+21 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+How many iterations does RANSAC need?
+• Ideally: check all possible combinations of 2 points in a dataset of 𝑁points.
+• Number of all pairwise combinations: 𝑁(𝑁−1)/2
+⇒a computationally unfeasible if 𝑁is too large.
+example: 10, 000 points to fit a line through a need to check all 10, 000 ∗9999/2 = 50
+million combinations!
+• Do we really need to check all combinations or can we stop after some iterations?
+Checking a subset of combinations is enough if we have a rough estimate of the
+percentage of inliers in our dataset
+• This can be done in a probabilistic way
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+22 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+How many iterations does RANSAC need?
+• 𝑤∶= number of inliers/𝑁and 𝑁∶= tot. no. data points
+⇒𝑤: fraction of inliers in the dataset
+⇒𝑤= 𝑃(selecting an inlier‑point out of the dataset)
+• Let 𝑝∶= 𝑃(selecting a minimal set of points free of outliers)
+• Assumption: the 2 points necessary to estimate a line are selected independently
+⇒𝑤2 = 𝑃(both selected points are inliers)
+⇒1 −𝑤2 = 𝑃(at least one of these two points is an outlier)
+• Let 𝑘∶= no. RANSAC iterations executed so far
+⇒(1 −𝑤2)𝑘= 𝑃(RANSAC never selects two points that are both inliers)
+⇒1 −𝑝= (1 −𝑤2)𝑘, and therefore:
+𝑘= log(1 −𝑝)
+log(1 −𝑤2)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+23 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 3. RANSAC
+How many iterations does RANSAC need?
+• The number of iterations 𝑘is:𝑘= log(1 −𝑝)
+log(1 −𝑤2)
+⇒knowing the fraction of inliers 𝑤, after 𝑘RANSAC iterations we will have a probability
+𝑝of finding a set of points free of outliers
+• Example: if we want a probability of success 𝑝= 99% and we know that
+𝑤= 50% ⇒𝑘= 16 iterations–these are dramatically fewer than the number of all
+possible combinations!
+• Notice: the number of points does not influence the estimated number of iterations, only 𝑤
+does!
+• In practice we need only a rough estimate of 𝑤.
+More advanced variants of RANSAC estimate the fraction of inliers and adaptively change
+it on every iteration
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+24 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+• Points vote for plausible line parameters
+• Hough‑Transform: maps image‑space into Hough‑space
+• Hough‑space: voting accummulator, parametrized w.r.t. line characteristics
+1
+P. Hough,Machine Analysis of Bubble Chamber Pictures, Proc. Int. Conf. High Energy Accelerators and Instrumentation, 1959
+2
+J. Richard, O. Duda, P.E. Hart (April 1971). Use of the Hough Transformation to Detect Lines and Curves in Pictures. Artificial Intelligence Center (SRI International)
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+25 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+• A line in the image corresponds to a point in Hough space
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+26 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+• A line in the image corresponds to a point in Hough space
+• What does a point (𝑥0, 𝑦0) in the image space map to in the Hough space?
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+26 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+• A line in the image corresponds to a point in Hough space
+• What does a point (𝑥0, 𝑦0) in the image space map to in the Hough space?
+• Where is the line that contains both (𝑥0, 𝑦0) and (𝑥1, 𝑦1)?
+It is the intersection of the lines 𝑏= –𝑥0𝑚+ 𝑦0 and 𝑏= –𝑥1𝑚+ 𝑦1
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+26 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+• Each point in image space, votes for line‑parameters in Hough parameter space
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+27 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+• Problems with the (𝑚, 𝑏) space:
+• Unbounded parameter domain
+• How to represent lines aligned with the axes?
+• Alternative: polar representation
+图3.1: Each point in image space will map to a sinusoid in the (𝜌, 𝜃) parameter space
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+28 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform
+Step 1: Initialize accumulator 𝐻to all zeros
+Step 2: for each edge point (𝑥, 𝑦) in the image
+for all 𝜃in [0, 180]
+• Compute 𝜌= 𝑥cos 𝜃+ 𝑦sin 𝜃
+• 𝐻(𝜃, 𝜌) = 𝐻(𝜃, 𝜌) + 1
+end
+end
+Step 3: Find the values of (𝜃, 𝜌) where 𝐻(𝜃, 𝜌) is a local
+maximum
+Step 4: The detected line in the image is given by:
+𝜌= 𝑥cos 𝜃+ 𝑦sin 𝜃
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+29 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform: examples
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+30 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform: examples
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+31 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | 4. Hough‑Transform: examples
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+32 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+Line extraction | comparison
+• Split‑and‑merge, Incremental and Line‑Regression: fastest ‑ best applied on laser scans
+• Deterministic & make use of the sequential ordering of raw scan points
+(points captured according to the rotation direction of the laser beam)
+• If applied on randomly captured points only last 2 algorithms would segment all lines.
+• RANSAC and Hough‑Transform produce greater precision ⇒a more robust to outliers
+Complexity
+Speed (Hz)
+False positives
+Precision
+Split‑and‑Merge
+𝑁log 𝑁
+1500
+10%
++ + +
+Incremental
+𝑆𝑁
+600
+6%
++ + +
+Line‑Regression
+𝑁𝑁𝑓
+400
+10%
++ + +
+RANSAC
+𝑆𝑁𝑘
+30
+30%
++ + ++
+Hough‑Transform
+𝑆𝑁𝑁𝐶+ 𝑆𝑁𝑅𝑁𝐶
+10
+30%
++ + ++
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+33 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+最小二乘直线拟合
+• Point‑Line distance
+𝜌𝑖cos(𝜃𝑖−𝛼) −𝑟= 𝑑𝑖
+• If each measurement is equally uncertain then sum
+of sq. errors:
+𝑆= ∑
+𝑖
+𝑑2
+𝑖= ∑
+𝑖
+(𝜌𝑖cos(𝜃𝑖−𝛼) −𝑟)2
+• Goal: minimize S when selecting (𝑟, 𝛼) ⇒a solve
+the system
+𝜕𝑆
+𝜕𝛼= 0
+𝜕𝑆
+𝜕𝑟= 0
+•“Unweighted Least Squares”
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+34 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+激光雷达传感器特性
+图3.2: 定距下激光雷达测量误差统计
+图3.3: 激光雷达测量误差随距离的变化
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+35 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+加权最小二乘直线拟合
+• Point‑Line distance
+𝜌𝑖cos(𝜃𝑖−𝛼) −𝑟= 𝑑𝑖
+• Each sensor measurement, may have its own,
+unique uncertainty 𝜎2
+𝑆= ∑
+𝑖
+𝑤𝑖𝑑2
+𝑖= ∑
+𝑖
+𝑤𝑖(𝜌𝑖cos(𝜃𝑖−𝛼) −𝑟)2
+𝑤𝑖= 1
+𝜎2
+•“Weighted Least Squares”
+𝜕𝑆
+𝜕𝛼= 0
+𝜕𝑆
+𝜕𝑟= 0
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+36 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+加权最小二乘直线拟合
+• Gives the line parameters:
+𝛼= 1
+2 arctan ⎛
+⎜
+⎝
+∑𝑤𝑖𝜌2
+𝑖sin 2𝜃𝑖−
+2
+∑𝑤𝑖∑∑𝑤𝑖𝑤𝑗𝜌𝑖𝜌𝑗cos 𝜃𝑖sin 𝜃𝑗
+∑𝑤𝑖𝜌2
+𝑖cos 2𝜃𝑖−
+1
+∑𝑤𝑖∑∑𝑤𝑖𝑤𝑗𝜌𝑖𝜌𝑗cos(𝜃𝑖+ 𝜃𝑗)
+⎞
+⎟
+⎠
+𝑟= ∑𝑤𝑖𝜌𝑖cos(𝜃𝑖−𝛼𝑖)
+∑𝑤𝑖
+• If { 𝜌𝑖∼𝑁(̂𝜌𝑖, 𝜎2
+𝜌𝑖)
+𝜃𝑖∼𝑁(̂𝜃𝑖, 𝜎2
+𝜃𝑖)
+what is the
+uncertainty in the line (𝑟, 𝛼) ?
+The uncertainty αiof each
+measurement is proportional
+to the measured distance ρi
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+37 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+加权最小二乘直线拟合的误差传导模型
+• The uncertainty of each measurement 𝑥𝑖= (𝜌𝑖, 𝜃𝑖) is described by the covariance matrix:
+𝐶𝑥𝑖= [𝜎2
+𝜌𝑖
+0
+0
+𝜎2
+𝜃𝑖
+]
+Assuming that 𝜌𝑖, 𝜃𝑖are independent
+• The uncertainty in the line (𝑟, 𝛼) is described by the covariance matrix:
+𝐶𝑟𝛼= [ 𝜎2
+𝛼
+𝜎𝛼𝑟
+𝜎𝑟𝛼
+𝜎2
+𝑟
+]
+Define:
+𝐶𝑥= [𝑑𝑖𝑎𝑔(𝜎2
+𝜌)
+0
+0
+𝑑𝑖𝑎𝑔(𝜎2
+𝜃)] =
+⎡
+⎢
+⎢
+⎢
+⎣
+𝜎2
+𝜌1
+0
+⋯
+0
+0
+0
+𝜎2
+𝜌2
+⋯
+0
+0
+0
+0
+⋱
+0
+0
+0
+0
+⋯
+𝜎2
+𝜃𝑛−1
+0
+0
+0
+⋯
+0
+𝜎2
+𝜃𝑛
+⎤
+⎥
+⎥
+⎥
+⎦2𝑛×2𝑛
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+38 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+加权最小二乘直线拟合的误差传导模型
+𝐶𝑥= [𝑑𝑖𝑎𝑔(𝜎2
+𝜌)
+0
+0
+𝑑𝑖𝑎𝑔(𝜎2
+𝜃)] =
+⎡
+⎢
+⎢
+⎢
+⎣
+𝜎2
+𝜌1
+0
+⋯
+0
+0
+0
+𝜎2
+𝜌2
+⋯
+0
+0
+0
+0
+⋱
+0
+0
+0
+0
+⋯
+𝜎2
+𝜃𝑛−1
+0
+0
+0
+⋯
+0
+𝜎2
+𝜃𝑛
+⎤
+⎥
+⎥
+⎥
+⎦2𝑛×2𝑛
+Jacobian:
+𝐹𝜌𝜃=
+⎡
+⎢⎢
+⎣
+𝜕𝛼
+𝜕𝜌1
+𝜕𝛼
+𝜕𝜌2
+⋯
+𝜕𝛼
+𝜕𝜃𝑛−1
+𝜕𝛼
+𝜕𝜃𝑛
+𝜕𝑟
+𝜕𝜌1
+𝜕𝑟
+𝜕𝜌2
+⋯
+𝜕𝑟
+𝜕𝜃𝑛−1
+𝜕𝑟
+𝜕𝜃𝑛
+⎤
+⎥⎥
+⎦
+From Error Paopagation Law:
+𝐶𝛼𝑟= 𝐹𝜌𝜃𝐶𝑥𝐹𝑇
+𝜌𝜃
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+39 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+作业
+直线特征提取仿真实验
+• 设计并实现一种基于2D 点云的直线提取算法
+• 通过仿真实验，并对仿真实验结果进行分析，测试所构建模型的正确性
+• 将模型的推导过程，仿真实验结果和数据分析补充到打报告之后，提交电
+子版文档，文件名称：学号+ 专业+ 姓名
+• 4 月26 日晚上23:59 之前发送邮箱：1537664323@qq.com
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+40 / 41
+激光定位原理
+The Method of Least Squares
+Line extraction from a point cloud
+split‑and‑merge
+line‑regression
+RANSAC
+Hough‑Transform
+第五章移动机器人感知技术
+激光传感器定位原理
+孙雷教授
+sunl@nankai.edu.cn
+Tel: 13512967601
+机器人与信息自动化研究所(IRAIS)
+天津市智能机器人技术重点实验室(tjKLIR)
+南开大学
+2026 年4 月13 日
+孙雷(南开大学)
+激光传感器定位原理
+2026 年4 月13 日
+41 / 41

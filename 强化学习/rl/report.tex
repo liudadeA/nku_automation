@@ -1,0 +1,278 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\setmainfont{TeX Gyre Termes}
+\setsansfont{TeX Gyre Termes}
+\setmonofont{TeX Gyre Cursor}
+
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Serif CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+
+\setlength{\parindent}{2em}
+\setlength{\headheight}{14pt}
+
+\titleformat{\section}{\centering\bfseries\fontsize{16pt}{\baselineskip}\selectfont}{第\thesection 章}{1em}{}
+\titlespacing{\section}{0pt}{24pt}{18pt}
+
+\titleformat{\subsection}{\centering\bfseries\fontsize{14pt}{\baselineskip}\selectfont}{第\thesubsection 节}{1em}{}
+\titlespacing{\subsection}{0pt}{24pt}{6pt}
+
+\titleformat{\subsubsection}{\raggedright\bfseries\fontsize{13pt}{\baselineskip}\selectfont}{\thesubsubsection}{1em}{}
+\titlespacing{\subsubsection}{0pt}{12pt}{6pt}
+
+\captionsetup{font=small,labelsep=quad}
+\captionsetup[table]{position=top}
+\captionsetup[figure]{position=bottom}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\small 基于REINFORCE算法的CartPole强化学习研究}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+\begin{center}
+{\bfseries\fontsize{18pt}{\baselineskip}\selectfont 摘要}
+\end{center}
+\vspace{18pt}
+
+\setlength{\parskip}{0pt}
+\setstretch{1.25}
+
+本文研究了基于REINFORCE算法的强化学习方法，并将其应用于CartPole平衡控制问题。REINFORCE算法是一种经典的策略梯度方法，通过蒙特卡洛采样估计策略梯度，直接优化策略参数。实验中采用了Actor-Critic架构，引入价值函数作为基线以降低方差，并添加熵正则化项以鼓励探索。
+
+实验结果表明，经过1000个训练回合后，智能体的平均奖励从初始的19.0提升至95.04，在评估阶段达到了455.40的平均奖励。训练过程中，策略损失和价值损失均呈现收敛趋势，验证了算法的有效性。本研究为强化学习在连续控制任务中的应用提供了参考。
+
+\vspace{12pt}
+\noindent\textbf{关键词：}强化学习；REINFORCE算法；策略梯度；CartPole；Actor-Critic
+
+\vspace{24pt}
+
+\begin{center}
+{\bfseries\fontsize{18pt}{\baselineskip}\selectfont Abstract}
+\end{center}
+\vspace{18pt}
+
+This paper investigates reinforcement learning methods based on the REINFORCE algorithm and applies them to the CartPole balancing control problem. The REINFORCE algorithm is a classic policy gradient method that estimates policy gradients through Monte Carlo sampling and directly optimizes policy parameters. The experiment adopts an Actor-Critic architecture, introducing a value function as a baseline to reduce variance and adding an entropy regularization term to encourage exploration.
+
+Experimental results show that after 1000 training episodes, the agent's average reward improved from an initial 19.0 to 95.04, achieving an average reward of 455.40 during the evaluation phase. During training, both policy loss and value loss showed convergence trends, validating the effectiveness of the algorithm. This research provides a reference for the application of reinforcement learning in continuous control tasks.
+
+\vspace{12pt}
+\noindent\textbf{Key Words:} Reinforcement Learning; REINFORCE Algorithm; Policy Gradient; CartPole; Actor-Critic
+
+\newpage
+
+\section{引言}
+
+强化学习是机器学习的一个重要分支，研究智能体如何在环境中通过试错学习最优行为策略。与监督学习和无监督学习不同，强化学习通过与环境交互获得的奖励信号来指导学习过程，使其特别适用于序列决策问题。
+
+CartPole是强化学习领域的经典基准环境，模拟了一个倒立摆平衡问题。智能体需要通过左右移动小车来保持杆子的平衡，这是一个典型的控制问题，具有连续状态空间和离散动作空间。
+
+REINFORCE算法由Williams于1992年提出，是最早的策略梯度方法之一。该算法通过蒙特卡洛采样估计策略梯度，具有无偏性的优点，但同时也存在方差较大的问题。为了解决方差问题，研究者提出了多种改进方法，其中Actor-Critic架构是最具代表性的方法之一。
+
+\section{相关工作}
+
+\subsection{策略梯度方法}
+
+策略梯度方法是强化学习中的一类重要方法，直接对策略进行参数化并优化。与基于价值的方法不同，策略梯度方法可以直接处理连续动作空间，并且具有更好的收敛性质。
+
+策略梯度定理给出了策略梯度的解析表达式：
+\begin{equation}
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t|s_t) G_t\right]
+\end{equation}
+其中，$\theta$表示策略参数，$\tau$表示轨迹，$G_t$表示从时刻$t$开始的累积折扣奖励。
+
+\subsection{Actor-Critic架构}
+
+Actor-Critic架构结合了基于策略和基于价值的方法的优点。Actor（演员）负责学习策略，Critic（评论家）负责学习价值函数。Critic提供的状态价值估计可以作为基线，有效降低策略梯度的方差。
+
+在Actor-Critic框架下，策略梯度可以改写为：
+\begin{equation}
+\nabla_\theta J(\theta) = \mathbb{E}\left[\nabla_\theta \log \pi_\theta(a|s) A(s,a)\right]
+\end{equation}
+其中，$A(s,a) = G - V(s)$表示优势函数，$V(s)$是状态价值函数。
+
+\section{方法}
+
+\subsection{算法设计}
+
+本研究采用带有基线的REINFORCE算法，结合Actor-Critic架构。算法主要包含以下组件：
+
+\subsubsection{策略网络}
+
+策略网络采用两层全连接神经网络结构，输入为状态向量，输出为动作概率分布。网络结构如下：
+\begin{itemize}[itemsep=0pt]
+    \item 输入层：状态维度（CartPole为4维）
+    \item 隐藏层：128个神经元，ReLU激活函数
+    \item 输出层：动作维度（CartPole为2维），Softmax激活函数
+\end{itemize}
+
+\subsubsection{价值网络}
+
+价值网络同样采用两层全连接神经网络结构，用于估计状态价值函数。网络结构如下：
+\begin{itemize}[itemsep=0pt]
+    \item 输入层：状态维度（CartPole为4维）
+    \item 隐藏层：128个神经元，ReLU激活函数
+    \item 输出层：1个神经元，线性激活函数
+\end{itemize}
+
+\subsection{训练策略}
+
+训练过程中采用以下策略来提高学习效率和稳定性：
+
+\textbf{批次更新：}每8个回合进行一次参数更新，这样可以利用多个轨迹的信息，提高梯度估计的稳定性。
+
+\textbf{优势归一化：}对优势函数进行标准化处理，加速收敛过程。
+
+\textbf{熵正则化：}在目标函数中添加熵项，鼓励策略探索，避免过早收敛到次优策略。
+
+\textbf{梯度裁剪：}对梯度进行裁剪，防止梯度爆炸问题。
+
+\subsection{超参数设置}
+
+实验中使用的超参数如表\ref{tab:hyperparams}所示。
+
+\begin{table}[H]
+\centering
+\caption{实验超参数设置}
+\label{tab:hyperparams}
+\begin{tabular}{lcc}
+\toprule
+\textbf{超参数} & \textbf{符号} & \textbf{值} \\
+\midrule
+折扣因子 & $\gamma$ & 0.99 \\
+策略学习率 & $\alpha_p$ & 0.001 \\
+价值学习率 & $\alpha_v$ & 0.003 \\
+隐藏层维度 & - & 128 \\
+训练回合数 & - & 1000 \\
+最大步数 & - & 500 \\
+批次大小 & - & 8 \\
+熵系数 & $\beta$ & 0.001 \\
+梯度裁剪阈值 & - & 1.0 \\
+随机种子 & - & 42 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{实验结果与分析}
+
+\subsection{实验环境}
+
+实验在CartPole-v1环境中进行。该环境的状态空间包含4个连续变量：小车位置、小车速度、杆子角度和杆子角速度。动作空间包含2个离散动作：向左施力和向右施力。每个时间步，如果杆子保持直立，智能体获得+1的奖励。回合在杆子倾斜角度超过15度或小车偏离中心超过2.4个单位时结束。
+
+\subsection{训练过程分析}
+
+图\ref{fig:training_results}展示了训练过程中的奖励曲线和损失曲线。
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{output/reward_curve.png}
+    \caption{训练奖励曲线}
+    \label{fig:reward_curve}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{output/loss_curve.png}
+    \caption{训练损失曲线}
+    \label{fig:loss_curve}
+\end{subfigure}
+\caption{训练过程曲线}
+\label{fig:training_results}
+\end{figure}
+
+从图\ref{fig:reward_curve}可以看出，训练初期智能体的奖励较低且波动较大，随着训练的进行，奖励逐渐提升。移动平均曲线显示了明显的上升趋势，表明智能体正在学习有效的策略。
+
+从图\ref{fig:loss_curve}可以观察到，策略损失和价值损失在训练过程中呈现波动但总体趋于稳定。策略损失在训练后期出现负值，这是由于熵正则化项的影响，鼓励策略保持探索性。
+
+\subsection{性能评估}
+
+训练完成后，对学习到的策略进行了5次评估测试。评估结果如表\ref{tab:eval_results}所示。
+
+\begin{table}[H]
+\centering
+\caption{策略评估结果}
+\label{tab:eval_results}
+\begin{tabular}{cc}
+\toprule
+\textbf{评估回合} & \textbf{奖励} \\
+\midrule
+1 & 500.0 \\
+2 & 500.0 \\
+3 & 500.0 \\
+4 & 404.0 \\
+5 & 373.0 \\
+\midrule
+\textbf{平均值} & \textbf{455.4} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+评估结果显示，学习到的策略在5次测试中有3次达到了最大奖励500，表明策略已经较好地学会了保持杆子平衡。相比500回合的训练，1000回合的训练显著提高了策略的稳定性，评估结果的波动明显减小。
+
+\subsection{训练统计数据}
+
+表\ref{tab:training_stats}总结了训练过程的关键统计数据。
+
+\begin{table}[H]
+\centering
+\caption{训练统计数据}
+\label{tab:training_stats}
+\begin{tabular}{lc}
+\toprule
+\textbf{指标} & \textbf{值} \\
+\midrule
+总训练回合数 & 1000 \\
+初始平均奖励 & 19.0 \\
+最终移动平均奖励 & 95.04 \\
+评估平均奖励 & 455.40 \\
+最高回合奖励 & 500.0 \\
+参数更新次数 & 125 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{结论与展望}
+
+\subsection{研究结论}
+
+本研究成功实现了基于REINFORCE算法的CartPole强化学习系统。实验结果表明：
+
+第一，REINFORCE算法能够有效学习CartPole任务的策略，训练过程中奖励呈现明显的上升趋势。
+
+第二，Actor-Critic架构通过引入价值函数作为基线，有效降低了策略梯度的方差，提高了学习效率。
+
+第三，熵正则化和梯度裁剪等技术对训练稳定性有积极作用。
+
+\subsection{未来工作}
+
+尽管本研究取得了一定成果，但仍存在改进空间：
+
+第一，可以尝试更先进的策略梯度算法，如PPO、A3C等，进一步提高学习效率和策略稳定性。
+
+第二，可以探索神经网络架构的优化，如使用更深的网络或引入注意力机制。
+
+第三，可以将该方法扩展到更复杂的连续控制任务中，验证算法的泛化能力。
+
+\end{document}
